@@ -64,7 +64,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
         items: mpItems,
         back_urls,
         external_reference: String(orderId),
-        notification_url: 'https://seusite.com/api/payments/webhook', // Em produção, MP enviará notificações aqui
+        notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
       },
     })
 
