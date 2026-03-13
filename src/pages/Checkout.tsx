@@ -71,7 +71,6 @@ export default function Checkout() {
             district: formData.district,
             city: formData.city,
             state: formData.state,
-            shipping_service_id: 1 // SEDEX por padrão
           })
           .select()
           .single();

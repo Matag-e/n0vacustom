@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { createMelhorEnvioShipment } from '../services/melhorenvio.js'
+import { createSuperFreteShipment } from '../services/superfrete.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -84,6 +84,74 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 })
 
 /**
+ * Rota manual para tentar gerar frete novamente
+ */
+router.post('/retry-shipping/:orderId', async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params
+    
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          quantity,
+          price,
+          product:products (name)
+        )
+      `)
+      .eq('id', orderId)
+      .single()
+
+    if (!order || orderError) {
+      return res.status(404).json({ error: 'Pedido não encontrado' })
+    }
+
+    console.log(`[Manual Retry] Tentando gerar frete para pedido: ${orderId}`)
+    
+    const result = await createSuperFreteShipment({
+      orderId: order.id,
+      from: {
+        postal_code: process.env.SENDER_CEP || '01001000',
+        address: process.env.SENDER_ADDRESS || 'Rua da Loja',
+        number: process.env.SENDER_NUMBER || '1',
+        district: process.env.SENDER_DISTRICT || 'Centro',
+        city: process.env.SENDER_CITY || 'São Paulo',
+        state: process.env.SENDER_STATE || 'SP'
+      },
+      to: {
+        name: `${order.first_name} ${order.last_name}`,
+        email: order.email,
+        phone: order.phone,
+        cpf: order.cpf,
+        postal_code: order.cep,
+        address: order.address,
+        number: order.number,
+        complement: order.complement,
+        district: order.district,
+        city: order.city,
+        state: order.state
+      },
+      items: order.order_items.map((item: any) => ({
+        name: item.product?.name || 'Camisa Personalizada',
+        quantity: item.quantity,
+        price: item.price,
+        weight: 0.5,
+        height: 2,
+        width: 20,
+        length: 30
+      })),
+      service_id: 1 // SEDEX
+    })
+
+    res.json({ success: true, message: 'Etiqueta enviada ao carrinho!', data: result })
+  } catch (error: any) {
+    console.error('[Manual Retry] Erro:', error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
  * Webhook do Mercado Pago (IPN / Webhooks)
  */
 router.post('/webhook', async (req: Request, res: Response) => {
@@ -108,8 +176,21 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const client = getMPClient()
       const payment = new Payment(client)
 
-      // Buscar detalhes reais do pagamento
-      const paymentData = await payment.get({ id: paymentId })
+      // Buscar detalhes reais do pagamento com Retry (MP às vezes demora a indexar)
+      let paymentData: any = null
+      let retries = 3
+      while (retries > 0) {
+        try {
+          paymentData = await payment.get({ id: paymentId })
+          break
+        } catch (err: any) {
+          console.log(`MP Payment Fetch Attempt Failed. Retries left: ${retries - 1}`)
+          retries--
+          if (retries === 0) throw err
+          await new Promise(resolve => setTimeout(resolve, 2000)) // Espera 2s
+        }
+      }
+
       const orderId = paymentData.external_reference
       const status = paymentData.status
 
@@ -126,8 +207,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
           console.error('Error updating order status in Supabase:', updateError)
         } else {
           console.log(`Order ${orderId} marked as paid.`)
-          
-          // 2. Buscar detalhes do pedido para o Melhor Envio
+
+          // 2. Buscar detalhes para Super Frete
           const { data: order, error: orderError } = await supabase
             .from('orders')
             .select(`
@@ -135,48 +216,40 @@ router.post('/webhook', async (req: Request, res: Response) => {
               order_items (
                 quantity,
                 price,
-                product:products (
-                  name
-                )
+                product:products (name)
               )
             `)
             .eq('id', orderId)
             .single()
 
           if (order && !orderError) {
-            console.log(`Order details fetched for Melhor Envio. Order ID: ${orderId}`)
             try {
-              // 3. Criar envio no Melhor Envio
-              console.log('Calling createMelhorEnvioShipment...')
-              const shipmentResult = await createMelhorEnvioShipment({
+              console.log('[Webhook] Iniciando integração com Super Frete...')
+              await createSuperFreteShipment({
                 orderId: order.id,
                 from: {
-                  name: process.env.MELHORENVIO_SENDER_NAME || 'Nova Custom',
-                  phone: process.env.MELHORENVIO_SENDER_PHONE || '11999999999',
-                  email: process.env.MELHORENVIO_SENDER_EMAIL || 'contato@novacustom.com.br',
-                  document: process.env.MELHORENVIO_SENDER_DOCUMENT || '',
-                  address: process.env.MELHORENVIO_SENDER_ADDRESS || 'Endereço da Loja',
-                  number: process.env.MELHORENVIO_SENDER_NUMBER || '1',
-                  district: process.env.MELHORENVIO_SENDER_DISTRICT || 'Centro',
-                  city: process.env.MELHORENVIO_SENDER_CITY || 'São Paulo',
-                  state_abbr: (process.env.MELHORENVIO_SENDER_STATE || 'SP').substring(0, 2).toUpperCase(),
-                  postal_code: process.env.MELHORENVIO_SENDER_CEP || '01001000'
+                  postal_code: process.env.SENDER_CEP || '01001000',
+                  address: process.env.SENDER_ADDRESS || 'Rua da Loja',
+                  number: process.env.SENDER_NUMBER || '1',
+                  district: process.env.SENDER_DISTRICT || 'Centro',
+                  city: process.env.SENDER_CITY || 'São Paulo',
+                  state: process.env.SENDER_STATE || 'SP'
                 },
                 to: {
                   name: `${order.first_name} ${order.last_name}`,
-                  phone: order.phone,
                   email: order.email,
-                  document: order.cpf,
+                  phone: order.phone,
+                  cpf: order.cpf,
+                  postal_code: order.cep,
                   address: order.address,
                   number: order.number,
                   complement: order.complement,
                   district: order.district,
                   city: order.city,
-                  state_abbr: order.state?.substring(0, 2).toUpperCase(),
-                  postal_code: order.cep
+                  state: order.state
                 },
                 items: order.order_items.map((item: any) => ({
-                  name: item.product.name,
+                  name: item.product?.name || 'Camisa Personalizada',
                   quantity: item.quantity,
                   price: item.price,
                   weight: 0.5,
@@ -184,27 +257,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
                   width: 20,
                   length: 30
                 })),
-                service_id: 1 // 1 = Correios SEDEX, 2 = Correios PAC
+                service_id: 1 // SEDEX
               })
-
-              if (shipmentResult) {
-                console.log('Melhor Envio Success Response:', JSON.stringify(shipmentResult))
-                // Atualizar pedido com info de frete
-                const { error: finalUpdateError } = await supabase
-                  .from('orders')
-                  .update({ 
-                    shipping_id: String(shipmentResult.id || shipmentResult.data?.id || 'generated'),
-                    status: 'shipped' 
-                  })
-                  .eq('id', orderId)
-                
-                if (finalUpdateError) console.error('Error in final status update:', finalUpdateError)
-              }
-            } catch (meError: any) {
-              console.error('CRITICAL: Melhor Envio Integration Failed:', meError.message)
-              if (meError.response) {
-                console.error('API Response Error Body:', JSON.stringify(meError.response.data))
-              }
+              
+              // Se deu certo, podemos opcionalmente mudar para 'shipped' 
+              // mas geralmente o lojista prefere mudar quando postar
+            } catch (sfError) {
+              console.error('[Webhook] Falha na integração Super Frete:', sfError)
             }
           }
         }

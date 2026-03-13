@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Package, Truck, CheckCircle2, Clock, XCircle, Search, 
-  ChevronDown, Filter, DollarSign, Calendar
+  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,8 +13,23 @@ interface Order {
   status: string;
   payment_method: string;
   user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  cpf: string;
+  phone: string;
+  cep: string;
+  address: string;
+  number: string;
+  complement: string;
+  district: string;
+  city: string;
+  state: string;
+  tracking_code: string;
   order_items: {
     quantity: number;
+    price: number;
+    size: string;
     product: {
       name: string;
     };
@@ -34,6 +49,30 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [trackingInput, setTrackingInput] = useState('');
+  const [shippingLoading, setShippingLoading] = useState(false);
+
+  async function handleRetryShipping(orderId: string) {
+    setShippingLoading(true);
+    try {
+      const response = await fetch(`/api/payments/retry-shipping/${orderId}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Sucesso! O pedido foi enviado para o carrinho do Super Frete.');
+      } else {
+        alert(`Erro: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error retrying shipping:', error);
+      alert('Falha ao conectar com o servidor.');
+    } finally {
+      setShippingLoading(false);
+    }
+  }
 
   useEffect(() => {
     fetchOrders();
@@ -48,6 +87,8 @@ export default function AdminDashboard() {
           *,
           order_items (
             quantity,
+            price,
+            size,
             product:products (name)
           )
         `)
@@ -78,6 +119,112 @@ export default function AdminDashboard() {
       alert('Erro ao atualizar status.');
     }
   }
+
+  async function updateTracking(orderId: string, code: string) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ tracking_code: code })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      setOrders(orders.map(o => o.id === orderId ? { ...o, tracking_code: code } : o));
+      alert('Código de rastreio salvo!');
+    } catch (error) {
+      console.error('Error updating tracking:', error);
+      alert('Erro ao salvar código.');
+    }
+  }
+
+  const copyAddress = (order: Order) => {
+    const text = `${order.first_name} ${order.last_name}
+CPF: ${order.cpf}
+CEP: ${order.cep}
+Endereço: ${order.address}, ${order.number} ${order.complement ? `(${order.complement})` : ''}
+Bairro: ${order.district}
+Cidade: ${order.city} - ${order.state}`;
+    
+    navigator.clipboard.writeText(text);
+    alert('Endereço copiado para a área de transferência!');
+  };
+
+  const printDeclaration = (order: Order) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Declaração de Conteúdo - Pedido #${order.id.slice(0, 8)}</title>
+          <style>
+            body { font-family: sans-serif; padding: 20px; font-size: 12px; }
+            .box { border: 1px solid black; padding: 10px; margin-bottom: 10px; }
+            .header { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
+            .section-title { font-weight: bold; background: #eee; padding: 5px; margin-top: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid black; padding: 5px; text-align: left; }
+            .footer { margin-top: 30px; border-top: 1px solid black; padding-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">DECLARAÇÃO DE CONTEÚDO</div>
+          
+          <div class="box">
+            <div class="section-title">REMETENTE</div>
+            <p><strong>Nome:</strong> NOVA CUSTOM</p>
+            <p><strong>CPF/CNPJ:</strong> 49364325800</p>
+            <p><strong>Endereço:</strong> Rua Tetsuko Kanai, 1515</p>
+            <p><strong>Cidade/UF/CEP:</strong> São Paulo - SP - 05757280</p>
+          </div>
+
+          <div class="box">
+            <div class="section-title">DESTINATÁRIO</div>
+            <p><strong>Nome:</strong> ${order.first_name} ${order.last_name}</p>
+            <p><strong>CPF/CNPJ:</strong> ${order.cpf}</p>
+            <p><strong>Endereço:</strong> ${order.address}, ${order.number} ${order.complement ? `(${order.complement})` : ''}</p>
+            <p><strong>Bairro:</strong> ${order.district}</p>
+            <p><strong>Cidade/UF/CEP:</strong> ${order.city} - ${order.state} - ${order.cep}</p>
+          </div>
+
+          <div class="box">
+            <div class="section-title">CONTEÚDO</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Quantidade</th>
+                  <th>Valor Unitário</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${order.order_items?.map(item => `
+                  <tr>
+                    <td>${item.product?.name || 'Produto'} (Tam: ${item.size || 'N/A'})</td>
+                    <td>${item.quantity || 0}</td>
+                    <td>R$ ${(item.price || 0).toFixed(2)}</td>
+                  </tr>
+                `).join('') || '<tr><td colspan="3">Nenhum item encontrado</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer">
+            <p>Declaro que não me enquadro no conceito de contribuinte previsto no art. 4º da Lei Complementar nº 87/96, logo não sou obrigado a emitir nota fiscal.</p>
+            <br><br>
+            <div style="text-align: center; border-top: 1px solid black; width: 300px; margin: 0 auto; padding-top: 5px;">
+              Assinatura do Remetente
+            </div>
+          </div>
+          
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
@@ -228,19 +375,45 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="relative group/actions">
-                          <select
-                            value={order.status}
-                            onChange={(e) => updateStatus(order.id, e.target.value)}
-                            className="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg p-2 pr-8 focus:ring-2 focus:ring-black focus:border-transparent outline-none cursor-pointer appearance-none hover:border-gray-400 transition-colors"
+                        <div className="flex items-center gap-2">
+                          <div className="relative group/actions">
+                            <select
+                              value={order.status}
+                              onChange={(e) => updateStatus(order.id, e.target.value)}
+                              className="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg p-2 pr-8 focus:ring-2 focus:ring-black focus:border-transparent outline-none cursor-pointer appearance-none hover:border-gray-400 transition-colors"
+                            >
+                              <option value="pending">Pendente</option>
+                              <option value="paid">Pago</option>
+                              <option value="shipped">Enviado</option>
+                              <option value="completed">Entregue</option>
+                              <option value="cancelled">Cancelado</option>
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setTrackingInput(order.tracking_code || '');
+                            }}
+                            className="p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-all"
+                            title="Ver Detalhes"
                           >
-                            <option value="pending">Pendente</option>
-                            <option value="paid">Pago</option>
-                            <option value="shipped">Enviado</option>
-                            <option value="completed">Entregue</option>
-                            <option value="cancelled">Cancelado</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          {order.status === 'paid' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRetryShipping(order.id);
+                              }}
+                              disabled={shippingLoading}
+                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                              title="Gerar Etiqueta no Super Frete"
+                            >
+                              <Truck className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -251,6 +424,149 @@ export default function AdminDashboard() {
           </table>
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tight">Detalhes do Pedido</h2>
+                <p className="text-xs text-gray-400 font-mono">#{selectedOrder.id}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <XCircle className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-8">
+              {/* Customer Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                    <Package className="w-3 h-3" />
+                    Dados de Entrega
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-xl space-y-2 text-sm">
+                    <p><strong>Nome:</strong> {selectedOrder.first_name} {selectedOrder.last_name}</p>
+                    <p><strong>CPF:</strong> {selectedOrder.cpf}</p>
+                    <p><strong>CEP:</strong> {selectedOrder.cep}</p>
+                    <p><strong>Endereço:</strong> {selectedOrder.address}, {selectedOrder.number}</p>
+                    <p><strong>Bairro:</strong> {selectedOrder.district}</p>
+                    <p><strong>Cidade/UF:</strong> {selectedOrder.city} - {selectedOrder.state}</p>
+                    {selectedOrder.complement && <p><strong>Comp:</strong> {selectedOrder.complement}</p>}
+                    
+                    <button 
+                      onClick={() => copyAddress(selectedOrder)}
+                      className="mt-4 flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-lg transition-all w-full justify-center"
+                    >
+                      <Copy className="w-3 h-3" />
+                      COPIAR ENDEREÇO PARA FRETE
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                    <Truck className="w-3 h-3" />
+                    Logística & Rastreio
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-gray-400">Código de Rastreio</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={trackingInput}
+                          onChange={(e) => setTrackingInput(e.target.value)}
+                          placeholder="Ex: BR123456789"
+                          className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
+                        />
+                        <button 
+                          onClick={() => updateTracking(selectedOrder.id, trackingInput)}
+                          className="bg-black text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-900 transition-all"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => printDeclaration(selectedOrder)}
+                      className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-black bg-white border border-gray-200 px-3 py-2 rounded-lg transition-all w-full justify-center"
+                    >
+                      <FileText className="w-3 h-3" />
+                      GERAR DECLARAÇÃO DE CONTEÚDO
+                    </button>
+                    
+                    <a 
+                      href="https://web.superfrete.com/"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-3 py-2 rounded-lg transition-all w-full justify-center"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      ABRIR SUPER FRETE
+                    </a>
+
+                    <button 
+                      onClick={() => handleRetryShipping(selectedOrder.id)}
+                      disabled={shippingLoading}
+                      className={cn(
+                        "flex items-center gap-2 text-xs font-bold px-3 py-3 rounded-xl transition-all w-full justify-center",
+                        shippingLoading 
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                          : "bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20"
+                      )}
+                    >
+                      <Truck className="w-4 h-4" />
+                      {shippingLoading ? 'ENVIANDO...' : 'GERAR ETIQUETA AGORA'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Itens do Pedido</h3>
+                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-bold text-gray-500 uppercase text-[10px]">Produto</th>
+                        <th className="px-4 py-3 text-center font-bold text-gray-500 uppercase text-[10px]">Tam</th>
+                        <th className="px-4 py-3 text-center font-bold text-gray-500 uppercase text-[10px]">Qtd</th>
+                        <th className="px-4 py-3 text-right font-bold text-gray-500 uppercase text-[10px]">Preço</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {selectedOrder.order_items?.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-3 font-medium">{item.product?.name || 'Produto'}</td>
+                          <td className="px-4 py-3 text-center">{item.size || 'N/A'}</td>
+                          <td className="px-4 py-3 text-center">{item.quantity || 0}</td>
+                          <td className="px-4 py-3 text-right font-bold">R$ {(item.price || 0).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 font-black">
+                      <tr>
+                        <td colSpan={3} className="px-4 py-3 text-right uppercase text-[10px]">Total do Pedido</td>
+                        <td className="px-4 py-3 text-right text-lg text-blue-600">
+                          R$ {selectedOrder.total_amount.toFixed(2).replace('.', ',')}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
