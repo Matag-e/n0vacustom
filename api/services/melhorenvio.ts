@@ -63,13 +63,17 @@ export async function createMelhorEnvioShipment(data: CreateShipmentData) {
       return null;
     }
 
+    const cleanFromDoc = data.from.document.replace(/\D/g, '');
+    const cleanToDoc = data.to.document.replace(/\D/g, '');
+
     const payload = {
       service: data.service_id,
       from: {
         name: data.from.name,
         phone: data.from.phone.replace(/\D/g, ''),
         email: data.from.email,
-        document: data.from.document.replace(/\D/g, ''),
+        document: cleanFromDoc.length <= 11 ? cleanFromDoc : undefined,
+        company_document: cleanFromDoc.length > 11 ? cleanFromDoc : undefined,
         address: data.from.address,
         number: data.from.number,
         complement: data.from.complement || '',
@@ -82,7 +86,8 @@ export async function createMelhorEnvioShipment(data: CreateShipmentData) {
         name: data.to.name,
         phone: data.to.phone.replace(/\D/g, ''),
         email: data.to.email,
-        document: data.to.document.replace(/\D/g, ''),
+        document: cleanToDoc.length <= 11 ? cleanToDoc : undefined,
+        company_document: cleanToDoc.length > 11 ? cleanToDoc : undefined,
         address: data.to.address,
         number: data.to.number,
         complement: data.to.complement || '',
@@ -118,6 +123,7 @@ export async function createMelhorEnvioShipment(data: CreateShipmentData) {
     };
 
     console.log(`[Melhor Envio] Environment: ${IS_SANDBOX ? 'SANDBOX' : 'PRODUCTION'}`);
+    console.log('Melhor Envio URL:', `${BASE_URL}/api/v2/me/cart`);
     console.log('Melhor Envio Payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch(`${BASE_URL}/api/v2/me/cart`, {
