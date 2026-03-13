@@ -88,13 +88,15 @@ router.post('/create-preference', async (req: Request, res: Response) => {
  */
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
-    const { action, data, type } = req.body
+    const { action, data, type, resource, topic } = req.body
 
-    console.log('Webhook MP received:', { action, data, type })
+    console.log('Webhook MP received:', JSON.stringify(req.body))
 
-    // No Mercado Pago, quando um pagamento é feito, o type é 'payment'
-    if (type === 'payment' || action === 'payment.created' || action === 'payment.updated') {
-      const paymentId = data.id
+    // Mercado Pago pode enviar via 'type'/'data.id' ou 'topic'/'id'
+    const notificationType = type || topic
+    const paymentId = (data && data.id) || (notificationType === 'payment' ? req.body.id : undefined) || (resource ? resource.split('/').pop() : undefined)
+
+    if (paymentId && (notificationType === 'payment' || action?.includes('payment'))) {
       const client = getMPClient()
       const payment = new Payment(client)
 
@@ -137,44 +139,44 @@ router.post('/webhook', async (req: Request, res: Response) => {
           if (order && !orderError) {
             try {
               // 3. Criar envio no Melhor Envio
-              const shipmentResult = await createMelhorEnvioShipment({
-                orderId: order.id,
-                from: {
-                  name: 'Nova Custom',
-                  phone: '11999999999',
-                  email: 'contato@novacustom.com.br',
-                  document: '00000000000', // CPF ou CNPJ do remetente
-                  address: 'Endereço da Loja',
-                  number: '1',
-                  district: 'Centro',
-                  city: 'São Paulo',
-                  state_abbr: 'SP',
-                  postal_code: '01001000'
-                },
-                to: {
-                  name: `${order.first_name} ${order.last_name}`,
-                  phone: order.phone,
-                  email: order.email,
-                  document: order.cpf,
-                  address: order.address,
-                  number: order.number,
-                  complement: order.complement,
-                  district: order.district,
-                  city: order.city,
-                  state_abbr: order.state, // Certifique-se de que é a sigla (ex: SP)
-                  postal_code: order.cep
-                },
-                items: order.order_items.map((item: any) => ({
-                  name: item.product.name,
-                  quantity: item.quantity,
-                  price: item.price,
-                  weight: 0.5,
-                  height: 2,
-                  width: 20,
-                  length: 30
-                })),
-                service_id: 1 // 1 = Correios SEDEX, 2 = Correios PAC
-              })
+               const shipmentResult = await createMelhorEnvioShipment({
+                 orderId: order.id,
+                 from: {
+                   name: process.env.MELHORENVIO_SENDER_NAME || 'Nova Custom',
+                   phone: process.env.MELHORENVIO_SENDER_PHONE || '11999999999',
+                   email: process.env.MELHORENVIO_SENDER_EMAIL || 'contato@novacustom.com.br',
+                   document: process.env.MELHORENVIO_SENDER_DOCUMENT || '', // CPF ou CNPJ real do remetente
+                   address: process.env.MELHORENVIO_SENDER_ADDRESS || 'Endereço da Loja',
+                   number: process.env.MELHORENVIO_SENDER_NUMBER || '1',
+                   district: process.env.MELHORENVIO_SENDER_DISTRICT || 'Centro',
+                   city: process.env.MELHORENVIO_SENDER_CITY || 'São Paulo',
+                   state_abbr: process.env.MELHORENVIO_SENDER_STATE || 'SP',
+                   postal_code: process.env.MELHORENVIO_SENDER_CEP || '01001000'
+                 },
+                 to: {
+                   name: `${order.first_name} ${order.last_name}`,
+                   phone: order.phone,
+                   email: order.email,
+                   document: order.cpf,
+                   address: order.address,
+                   number: order.number,
+                   complement: order.complement,
+                   district: order.district,
+                   city: order.city,
+                   state_abbr: order.state,
+                   postal_code: order.cep
+                 },
+                 items: order.order_items.map((item: any) => ({
+                   name: item.product.name,
+                   quantity: item.quantity,
+                   price: item.price,
+                   weight: 0.5,
+                   height: 2,
+                   width: 20,
+                   length: 30
+                 })),
+                 service_id: 1 // 1 = Correios SEDEX, 2 = Correios PAC
+               })
 
               if (shipmentResult && shipmentResult.id) {
                 console.log('Shipment added to Melhor Envio cart successfully. ID:', shipmentResult.id)
