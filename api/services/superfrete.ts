@@ -63,9 +63,10 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
     const cleanCPF = data.to.cpf.replace(/\D/g, '');
     const cleanPhone = data.to.phone.replace(/\D/g, '');
 
-    // Payload robusto baseado no padrão Melhor Envio/Super Frete
+    // Payload ultra-compatível (Padrão Melhor Envio/Super Frete V2/V0)
     const payload = {
-      service: Number(data.service_id) || 1, // 1 = SEDEX, 2 = PAC
+      service: Number(data.service_id) || 1,
+      agency: 1, // Algumas transportadoras exigem agência (1 é o padrão para Correios)
       from: {
         name: process.env.SENDER_NAME || "NOVA CUSTOM",
         phone: process.env.SENDER_PHONE?.replace(/\D/g, '') || "11991814636",
@@ -96,6 +97,7 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
         name: item.name.substring(0, 50),
         quantity: item.quantity,
         unitary_value: Number(item.price.toFixed(2)),
+        weight: 0.5 // Peso individual por produto
       })),
       volumes: [{
         height: 2,
@@ -108,7 +110,7 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
         receipt: false,
         own_hand: false,
         reverse: false,
-        non_commercial: true, // Importante para quem não emite NF
+        non_commercial: true,
       }
     };
 

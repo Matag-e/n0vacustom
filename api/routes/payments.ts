@@ -144,7 +144,16 @@ router.post('/retry-shipping/:orderId', async (req: Request, res: Response) => {
       service_id: 1 // SEDEX
     })
 
-    res.json({ success: true, message: 'Etiqueta enviada ao carrinho!', data: result })
+    const cartUrl = process.env.SUPERFRETE_SANDBOX === 'true' 
+      ? 'https://sandbox.superfrete.com/#/cart' 
+      : 'https://web.superfrete.com/#/cart'
+
+    res.json({ 
+      success: true, 
+      message: 'Etiqueta enviada ao carrinho!', 
+      data: result,
+      cartUrl
+    })
   } catch (error: any) {
     console.error('[Manual Retry] Erro:', error.message)
     res.status(500).json({ success: false, error: error.message })

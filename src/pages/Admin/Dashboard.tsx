@@ -52,6 +52,7 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingInput, setTrackingInput] = useState('');
   const [shippingLoading, setShippingLoading] = useState(false);
+  const [lastCartUrl, setLastCartUrl] = useState<string>('https://web.superfrete.com/#/cart');
 
   async function handleRetryShipping(orderId: string) {
     setShippingLoading(true);
@@ -62,7 +63,11 @@ export default function AdminDashboard() {
       const data = await response.json();
       
       if (data.success) {
-        alert('Sucesso! O pedido foi enviado para o carrinho do Super Frete.');
+        setLastCartUrl(data.cartUrl);
+        const sfId = data.data?.id || data.data?.protocol || 'OK';
+        if (confirm(`Sucesso! Pedido enviado para o carrinho.\nID da Etiqueta: ${sfId}\nDeseja abrir o carrinho agora?`)) {
+          window.open(data.cartUrl, '_blank');
+        }
       } else {
         alert(`Erro: ${data.error}`);
       }
@@ -503,13 +508,13 @@ Cidade: ${order.city} - ${order.state}`;
                     </button>
                     
                     <a 
-                      href="https://web.superfrete.com/"
+                      href={lastCartUrl}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-3 py-2 rounded-lg transition-all w-full justify-center"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      ABRIR SUPER FRETE
+                      ABRIR CARRINHO SUPER FRETE
                     </a>
 
                     <button 
