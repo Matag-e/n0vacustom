@@ -85,6 +85,7 @@ export default function Profile() {
         body: JSON.stringify({
           orderId: order.id,
           totalAmount: order.total_amount,
+          paymentMethod: order.payment_method,
         }),
       });
 
@@ -257,11 +258,14 @@ export default function Profile() {
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
-                          order.status === 'completed' ? "bg-green-50 text-green-600" :
+                          order.status === 'paid' || order.status === 'completed' ? "bg-green-50 text-green-600" :
+                          order.status === 'shipped' ? "bg-blue-50 text-blue-600" :
+                          order.status === 'delivered' ? "bg-purple-50 text-purple-600" :
                           order.status === 'pending' ? "bg-yellow-50 text-yellow-600" :
                           "bg-gray-50 text-gray-400"
                         )}>
-                          {order.status === 'completed' ? <CheckCircle2 className="w-6 h-6" /> :
+                          {order.status === 'paid' || order.status === 'completed' || order.status === 'delivered' ? <CheckCircle2 className="w-6 h-6" /> :
+                           order.status === 'shipped' ? <Package className="w-6 h-6" /> :
                            order.status === 'pending' ? <Clock className="w-6 h-6" /> :
                            <XCircle className="w-6 h-6" />}
                         </div>
@@ -290,12 +294,16 @@ export default function Profile() {
                           <div className="flex flex-col items-end gap-2">
                             <span className={cn(
                               "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider",
-                              order.status === 'completed' ? "bg-green-100 text-green-800" :
+                              order.status === 'paid' ? "bg-blue-100 text-blue-800" :
+                              order.status === 'shipped' ? "bg-indigo-100 text-indigo-800" :
+                              order.status === 'completed' || order.status === 'delivered' ? "bg-green-100 text-green-800" :
                               order.status === 'pending' ? "bg-yellow-100 text-yellow-800" :
                               "bg-gray-100 text-gray-800"
                             )}>
                               {order.status === 'pending' ? 'Pendente' : 
-                               order.status === 'completed' ? 'Confirmado' : 
+                               order.status === 'paid' ? 'Pago' :
+                               order.status === 'shipped' ? 'Enviado' :
+                               order.status === 'completed' || order.status === 'delivered' ? 'Entregue' :
                                order.status === 'cancelled' ? 'Cancelado' : order.status}
                             </span>
                             

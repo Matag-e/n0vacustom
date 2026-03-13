@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createSuperFreteShipment } from '../services/superfrete.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -27,7 +28,7 @@ const getMPClient = () => {
 
 router.post('/create-preference', async (req: Request, res: Response) => {
   try {
-    const { items, orderId, totalAmount } = req.body
+    const { items, orderId, totalAmount, paymentMethod } = req.body
 
     const client = getMPClient()
     const preference = new Preference(client)
@@ -65,6 +66,10 @@ router.post('/create-preference', async (req: Request, res: Response) => {
         back_urls,
         external_reference: String(orderId),
         notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
+        payment_methods: {
+          default_payment_method_id: paymentMethod === 'pix' ? 'pix' : undefined,
+          installments: 12,
+        },
       },
     })
 
@@ -102,16 +107,103 @@ router.post('/webhook', async (req: Request, res: Response) => {
       console.log(`Payment Status: ${status} for Order ID: ${orderId}`)
 
       if (status === 'approved') {
-        // Atualizar pedido no Supabase
-        const { error } = await supabase
+        // 1. Atualizar pedido no Supabase para 'paid'
+        const { error: updateError } = await supabase
           .from('orders')
-          .update({ status: 'completed' }) // 'completed' ou 'paid' dependendo da sua convenção
+          .update({ status: 'paid' })
           .eq('id', orderId)
 
-        if (error) {
-          console.error('Error updating order status in Supabase:', error)
+        if (updateError) {
+          console.error('Error updating order status in Supabase:', updateError)
         } else {
-          console.log(`Order ${orderId} marked as completed.`)
+          console.log(`Order ${orderId} marked as paid.`)
+          
+          // 2. Buscar detalhes do pedido para o Super Frete
+          const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .select(`
+              *,
+              order_items (
+                quantity,
+                price,
+                product:products (
+                  name
+                )
+              )
+            `)
+            .eq('id', orderId)
+            .single()
+
+          if (order && !orderError) {
+            try {
+              // 3. Validar dados obrigatórios para o Super Frete
+              const missingFields = []
+              if (!order.first_name) missingFields.push('Nome')
+              if (!order.cpf) missingFields.push('CPF')
+              if (!order.cep) missingFields.push('CEP')
+              if (!order.address) missingFields.push('Endereço')
+              if (!order.phone) missingFields.push('Telefone')
+
+              if (missingFields.length > 0) {
+                console.warn(`Dados incompletos para Super Frete no Pedido ${orderId}:`, missingFields.join(', '))
+                return
+              }
+
+              // 4. Criar envio no Super Frete
+              const shipmentResult = await createSuperFreteShipment({
+                orderId: order.id,
+                from: {
+                  postal_code: '01001-000', // CEP de teste (Substituir pelo CEP real da loja)
+                  address: 'Endereço da Loja',
+                  number: '1',
+                  district: 'Centro',
+                  city: 'São Paulo',
+                  state: 'SP'
+                },
+                to: {
+                  name: `${order.first_name} ${order.last_name}`,
+                  email: order.email,
+                  phone: order.phone,
+                  cpf: order.cpf,
+                  postal_code: order.cep,
+                  address: order.address,
+                  number: order.number,
+                  complement: order.complement,
+                  district: order.district,
+                  city: order.city,
+                  state: order.state
+                },
+                items: order.order_items.map((item: any) => ({
+                  name: item.product.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                  weight: 0.5,
+                  height: 2,
+                  width: 20,
+                  length: 30
+                })),
+                service_id: order.shipping_service_id || 1
+              })
+
+              if (shipmentResult && shipmentResult.id) {
+                console.log('Shipment created in Super Frete successfully:', shipmentResult.id)
+                // Atualizar pedido com info de frete
+                const { error: finalError } = await supabase
+                  .from('orders')
+                  .update({ 
+                    shipping_id: String(shipmentResult.id),
+                    status: 'shipped' 
+                  })
+                  .eq('id', orderId)
+                
+                if (finalError) console.error('Error updating final order status:', finalError)
+              } else {
+                console.log('Super Frete did not return a valid shipment ID. Result:', shipmentResult)
+              }
+            } catch (sfError) {
+              console.error('Erro na integração com Super Frete:', sfError)
+            }
+          }
         }
       } else if (status === 'rejected' || status === 'cancelled') {
         // Opcional: Marcar como cancelado se rejeitado

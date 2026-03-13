@@ -27,6 +27,7 @@ export default function Checkout() {
     district: '',
     city: '',
     state: '',
+    paymentMethod: 'mercadopago' as 'mercadopago' | 'pix',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -46,7 +47,8 @@ export default function Checkout() {
     setLoading(true);
     
     try {
-      const totalAmount = totalPrice;
+      const isPix = formData.paymentMethod === 'pix';
+      const totalAmount = isPix ? totalPrice * 0.95 : totalPrice;
 
       if (user) {
         // Salvar pedido no Supabase
@@ -56,7 +58,20 @@ export default function Checkout() {
             user_id: user.id,
             total_amount: totalAmount,
             status: 'pending',
-            payment_method: 'mercadopago'
+            payment_method: formData.paymentMethod,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            cpf: formData.cpf,
+            phone: formData.phone,
+            cep: formData.cep,
+            address: formData.address,
+            number: formData.number,
+            complement: formData.complement,
+            district: formData.district,
+            city: formData.city,
+            state: formData.state,
+            shipping_service_id: 1 // SEDEX por padrão
           })
           .select()
           .single();
@@ -96,6 +111,8 @@ export default function Checkout() {
                 quantity: item.quantity,
               })),
               orderId: orderData.id,
+              paymentMethod: formData.paymentMethod,
+              totalAmount: totalAmount
             }),
           });
 
@@ -199,6 +216,56 @@ export default function Checkout() {
                 </div>
               </div>
 
+              {/* Payment Method Selection */}
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Forma de Pagamento
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'mercadopago' }))}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all gap-3",
+                      formData.paymentMethod === 'mercadopago' 
+                        ? "border-black bg-gray-50 ring-2 ring-black/5" 
+                        : "border-gray-100 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-6 h-6 text-blue-600" />
+                      <span className="font-bold">Mercado Pago</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest text-center">
+                      Cartão, Boleto e Outros
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'pix' }))}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all gap-3 relative overflow-hidden",
+                      formData.paymentMethod === 'pix' 
+                        ? "border-green-500 bg-green-50 ring-2 ring-green-500/5" 
+                        : "border-gray-100 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="absolute top-2 right-2 bg-green-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                      5% OFF
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-6 h-6 text-green-600" />
+                      <span className="font-bold">PIX (MP)</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest text-center">
+                      Liberação Instantânea
+                    </span>
+                  </button>
+                </div>
+              </div>
+
               {/* Address */}
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -270,10 +337,20 @@ export default function Checkout() {
                   <span>Frete</span>
                   <span className="text-green-600 font-bold uppercase text-xs">Grátis</span>
                 </div>
+                {formData.paymentMethod === 'pix' && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Desconto PIX (5%)</span>
+                    <span>- R$ {(totalPrice * 0.05).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-end pt-4 border-t border-gray-100">
                   <span className="font-bold text-gray-900">Total</span>
                   <span className="text-2xl font-black text-gray-900">
-                    R$ {totalPrice.toFixed(2).replace('.', ',')}
+                    R$ {
+                      formData.paymentMethod === 'pix' 
+                        ? (totalPrice * 0.95).toFixed(2).replace('.', ',') 
+                        : totalPrice.toFixed(2).replace('.', ',')
+                    }
                   </span>
                 </div>
               </div>
