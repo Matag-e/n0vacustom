@@ -112,7 +112,8 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
       }
     };
 
-    console.log(`[Super Frete] Enviando para ${IS_SANDBOX ? 'SANDBOX' : 'PRODUÇÃO'}...`);
+    console.log(`[Super Frete] URL: ${BASE_URL}/api/v0/cart/add`);
+    console.log(`[Super Frete] Payload: ${JSON.stringify(payload, null, 2)}`);
     
     const response = await fetch(`${BASE_URL}/api/v0/cart/add`, {
       method: 'POST',
@@ -125,7 +126,10 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
       body: JSON.stringify(payload),
     });
 
+    console.log(`[Super Frete] Status: ${response.status} ${response.statusText}`);
+
     const responseText = await response.text();
+    console.log(`[Super Frete] Raw Response: ${responseText}`);
     let responseData;
     try {
       responseData = JSON.parse(responseText);

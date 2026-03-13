@@ -147,7 +147,7 @@ router.post('/retry-shipping/:orderId', async (req: Request, res: Response) => {
     res.json({ success: true, message: 'Etiqueta enviada ao carrinho!', data: result })
   } catch (error: any) {
     console.error('[Manual Retry] Erro:', error.message)
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ success: false, error: error.message })
   }
 })
 
@@ -224,8 +224,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
           if (order && !orderError) {
             try {
-              console.log('[Webhook] Iniciando integração com Super Frete...')
-              await createSuperFreteShipment({
+              console.log(`[Webhook] Iniciando integração com Super Frete para Pedido ${orderId}...`)
+              const sfResult = await createSuperFreteShipment({
                 orderId: order.id,
                 from: {
                   postal_code: process.env.SENDER_CEP || '01001000',
@@ -259,11 +259,15 @@ router.post('/webhook', async (req: Request, res: Response) => {
                 })),
                 service_id: 1 // SEDEX
               })
+              console.log('[Webhook] Sucesso Super Frete:', JSON.stringify(sfResult))
               
               // Se deu certo, podemos opcionalmente mudar para 'shipped' 
               // mas geralmente o lojista prefere mudar quando postar
-            } catch (sfError) {
-              console.error('[Webhook] Falha na integração Super Frete:', sfError)
+            } catch (sfError: any) {
+              console.error('[Webhook] Falha na integração Super Frete:', sfError.message)
+              if (sfError.response) {
+                console.error('[Webhook] Detalhes do erro Super Frete:', JSON.stringify(sfError.response.data))
+              }
             }
           }
         }
