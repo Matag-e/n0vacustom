@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { createSuperFreteShipment } from '../services/superfrete.js'
+import { createMelhorEnvioShipment } from '../services/melhorenvio.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -118,7 +118,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         } else {
           console.log(`Order ${orderId} marked as paid.`)
           
-          // 2. Buscar detalhes do pedido para o Super Frete
+          // 2. Buscar detalhes do pedido para o Melhor Envio
           const { data: order, error: orderError } = await supabase
             .from('orders')
             .select(`
@@ -136,42 +136,33 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
           if (order && !orderError) {
             try {
-              // 3. Validar dados obrigatórios para o Super Frete
-              const missingFields = []
-              if (!order.first_name) missingFields.push('Nome')
-              if (!order.cpf) missingFields.push('CPF')
-              if (!order.cep) missingFields.push('CEP')
-              if (!order.address) missingFields.push('Endereço')
-              if (!order.phone) missingFields.push('Telefone')
-
-              if (missingFields.length > 0) {
-                console.warn(`Dados incompletos para Super Frete no Pedido ${orderId}:`, missingFields.join(', '))
-                return
-              }
-
-              // 4. Criar envio no Super Frete
-              const shipmentResult = await createSuperFreteShipment({
+              // 3. Criar envio no Melhor Envio
+              const shipmentResult = await createMelhorEnvioShipment({
                 orderId: order.id,
                 from: {
-                  postal_code: '01001-000', // CEP de teste (Substituir pelo CEP real da loja)
+                  name: 'Nova Custom',
+                  phone: '11999999999',
+                  email: 'contato@novacustom.com.br',
+                  document: '00000000000', // CPF ou CNPJ do remetente
                   address: 'Endereço da Loja',
                   number: '1',
                   district: 'Centro',
                   city: 'São Paulo',
-                  state: 'SP'
+                  state_abbr: 'SP',
+                  postal_code: '01001000'
                 },
                 to: {
                   name: `${order.first_name} ${order.last_name}`,
-                  email: order.email,
                   phone: order.phone,
-                  cpf: order.cpf,
-                  postal_code: order.cep,
+                  email: order.email,
+                  document: order.cpf,
                   address: order.address,
                   number: order.number,
                   complement: order.complement,
                   district: order.district,
                   city: order.city,
-                  state: order.state
+                  state_abbr: order.state, // Certifique-se de que é a sigla (ex: SP)
+                  postal_code: order.cep
                 },
                 items: order.order_items.map((item: any) => ({
                   name: item.product.name,
@@ -182,26 +173,22 @@ router.post('/webhook', async (req: Request, res: Response) => {
                   width: 20,
                   length: 30
                 })),
-                service_id: order.shipping_service_id || 1
+                service_id: 1 // 1 = Correios SEDEX, 2 = Correios PAC
               })
 
               if (shipmentResult && shipmentResult.id) {
-                console.log('Shipment created in Super Frete successfully:', shipmentResult.id)
+                console.log('Shipment added to Melhor Envio cart successfully. ID:', shipmentResult.id)
                 // Atualizar pedido com info de frete
-                const { error: finalError } = await supabase
+                await supabase
                   .from('orders')
                   .update({ 
                     shipping_id: String(shipmentResult.id),
                     status: 'shipped' 
                   })
                   .eq('id', orderId)
-                
-                if (finalError) console.error('Error updating final order status:', finalError)
-              } else {
-                console.log('Super Frete did not return a valid shipment ID. Result:', shipmentResult)
               }
-            } catch (sfError) {
-              console.error('Erro na integração com Super Frete:', sfError)
+            } catch (meError) {
+              console.error('Erro na integração com Melhor Envio:', meError)
             }
           }
         }
