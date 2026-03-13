@@ -270,20 +270,10 @@ export default function Checkout() {
                   <span>Frete</span>
                   <span className="text-green-600 font-bold uppercase text-xs">Grátis</span>
                 </div>
-                {formData.paymentMethod === 'pix' && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Desconto PIX (5%)</span>
-                    <span>- R$ {(totalPrice * 0.05).toFixed(2).replace('.', ',')}</span>
-                  </div>
-                )}
                 <div className="flex justify-between items-end pt-4 border-t border-gray-100">
                   <span className="font-bold text-gray-900">Total</span>
                   <span className="text-2xl font-black text-gray-900">
-                    R$ {
-                      formData.paymentMethod === 'pix' 
-                        ? (totalPrice * 0.95).toFixed(2).replace('.', ',') 
-                        : totalPrice.toFixed(2).replace('.', ',')
-                    }
+                    R$ {totalPrice.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               </div>
