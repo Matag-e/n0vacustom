@@ -69,7 +69,8 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     
     console.log('Back URLs for MP:', back_urls)
 
-    // Log do payload para debug no Vercel
+    // Simplificação total para Checkout Pro (Cartão)
+    // Se chegamos aqui, não é PIX, então não precisamos de restrições complexas
     const preferencePayload = {
       items: mpItems,
       back_urls,
@@ -77,15 +78,6 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
       auto_return: 'approved',
       payment_methods: {
-        default_payment_method_id: paymentMethod === 'pix' ? 'pix' : undefined,
-        excluded_payment_types: paymentMethod === 'pix'
-          ? [
-              { id: 'credit_card' },
-              { id: 'debit_card' },
-              { id: 'ticket' },
-              { id: 'atm' }
-            ]
-          : [],
         installments: 12,
       },
     }
