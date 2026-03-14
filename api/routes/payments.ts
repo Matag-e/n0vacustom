@@ -186,4 +186,56 @@ router.post('/webhook', async (req: Request, res: Response) => {
   }
 })
 
+router.post('/process-payment', async (req: Request, res: Response) => {
+  try {
+    const { totalAmount, paymentMethod, payer, orderId } = req.body
+
+    const client = getMPClient()
+    const payment = new Payment(client)
+
+    if (paymentMethod === 'pix') {
+      const result = await payment.create({
+        body: {
+          transaction_amount: Number(totalAmount),
+          description: `Pedido #${String(orderId).slice(0, 8)} - NovaCustom`,
+          payment_method_id: 'pix',
+          payer: {
+            email: payer.email,
+            first_name: payer.firstName,
+            last_name: payer.lastName,
+            identification: {
+              type: 'CPF',
+              number: payer.cpf.replace(/\D/g, ''),
+            },
+          },
+          external_reference: String(orderId),
+          notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
+        }
+      })
+
+      return res.json({
+        id: result.id,
+        status: result.status,
+        qr_code: result.point_of_interaction?.transaction_data?.qr_code,
+        qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64,
+        ticket_url: result.point_of_interaction?.transaction_data?.ticket_url,
+      })
+    }
+
+    // Para outros métodos (cartão), mantemos o checkout pro por segurança/facilidade inicial
+    return res.status(400).json({ error: 'Checkout transparente disponível apenas para PIX no momento.' })
+  } catch (error: any) {
+    console.error('Error processing direct payment:', error.message || error)
+    if (error.apiResponse) {
+      console.error('MP API Full Error:', JSON.stringify(error.apiResponse.body, null, 2))
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        details: error.apiResponse.body 
+      })
+    }
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
 export default router

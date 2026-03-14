@@ -1,17 +1,25 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { ArrowLeft, CreditCard, Truck, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, ShieldCheck, ShoppingBag, Copy, CheckCircle2, QrCode } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import { maskCPF, maskPhone, maskCEP, maskCardNumber, maskExpiry } from '@/lib/masks';
+import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
+
+interface PixResult {
+  qr_code: string;
+  qr_code_base64: string;
+  status: string;
+}
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [pixResult, setPixResult] = useState<PixResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -94,7 +102,36 @@ export default function Checkout() {
 
           if (itemsError) throw itemsError;
 
-          // Criar Preferência no Mercado Pago
+          if (isPix) {
+            // Checkout Transparente para PIX
+            const response = await fetch('/api/payments/process-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                totalAmount: totalAmount,
+                paymentMethod: 'pix',
+                payer: {
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  email: formData.email,
+                  cpf: formData.cpf,
+                },
+                orderId: orderData.id,
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.details?.message || errorData.error || 'Erro ao gerar PIX');
+            }
+
+            const data = await response.json();
+            setPixResult(data);
+            clearCart();
+            return;
+          }
+
+          // Checkout Pro para outros métodos
           const response = await fetch('/api/payments/create-preference', {
             method: 'POST',
             headers: {
@@ -154,7 +191,89 @@ export default function Checkout() {
     }
   };
 
-  if (items.length === 0) {
+  if (pixResult) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-32 pb-20">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+            {/* Header Sucesso */}
+            <div className="bg-black p-10 text-center text-white space-y-4">
+              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20 animate-in zoom-in duration-500">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-black uppercase tracking-tight">Pedido Realizado!</h2>
+              <p className="text-gray-400 text-sm">Agora falta pouco para seu manto estar a caminho.</p>
+            </div>
+
+            {/* Instruções PIX */}
+            <div className="p-8 md:p-12 space-y-8 text-center">
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Valor do Pagamento</span>
+                <p className="text-4xl font-black text-gray-900">
+                  R$ {(totalPrice * 0.95).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+
+              {/* QR Code */}
+              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 inline-block mx-auto">
+                {pixResult.qr_code_base64 ? (
+                  <img 
+                    src={`data:image/png;base64,${pixResult.qr_code_base64}`} 
+                    alt="QR Code PIX" 
+                    className="w-48 h-48 md:w-64 md:h-64 mx-auto mix-blend-multiply"
+                  />
+                ) : (
+                  <div className="w-48 h-48 md:w-64 md:h-64 flex items-center justify-center text-gray-300">
+                    <QrCode className="w-20 h-20" />
+                  </div>
+                )}
+              </div>
+
+              {/* Copia e Cola */}
+              <div className="space-y-4">
+                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Ou use o PIX Copia e Cola</p>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-mono text-gray-500 break-all text-left">
+                    {pixResult.qr_code}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(pixResult.qr_code);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-all",
+                      copied ? "bg-green-500 text-white" : "bg-black text-white hover:bg-gray-800"
+                    )}
+                  >
+                    {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? 'Copiado' : 'Copiar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Avisos */}
+              <div className="pt-8 border-t border-gray-100 space-y-4">
+                <div className="flex items-start gap-3 text-left bg-blue-50 p-4 rounded-2xl">
+                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-0.5">!</div>
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    A aprovação é instantânea. Após o pagamento, você receberá um e-mail de confirmação e poderá acompanhar o status em seu perfil.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => navigate('/profile')}
+                  className="text-sm font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
+                >
+                  Ver meus pedidos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <div className="text-center space-y-4">
