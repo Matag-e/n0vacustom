@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { createSuperFreteShipment } from '../services/superfrete.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -84,83 +83,6 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 })
 
 /**
- * Rota manual para tentar gerar frete novamente
- */
-router.post('/retry-shipping/:orderId', async (req: Request, res: Response) => {
-  try {
-    const { orderId } = req.params
-    
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        order_items (
-          quantity,
-          price,
-          product:products (name)
-        )
-      `)
-      .eq('id', orderId)
-      .single()
-
-    if (!order || orderError) {
-      return res.status(404).json({ error: 'Pedido não encontrado' })
-    }
-
-    console.log(`[Manual Retry] Tentando gerar frete para pedido: ${orderId}`)
-    
-    const result = await createSuperFreteShipment({
-      orderId: order.id,
-      from: {
-        postal_code: process.env.SENDER_CEP || '01001000',
-        address: process.env.SENDER_ADDRESS || 'Endereço da Loja',
-        number: process.env.SENDER_NUMBER || '1',
-        district: process.env.SENDER_DISTRICT || 'Centro',
-        city: process.env.SENDER_CITY || 'São Paulo',
-        state: process.env.SENDER_STATE || 'SP'
-      },
-      to: {
-        name: `${order.first_name} ${order.last_name}`,
-        email: order.email,
-        phone: order.phone,
-        cpf: order.cpf,
-        postal_code: order.cep,
-        address: order.address,
-        number: order.number,
-        complement: order.complement,
-        district: order.district,
-        city: order.city,
-        state: order.state
-      },
-      items: order.order_items.map((item: any) => ({
-        name: item.product?.name || 'Camisa Personalizada',
-        quantity: item.quantity,
-        price: item.price,
-        weight: 0.5,
-        height: 2,
-        width: 20,
-        length: 30
-      })),
-      service_id: 1 // SEDEX
-    })
-
-    const cartUrl = process.env.SUPERFRETE_SANDBOX === 'true' 
-      ? 'https://sandbox.superfrete.com/#/cart' 
-      : 'https://web.superfrete.com/#/cart'
-
-    res.json({ 
-      success: true, 
-      message: 'Etiqueta enviada ao carrinho!', 
-      data: result,
-      cartUrl
-    })
-  } catch (error: any) {
-    console.error('[Manual Retry] Erro:', error.message)
-    res.status(500).json({ success: false, error: error.message })
-  }
-})
-
-/**
  * Webhook do Mercado Pago (IPN / Webhooks)
  */
 router.post('/webhook', async (req: Request, res: Response) => {
@@ -206,7 +128,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
       console.log(`Payment Status: ${status} for Order ID: ${orderId}`)
 
       if (status === 'approved') {
-        // 1. Atualizar pedido no Supabase para 'paid'
+        // Atualizar pedido no Supabase para 'paid'
         const { error: updateError } = await supabase
           .from('orders')
           .update({ status: 'paid' })
@@ -216,69 +138,6 @@ router.post('/webhook', async (req: Request, res: Response) => {
           console.error('Error updating order status in Supabase:', updateError)
         } else {
           console.log(`Order ${orderId} marked as paid.`)
-
-          // 2. Buscar detalhes para Super Frete
-          const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .select(`
-              *,
-              order_items (
-                quantity,
-                price,
-                product:products (name)
-              )
-            `)
-            .eq('id', orderId)
-            .single()
-
-          if (order && !orderError) {
-            try {
-              console.log(`[Webhook] Iniciando integração com Super Frete para Pedido ${orderId}...`)
-              const sfResult = await createSuperFreteShipment({
-                orderId: order.id,
-                from: {
-                  postal_code: process.env.SENDER_CEP || '01001000',
-                  address: process.env.SENDER_ADDRESS || 'Rua da Loja',
-                  number: process.env.SENDER_NUMBER || '1',
-                  district: process.env.SENDER_DISTRICT || 'Centro',
-                  city: process.env.SENDER_CITY || 'São Paulo',
-                  state: process.env.SENDER_STATE || 'SP'
-                },
-                to: {
-                  name: `${order.first_name} ${order.last_name}`,
-                  email: order.email,
-                  phone: order.phone,
-                  cpf: order.cpf,
-                  postal_code: order.cep,
-                  address: order.address,
-                  number: order.number,
-                  complement: order.complement,
-                  district: order.district,
-                  city: order.city,
-                  state: order.state
-                },
-                items: order.order_items.map((item: any) => ({
-                  name: item.product?.name || 'Camisa Personalizada',
-                  quantity: item.quantity,
-                  price: item.price,
-                  weight: 0.5,
-                  height: 2,
-                  width: 20,
-                  length: 30
-                })),
-                service_id: 1 // SEDEX
-              })
-              console.log('[Webhook] Sucesso Super Frete:', JSON.stringify(sfResult))
-              
-              // Se deu certo, podemos opcionalmente mudar para 'shipped' 
-              // mas geralmente o lojista prefere mudar quando postar
-            } catch (sfError: any) {
-              console.error('[Webhook] Falha na integração Super Frete:', sfError.message)
-              if (sfError.response) {
-                console.error('[Webhook] Detalhes do erro Super Frete:', JSON.stringify(sfError.response.data))
-              }
-            }
-          }
         }
       } else if (status === 'rejected' || status === 'cancelled') {
         // Opcional: Marcar como cancelado se rejeitado
