@@ -36,8 +36,14 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     
     console.log('Origin used for back_urls:', origin)
 
-    // Se temos items detalhados, usamos eles. Caso contrário (re-pagamento), usamos um item genérico.
-    const mpItems = items ? items.map((item: any) => ({
+    // Se for PIX, enviamos um único item com o valor já descontado para evitar erros de cálculo no MP
+    const mpItems = (paymentMethod === 'pix') ? [{
+      id: String(orderId),
+      title: `Pedido #${String(orderId).slice(0, 8)} (Desconto PIX)`,
+      unit_price: Number(totalAmount),
+      quantity: 1,
+      currency_id: 'BRL',
+    }] : (items ? items.map((item: any) => ({
       id: String(item.product.id),
       title: item.product.name,
       unit_price: Number(item.product.price),
@@ -49,7 +55,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       unit_price: Number(totalAmount),
       quantity: 1,
       currency_id: 'BRL',
-    }]
+    }])
 
     const back_urls = {
       success: `${origin}/profile`,
@@ -66,9 +72,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
         external_reference: String(orderId),
         notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
         payment_methods: {
-          excluded_payment_methods: paymentMethod === 'pix' 
-            ? [{ id: 'master' }, { id: 'visa' }, { id: 'amex' }, { id: 'elo' }, { id: 'hipercard' }] 
-            : [],
+          default_payment_method_id: paymentMethod === 'pix' ? 'pix' : undefined,
           excluded_payment_types: paymentMethod === 'pix'
             ? [{ id: 'credit_card' }, { id: 'debit_card' }, { id: 'ticket' }]
             : [],
