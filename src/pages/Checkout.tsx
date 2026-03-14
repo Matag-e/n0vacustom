@@ -274,6 +274,7 @@ export default function Checkout() {
       </div>
     );
   }
+  if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <div className="text-center space-y-4">
