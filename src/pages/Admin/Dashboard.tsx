@@ -64,9 +64,18 @@ export default function AdminDashboard() {
       
       if (data.success) {
         setLastCartUrl(data.cartUrl);
-        const sfId = data.data?.detected_id || data.data?.id || data.data?.protocol || 'Sucesso (Sem ID)';
-        if (confirm(`Pedido enviado para o carrinho!\n\nID/Status: ${sfId}\n\nDeseja abrir o carrinho agora?`)) {
-          window.open(data.cartUrl, '_blank');
+        const sfId = data.data?.detected_id || data.data?.id || data.data?.protocol;
+        
+        if (sfId) {
+          if (confirm(`Pedido enviado para o carrinho!\n\nID/Status: ${sfId}\n\nDeseja abrir o carrinho agora?`)) {
+            window.open(data.cartUrl, '_blank');
+          }
+        } else {
+          // Se não detectou ID, mostra o que veio na resposta para debug
+          const rawResponse = JSON.stringify(data.data).substring(0, 100);
+          if (confirm(`Pedido enviado (sem ID detectado).\nResposta: ${rawResponse}\n\nDeseja abrir o carrinho mesmo assim?`)) {
+            window.open(data.cartUrl, '_blank');
+          }
         }
       } else {
         alert(`Erro: ${data.error}`);

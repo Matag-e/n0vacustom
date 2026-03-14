@@ -58,6 +58,8 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
       throw new Error('SUPERFRETE_TOKEN não configurado nas variáveis de ambiente.');
     }
 
+    console.log(`[Super Frete] Token Length: ${SUPERFRETE_TOKEN.length}`);
+
     const cleanFromZip = data.from.postal_code.replace(/\D/g, '');
     const cleanToZip = data.to.postal_code.replace(/\D/g, '');
     const cleanCPF = data.to.cpf.replace(/\D/g, '');
@@ -66,7 +68,6 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
     // Payload ultra-compatível (Padrão Melhor Envio/Super Frete V2/V0)
     const payload = {
       service: Number(data.service_id) || 1,
-      agency: 1, // Algumas transportadoras exigem agência (1 é o padrão para Correios)
       from: {
         name: process.env.SENDER_NAME || "NOVA CUSTOM",
         phone: process.env.SENDER_PHONE?.replace(/\D/g, '') || "11991814636",
@@ -97,7 +98,6 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
         name: item.name.substring(0, 50),
         quantity: item.quantity,
         unitary_value: Number(item.price.toFixed(2)),
-        weight: 0.5 // Peso individual por produto
       })),
       volumes: [{
         height: 2,
@@ -136,6 +136,7 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
     let responseData;
     try {
       responseData = JSON.parse(responseText);
+      console.log(`[Super Frete] Keys in response: ${Object.keys(responseData).join(', ')}`);
     } catch (e) {
       responseData = { message: responseText };
     }

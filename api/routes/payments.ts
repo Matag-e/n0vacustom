@@ -113,7 +113,7 @@ router.post('/retry-shipping/:orderId', async (req: Request, res: Response) => {
       orderId: order.id,
       from: {
         postal_code: process.env.SENDER_CEP || '01001000',
-        address: process.env.SENDER_ADDRESS || 'Rua da Loja',
+        address: process.env.SENDER_ADDRESS || 'Endereço da Loja',
         number: process.env.SENDER_NUMBER || '1',
         district: process.env.SENDER_DISTRICT || 'Centro',
         city: process.env.SENDER_CITY || 'São Paulo',
