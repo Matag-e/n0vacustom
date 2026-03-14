@@ -118,7 +118,8 @@ export default function Checkout() {
           if (!response.ok) {
             const errorData = await response.json();
             console.error('Payment preference error:', errorData);
-            throw new Error(errorData.error || 'Failed to create payment preference');
+            const errorMessage = errorData.details?.message || errorData.error || 'Erro ao criar pagamento';
+            throw new Error(errorMessage);
           }
 
           const { init_point } = await response.json();
@@ -145,9 +146,9 @@ export default function Checkout() {
         navigate('/', { replace: true });
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing order:', error);
-      alert('Houve um erro ao processar seu pedido. Tente novamente.');
+      alert(`Houve um erro ao processar seu pedido: ${error.message}`);
     } finally {
       setLoading(false);
     }

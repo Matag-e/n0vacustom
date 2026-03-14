@@ -65,29 +65,38 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     
     console.log('Back URLs for MP:', back_urls)
 
-    const result = await preference.create({
-      body: {
-        items: mpItems,
-        back_urls,
-        external_reference: String(orderId),
-        notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
-        payment_methods: {
-          default_payment_method_id: paymentMethod === 'pix' ? 'pix' : undefined,
-          excluded_payment_types: paymentMethod === 'pix'
-            ? [{ id: 'credit_card' }, { id: 'debit_card' }, { id: 'ticket' }]
-            : [],
-          installments: 12,
-        },
+    // Log do payload para debug no Vercel
+    const preferencePayload = {
+      items: mpItems,
+      back_urls,
+      external_reference: String(orderId),
+      notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
+      payment_methods: {
+        excluded_payment_types: paymentMethod === 'pix'
+          ? [{ id: 'ticket' }] // No PIX, removemos apenas o boleto para não dar conflito
+          : [],
+        installments: 12,
       },
+    }
+
+    console.log('[MP] Criando preferência com payload:', JSON.stringify(preferencePayload, null, 2))
+
+    const result = await preference.create({
+      body: preferencePayload,
     })
 
     res.json({ id: result.id, init_point: result.init_point })
   } catch (error: any) {
     console.error('Error creating preference:', error.message || error)
     if (error.apiResponse) {
-      console.error('MP API Error:', error.apiResponse.body)
+      console.error('MP API Full Error:', JSON.stringify(error.apiResponse.body, null, 2))
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        details: error.apiResponse.body 
+      })
     }
-    res.status(500).json({ error: 'Failed to create preference' })
+    res.status(500).json({ success: false, error: error.message })
   }
 })
 
