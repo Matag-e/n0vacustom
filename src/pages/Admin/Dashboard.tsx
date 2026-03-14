@@ -64,8 +64,8 @@ export default function AdminDashboard() {
       
       if (data.success) {
         setLastCartUrl(data.cartUrl);
-        const sfId = data.data?.id || data.data?.protocol || 'OK';
-        if (confirm(`Sucesso! Pedido enviado para o carrinho.\nID da Etiqueta: ${sfId}\nDeseja abrir o carrinho agora?`)) {
+        const sfId = data.data?.detected_id || data.data?.id || data.data?.protocol || 'Sucesso (Sem ID)';
+        if (confirm(`Pedido enviado para o carrinho!\n\nID/Status: ${sfId}\n\nDeseja abrir o carrinho agora?`)) {
           window.open(data.cartUrl, '_blank');
         }
       } else {

@@ -111,6 +111,7 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
         own_hand: false,
         reverse: false,
         non_commercial: true,
+        external_id: String(data.orderId),
       }
     };
 
@@ -140,12 +141,22 @@ export async function createSuperFreteShipment(data: CreateShipmentData) {
     }
 
     if (!response.ok) {
-      console.error('[Super Frete] Erro detalhado:', JSON.stringify(responseData));
-      throw new Error(`Super Frete Error: ${response.status} - ${responseData.message || JSON.stringify(responseData)}`);
+      console.error('[Super Frete] Erro na API:', response.status, responseText);
+      throw new Error(`Super Frete Error: ${response.status} - ${responseText}`);
     }
 
-    console.log('[Super Frete] Sucesso ao adicionar no carrinho!');
-    return responseData;
+    // Tentar extrair o ID de qualquer lugar da resposta
+    const id = responseData.id || 
+               responseData.protocol || 
+               (Array.isArray(responseData) ? responseData[0]?.id : null) ||
+               responseData.data?.id;
+
+    console.log(`[Super Frete] Sucesso! ID detectado: ${id}`);
+    
+    return {
+      ...responseData,
+      detected_id: id
+    };
   } catch (error: any) {
     console.error('[Super Frete] Erro na função createSuperFreteShipment:', error.message);
     throw error;
