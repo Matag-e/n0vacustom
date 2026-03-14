@@ -8,8 +8,9 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const SUPERFRETE_TOKEN = process.env.SUPERFRETE_TOKEN;
-const IS_SANDBOX = process.env.SUPERFRETE_SANDBOX === 'true';
-const BASE_URL = IS_SANDBOX ? 'https://sandbox.superfrete.com' : 'https://api.superfrete.com';
+// No Super Frete, a URL de API costuma ser a mesma, o que muda é o token.
+// Usar api.superfrete.com evita que o site sandbox intercepte a chamada como se fosse navegação web.
+const BASE_URL = 'https://api.superfrete.com';
 
 export interface ShippingItem {
   name: string;

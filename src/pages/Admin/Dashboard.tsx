@@ -71,10 +71,15 @@ export default function AdminDashboard() {
             window.open(data.cartUrl, '_blank');
           }
         } else {
-          // Se não detectou ID, mostra o que veio na resposta para debug
-          const rawResponse = JSON.stringify(data.data).substring(0, 100);
-          if (confirm(`Pedido enviado (sem ID detectado).\nResposta: ${rawResponse}\n\nDeseja abrir o carrinho mesmo assim?`)) {
-            window.open(data.cartUrl, '_blank');
+          // Se não detectou ID, verifica se é HTML
+          const rawResponse = String(data.data?.message || JSON.stringify(data.data));
+          
+          if (rawResponse.includes('<!doctype html>') || rawResponse.includes('<html')) {
+            alert('Erro Crítico: O servidor do Super Frete devolveu uma página HTML em vez de dados.\n\nIsso geralmente significa que a URL da API está errada ou o servidor está em manutenção.');
+          } else {
+            if (confirm(`Pedido enviado (sem ID detectado).\nResposta: ${rawResponse.substring(0, 100)}\n\nDeseja abrir o carrinho mesmo assim?`)) {
+              window.open(data.cartUrl, '_blank');
+            }
           }
         }
       } else {
