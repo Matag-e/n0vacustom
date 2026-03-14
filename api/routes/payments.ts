@@ -40,21 +40,25 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     const mpItems = (paymentMethod === 'pix') ? [{
       id: String(orderId),
       title: `Pedido #${String(orderId).slice(0, 8)} (Desconto PIX)`,
+      description: 'Pagamento via PIX com 5% de desconto',
       unit_price: Number(totalAmount),
       quantity: 1,
       currency_id: 'BRL',
+      category_id: 'clothing'
     }] : (items ? items.map((item: any) => ({
       id: String(item.product.id),
       title: item.product.name,
       unit_price: Number(item.product.price),
       quantity: Number(item.quantity),
       currency_id: 'BRL',
+      category_id: 'clothing'
     })) : [{
       id: String(orderId),
       title: `Pedido #${String(orderId).slice(0, 8)}`,
       unit_price: Number(totalAmount),
       quantity: 1,
       currency_id: 'BRL',
+      category_id: 'clothing'
     }])
 
     const back_urls = {
@@ -70,10 +74,17 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       items: mpItems,
       back_urls,
       external_reference: String(orderId),
-      notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
+      notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
+      auto_return: 'approved',
       payment_methods: {
+        default_payment_method_id: paymentMethod === 'pix' ? 'pix' : undefined,
         excluded_payment_types: paymentMethod === 'pix'
-          ? [{ id: 'ticket' }] // No PIX, removemos apenas o boleto para não dar conflito
+          ? [
+              { id: 'credit_card' },
+              { id: 'debit_card' },
+              { id: 'ticket' },
+              { id: 'atm' }
+            ]
           : [],
         installments: 12,
       },
