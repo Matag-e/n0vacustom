@@ -186,31 +186,39 @@ router.post('/process-payment', async (req: Request, res: Response) => {
     const payment = new Payment(client)
 
     if (paymentMethod === 'pix') {
-      const result = await payment.create({
-        body: {
-          transaction_amount: Number(totalAmount),
-          description: `Pedido #${String(orderId).slice(0, 8)} - NovaCustom`,
-          payment_method_id: 'pix',
-          payer: {
-            email: payer.email,
-            first_name: payer.firstName,
-            last_name: payer.lastName,
-            identification: {
-              type: 'CPF',
-              number: payer.cpf.replace(/\D/g, ''),
-            },
+      console.log('[MP] Iniciando pagamento PIX direto para Order:', orderId);
+      
+      const paymentData = {
+        transaction_amount: Number(totalAmount),
+        description: `Pedido #${String(orderId).slice(0, 8)} - NovaCustom`,
+        payment_method_id: 'pix',
+        payer: {
+          email: payer.email,
+          first_name: payer.firstName,
+          last_name: payer.lastName,
+          identification: {
+            type: 'CPF',
+            number: payer.cpf.replace(/\D/g, ''),
           },
-          external_reference: String(orderId),
-          notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
-        }
+        },
+        external_reference: String(orderId),
+        notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
+      };
+
+      console.log('[MP] Enviando body:', JSON.stringify(paymentData, null, 2));
+
+      const result = await payment.create({
+        body: paymentData
       })
+
+      console.log('[MP] Resposta completa do pagamento:', JSON.stringify(result, null, 2));
 
       return res.json({
         id: result.id,
         status: result.status,
-        qr_code: result.point_of_interaction?.transaction_data?.qr_code,
-        qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64,
-        ticket_url: result.point_of_interaction?.transaction_data?.ticket_url,
+        qr_code: result.point_of_interaction?.transaction_data?.qr_code || result.qr_code,
+        qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64 || result.qr_code_base64,
+        ticket_url: result.point_of_interaction?.transaction_data?.ticket_url || result.ticket_url,
       })
     }
 
