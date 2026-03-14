@@ -91,7 +91,7 @@ export function CustomizationGallery() {
 
       {/* Modal / Lightbox */}
       {selectedCustomization && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="absolute inset-0" onClick={closeModal} />
           
           <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col items-center">

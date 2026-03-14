@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Truck, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { MinimalCategories } from '@/components/MinimalCategories';
@@ -100,21 +100,21 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="p-6">
               <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                <ShieldCheck className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Qualidade Garantida</h3>
               <p className="text-gray-500 dark:text-gray-400">Tecidos tecnológicos e acabamento premium em todas as peças.</p>
             </div>
             <div className="p-6">
               <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <Truck className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Entrega Rápida</h3>
               <p className="text-gray-500 dark:text-gray-400">Enviamos para todo o Brasil com rastreamento em tempo real.</p>
             </div>
             <div className="p-6">
               <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <DollarSign className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Pagamento Seguro</h3>
               <p className="text-gray-500 dark:text-gray-400">Parcele em até 12x no cartão ou pague via PIX com desconto.</p>

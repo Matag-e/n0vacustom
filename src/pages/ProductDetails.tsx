@@ -166,7 +166,7 @@ export default function ProductDetails() {
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
 
   return (
-    <div className="bg-white min-h-screen pb-20 pt-20">
+    <div className="bg-white min-h-screen pb-20 pt-20 relative">
       {/* Back Button - Desktop Only (Floating) */}
       <div className="hidden lg:block fixed top-24 left-8 z-40 pointer-events-none">
         <Link to="/" className="pointer-events-auto inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-sm hover:bg-white transition-all text-gray-900 border border-gray-100">
@@ -184,7 +184,7 @@ export default function ProductDetails() {
         </div>
 
         {/* Left Column - Visuals (Sticky on Desktop) */}
-        <div className="lg:w-2/3 bg-gray-50 relative min-h-[50vh] lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 flex flex-col items-center justify-center overflow-hidden py-8">
+        <div className="lg:w-2/3 bg-gray-50 relative min-h-[50vh] lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 flex flex-col items-center justify-center py-8 z-20">
           {/* Main Image */}
           <div className="relative w-full max-w-xl mx-auto p-8 lg:p-0 transition-all duration-700 flex-1 flex items-center justify-center">
             {product.image_url ? (

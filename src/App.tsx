@@ -10,6 +10,7 @@ import Checkout from '@/pages/Checkout';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
 import CategoryPage from '@/pages/CategoryPage';
+import FAQ from '@/pages/FAQ';
 import Restoration from '@/pages/Restoration';
 import CustomizationService from '@/pages/CustomizationService';
 import AdminLayout from '@/pages/Admin/AdminLayout';
@@ -42,6 +43,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/restauracao" element={<Restoration />} />
                     <Route path="/personalizacao" element={<CustomizationService />} />
+                    <Route path="/faq" element={<FAQ />} />
                     
                     {/* Category Routes */}
                     <Route path="/clubes" element={<CategoryPage title="Clubes" category="clubes" />} />

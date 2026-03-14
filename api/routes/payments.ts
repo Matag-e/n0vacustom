@@ -66,7 +66,12 @@ router.post('/create-preference', async (req: Request, res: Response) => {
         external_reference: String(orderId),
         notification_url: 'https://n0vacustom.vercel.app/api/payments/webhook',
         payment_methods: {
-          default_payment_method_id: paymentMethod === 'pix' ? 'pix' : undefined,
+          excluded_payment_methods: paymentMethod === 'pix' 
+            ? [{ id: 'master' }, { id: 'visa' }, { id: 'amex' }, { id: 'elo' }, { id: 'hipercard' }] 
+            : [],
+          excluded_payment_types: paymentMethod === 'pix'
+            ? [{ id: 'credit_card' }, { id: 'debit_card' }, { id: 'ticket' }]
+            : [],
           installments: 12,
         },
       },
