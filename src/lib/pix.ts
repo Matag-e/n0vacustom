@@ -1,59 +1,48 @@
+/**
+ * Utilitário para gerar a string do PIX Copia e Cola (BR Code)
+ * Baseado no padrão do Banco Central do Brasil
+ */
 
-function crc16ccitt(text: string) {
-  let crc = 0xffff;
-  for (let c = 0; c < text.length; c++) {
-    crc ^= text.charCodeAt(c) << 8;
-    for (let i = 0; i < 8; i++) {
-      if (crc & 0x8000) {
+function crc16(data: string): string {
+  let crc = 0xFFFF;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      if ((crc & 0x8000) !== 0) {
         crc = (crc << 1) ^ 0x1021;
       } else {
-        crc = crc << 1;
+        crc <<= 1;
       }
     }
   }
-  return ((crc & 0xffff).toString(16).toUpperCase()).padStart(4, '0');
+  return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 }
 
-export function generatePixPayload({
-  key,
-  name,
-  city,
-  amount,
-  txid = '***'
-}: {
-  key: string;
-  name: string;
-  city: string;
-  amount: number;
-  txid?: string;
-}) {
-  const amountStr = amount.toFixed(2);
+export function generatePixPayload(amount: number, key: string, name: string = "NovaCustom", city: string = "SAO PAULO"): string {
+  // Limpar a chave (remover parênteses, espaços, hífens)
+  const cleanKey = key.replace(/\D/g, '');
   
-  const payload = [
+  // Formatar o valor com 2 casas decimais e ponto
+  const formattedAmount = amount.toFixed(2);
+  
+  // Padrão do Merchant Account Information (GUI + Key)
+  const merchantAccountInfo = `0014br.gov.bcb.pix01${cleanKey.length.toString().padStart(2, '0')}${cleanKey}`;
+  
+  // Montar o payload base
+  let payload = [
     '000201', // Payload Format Indicator
-    '26', // Merchant Account Information
-    (
-      '0014br.gov.bcb.pix' +
-      `01${key.length.toString().padStart(2, '0')}${key}`
-    ).length.toString().padStart(2, '0'),
-    '0014br.gov.bcb.pix',
-    `01${key.length.toString().padStart(2, '0')}${key}`,
-    
+    `26${merchantAccountInfo.length.toString().padStart(2, '0')}${merchantAccountInfo}`, // Merchant Account Info
     '52040000', // Merchant Category Code
-    '5303986', // Transaction Currency (BRL)
-    `54${amountStr.length.toString().padStart(2, '0')}${amountStr}`, // Transaction Amount
+    '5303986', // Currency (BRL)
+    `54${formattedAmount.length.toString().padStart(2, '0')}${formattedAmount}`, // Amount
     '5802BR', // Country Code
     `59${name.length.toString().padStart(2, '0')}${name}`, // Merchant Name
     `60${city.length.toString().padStart(2, '0')}${city}`, // Merchant City
-    
-    '62', // Additional Data Field Template
-    (
-      `05${txid.length.toString().padStart(2, '0')}${txid}`
-    ).length.toString().padStart(2, '0'),
-    `05${txid.length.toString().padStart(2, '0')}${txid}`,
-    
-    '6304' // CRC16
+    '62070503***', // Additional Data (TXID *** para dinâmico/geral)
+    '6304' // CRC16 Indicator
   ].join('');
-
-  return `${payload}${crc16ccitt(payload)}`;
+  
+  // Calcular o CRC16 e anexar ao final
+  const crc = crc16(payload);
+  return payload + crc;
 }

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
 import { QRCodeSVG } from 'qrcode.react';
+import { generatePixPayload } from '@/lib/pix';
 
 interface PixResult {
   id: number;
@@ -25,6 +26,7 @@ export default function Checkout() {
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
+  const [pixPayload, setPixPayload] = useState("");
 
   const PIX_KEY = "11991814636"; // Chave PIX da loja (Celular)
 
@@ -154,10 +156,12 @@ export default function Checkout() {
 
       // 2. TRATAR PAGAMENTO
       if (isPix) {
-        console.log('[Checkout] Finalizando como PIX Direto - Sem redirecionamento');
+        console.log('[Checkout] Finalizando como PIX Direto - Gerando Payload BR Code');
+        const pixPayload = generatePixPayload(totalAmount, PIX_KEY);
+        
         setPixResult({
           id: orderId as any,
-          qr_code: PIX_KEY,
+          qr_code: pixPayload, // Agora enviamos o payload BR Code completo
           qr_code_base64: '',
           status: 'pending'
         });
@@ -256,9 +260,9 @@ export default function Checkout() {
 
               {/* Copia e Cola */}
               <div className="space-y-4">
-                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Chave PIX (Celular)</p>
+                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">PIX Copia e Cola (BR Code)</p>
                 <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-xl font-mono font-bold text-gray-900 tracking-wider text-center">
+                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-[10px] font-mono text-gray-500 break-all text-left">
                     {pixResult.qr_code}
                   </div>
                   <button 
@@ -276,6 +280,7 @@ export default function Checkout() {
                     {copied ? 'Copiado' : 'Copiar'}
                   </button>
                 </div>
+                <p className="text-[10px] text-gray-400">Chave: {PIX_KEY}</p>
               </div>
 
               {/* Avisos */}
@@ -371,6 +376,9 @@ export default function Checkout() {
                   <button
                     type="button"
                     onClick={() => {
+                      const amountWithDiscount = Number((totalPrice * 0.95).toFixed(2));
+                      const payload = generatePixPayload(amountWithDiscount, PIX_KEY);
+                      setPixPayload(payload);
                       setFormData(prev => ({ ...prev, paymentMethod: 'pix' }));
                       setShowPixModal(true);
                     }}
@@ -573,8 +581,8 @@ export default function Checkout() {
               {/* QR Code */}
               <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 inline-block">
                 <QRCodeSVG 
-                  value={PIX_KEY} 
-                  size={180}
+                  value={pixPayload} 
+                  size={200}
                   level="H"
                   includeMargin={true}
                   className="mx-auto mix-blend-multiply"
@@ -583,23 +591,35 @@ export default function Checkout() {
 
               {/* Chave PIX */}
               <div className="space-y-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Chave PIX (Celular)</p>
-                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <span className="flex-1 font-mono text-lg font-bold text-gray-900 tracking-wider">
-                    {PIX_KEY}
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Copia e Cola (BR Code)</p>
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3 overflow-hidden">
+                  <span className="flex-1 font-mono text-[10px] text-gray-400 break-all text-left truncate">
+                    {pixPayload}
                   </span>
                   <button 
                     onClick={() => {
-                      navigator.clipboard.writeText(PIX_KEY);
+                      navigator.clipboard.writeText(pixPayload);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
                     className={cn(
-                      "p-3 rounded-lg transition-all",
+                      "p-3 rounded-lg transition-all shrink-0",
                       copied ? "bg-green-500 text-white" : "bg-black text-white hover:bg-gray-800"
                     )}
                   >
                     {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                  </button>
+                </div>
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[9px] text-gray-400">Chave: {PIX_KEY}</span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(PIX_KEY);
+                      alert('Chave celular copiada!');
+                    }}
+                    className="text-[9px] font-bold text-blue-600 hover:underline"
+                  >
+                    Copiar apenas a chave
                   </button>
                 </div>
               </div>
