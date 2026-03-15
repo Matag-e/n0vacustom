@@ -41,7 +41,7 @@ export default function Checkout() {
     district: '',
     city: '',
     state: '',
-    paymentMethod: 'mercadopago' as 'mercadopago' | 'pix',
+    paymentMethod: 'pix' as 'mercadopago' | 'pix',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -58,12 +58,27 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const isPix = formData.paymentMethod === 'pix';
+    console.log('[Checkout] Iniciando finalização do pedido. Método:', formData.paymentMethod);
+
     setLoading(true);
     
     try {
-      const isPix = formData.paymentMethod === 'pix';
       const discount = isPix ? 0.95 : 1;
       const totalAmount = Number((totalPrice * discount).toFixed(2));
+
+      // Se o usuário não estiver logado, tratamos como guest mas ainda mostramos o PIX se selecionado
+      if (!user && isPix) {
+        setPixResult({
+          id: Date.now(), // ID temporário para guest
+          qr_code: PIX_KEY,
+          qr_code_base64: '',
+          status: 'pending'
+        });
+        clearCart();
+        return;
+      }
 
       if (user) {
         // Salvar pedido no Supabase
@@ -332,25 +347,6 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'mercadopago' }))}
-                    className={cn(
-                      "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all gap-3",
-                      formData.paymentMethod === 'mercadopago' 
-                        ? "border-black bg-gray-50 ring-2 ring-black/5" 
-                        : "border-gray-100 hover:border-gray-300"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-6 h-6 text-blue-600" />
-                      <span className="font-bold">Mercado Pago</span>
-                    </div>
-                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest text-center">
-                      Cartão, Boleto e Outros
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => {
                       setFormData(prev => ({ ...prev, paymentMethod: 'pix' }));
                       setShowPixModal(true);
@@ -367,10 +363,29 @@ export default function Checkout() {
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-6 h-6 text-green-600" />
-                      <span className="font-bold">PIX (MP)</span>
+                      <span className="font-bold">PIX (Direto)</span>
                     </div>
                     <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest text-center">
                       Liberação Instantânea
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'mercadopago' }))}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all gap-3",
+                      formData.paymentMethod === 'mercadopago' 
+                        ? "border-black bg-gray-50 ring-2 ring-black/5" 
+                        : "border-gray-100 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-6 h-6 text-blue-600" />
+                      <span className="font-bold">Cartão (MP)</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest text-center">
+                      Parcelado em até 12x
                     </span>
                   </button>
                 </div>
