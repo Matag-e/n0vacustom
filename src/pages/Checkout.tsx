@@ -21,6 +21,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
@@ -56,6 +57,31 @@ export default function Checkout() {
     setFormData(prev => ({ ...prev, [name]: maskedValue }));
   };
 
+  const handleCepBlur = async () => {
+    const cep = formData.cep.replace(/\D/g, '');
+    if (cep.length === 8) {
+      setLoadingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          setFormData(prev => ({
+            ...prev,
+            address: data.logradouro || prev.address,
+            district: data.bairro || prev.district,
+            city: data.localidade || prev.city,
+            state: data.uf || prev.state,
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+      } finally {
+        setLoadingCep(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -68,20 +94,10 @@ export default function Checkout() {
       const discount = isPix ? 0.95 : 1;
       const totalAmount = Number((totalPrice * discount).toFixed(2));
 
-      // Se o usuário não estiver logado, tratamos como guest mas ainda mostramos o PIX se selecionado
-      if (!user && isPix) {
-        setPixResult({
-          id: Date.now(), // ID temporário para guest
-          qr_code: PIX_KEY,
-          qr_code_base64: '',
-          status: 'pending'
-        });
-        clearCart();
-        return;
-      }
+      // 1. CRIAR O PEDIDO NO SUPABASE (Se tiver usuário)
+      let orderId = Date.now(); // Fallback ID
 
       if (user) {
-        // Salvar pedido no Supabase
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert({
@@ -106,8 +122,9 @@ export default function Checkout() {
           .single();
 
         if (orderError) throw orderError;
-
         if (orderData) {
+          orderId = orderData.id;
+          
           const orderItems = items.map(item => ({
             order_id: orderData.id,
             product_id: item.product.id,
@@ -123,70 +140,55 @@ export default function Checkout() {
             .insert(orderItems);
 
           if (itemsError) throw itemsError;
-
-          if (isPix) {
-            // Se for PIX, agora usamos a chave estática da loja conforme solicitado
-            // O pedido é criado como 'pending' e o admin verifica manualmente
-            setPixResult({
-              id: orderData.id,
-              qr_code: PIX_KEY,
-              qr_code_base64: '', // Não temos base64 para a chave estática
-              status: 'pending'
-            });
-            clearCart();
-            return;
-          }
-
-          // Checkout Pro para outros métodos
-          const response = await fetch('/api/payments/create-preference', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              items: items.map(item => ({
-                product: {
-                  id: item.product.id,
-                  name: item.product.name,
-                  price: item.product.price,
-                },
-                quantity: item.quantity,
-              })),
-              orderId: orderData.id,
-              paymentMethod: formData.paymentMethod,
-              totalAmount: totalAmount
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Payment preference error:', errorData);
-            const errorMessage = errorData.details?.message || errorData.error || 'Erro ao criar pagamento';
-            throw new Error(errorMessage);
-          }
-
-          const { init_point } = await response.json();
-          
-          if (init_point) {
-            clearCart();
-            window.location.href = init_point;
-            return;
-          }
-          
-          throw new Error('Mercado Pago init_point missing');
         }
-      } else {
-        console.log('Guest checkout processed locally');
       }
 
-      // Sucesso
-      console.log('Order processed successfully. Redirecting to profile.');
-      clearCart();
-      
-      if (user) {
-        navigate('/profile', { replace: true });
-      } else {
-        navigate('/', { replace: true });
+      // 2. TRATAR PAGAMENTO
+      if (isPix) {
+        console.log('[Checkout] Finalizando como PIX Direto - Sem redirecionamento');
+        setPixResult({
+          id: orderId,
+          qr_code: PIX_KEY,
+          qr_code_base64: '',
+          status: 'pending'
+        });
+        clearCart();
+        return;
+      }
+
+      // 3. SE NÃO FOR PIX, REDIRECIONAR PARA MERCADO PAGO (Só se tiver usuário ou implementar guest MP)
+      if (formData.paymentMethod === 'mercadopago') {
+        console.log('[Checkout] Redirecionando para Mercado Pago (Cartão/Boleto)');
+        const response = await fetch('/api/payments/create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: items.map(item => ({
+              product: {
+                id: item.product.id,
+                name: item.product.name,
+                price: item.product.price,
+              },
+              quantity: item.quantity,
+            })),
+            orderId: orderId,
+            paymentMethod: formData.paymentMethod,
+            totalAmount: totalAmount
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.details?.message || errorData.error || 'Erro ao criar pagamento');
+        }
+
+        const { init_point } = await response.json();
+        if (init_point) {
+          clearCart();
+          window.location.href = init_point;
+          return;
+        }
+        throw new Error('Link de pagamento não gerado');
       }
       
     } catch (error: any) {
@@ -399,7 +401,23 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-bold text-gray-500 uppercase">CEP</label>
-                    <input required name="cep" onChange={handleChange} value={formData.cep} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all" placeholder="00000-000" maxLength={9} />
+                    <div className="relative">
+                      <input 
+                        required 
+                        name="cep" 
+                        onChange={handleChange} 
+                        onBlur={handleCepBlur}
+                        value={formData.cep} 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all" 
+                        placeholder="00000-000" 
+                        maxLength={9} 
+                      />
+                      {loadingCep && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2 md:col-span-4">
                     <label className="text-xs font-bold text-gray-500 uppercase">Rua</label>
