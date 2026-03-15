@@ -36,26 +36,28 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     
     console.log('Origin used for back_urls:', origin)
 
+    const cleanAmount = Number(Number(totalAmount).toFixed(2));
+
     // Se for PIX, enviamos um único item com o valor já descontado para evitar erros de cálculo no MP
     const mpItems = (paymentMethod === 'pix') ? [{
       id: String(orderId),
       title: `Pedido #${String(orderId).slice(0, 8)} (Desconto PIX)`,
       description: 'Pagamento via PIX com 5% de desconto',
-      unit_price: Number(totalAmount),
+      unit_price: cleanAmount,
       quantity: 1,
       currency_id: 'BRL',
       category_id: 'clothing'
     }] : (items ? items.map((item: any) => ({
       id: String(item.product.id),
       title: item.product.name,
-      unit_price: Number(item.product.price),
+      unit_price: Number(Number(item.product.price).toFixed(2)),
       quantity: Number(item.quantity),
       currency_id: 'BRL',
       category_id: 'clothing'
     })) : [{
       id: String(orderId),
       title: `Pedido #${String(orderId).slice(0, 8)}`,
-      unit_price: Number(totalAmount),
+      unit_price: cleanAmount,
       quantity: 1,
       currency_id: 'BRL',
       category_id: 'clothing'
@@ -182,58 +184,94 @@ router.post('/process-payment', async (req: Request, res: Response) => {
   try {
     const { totalAmount, paymentMethod, payer, orderId } = req.body
 
+    // Garantir que o valor seja um número válido e arredondado
+    const cleanAmount = Number(Number(totalAmount).toFixed(2));
+
+    console.log('[MP] Recebendo pedido de pagamento:', {
+      orderId,
+      paymentMethod,
+      totalAmount: cleanAmount,
+      payerEmail: payer?.email
+    });
+
+    if (isNaN(cleanAmount) || cleanAmount <= 0) {
+      console.error('[MP] Valor inválido:', cleanAmount);
+      return res.status(400).json({ error: 'Valor do pagamento inválido.' });
+    }
+
     const client = getMPClient()
     const payment = new Payment(client)
 
     if (paymentMethod === 'pix') {
       console.log('[MP] Iniciando pagamento PIX direto para Order:', orderId);
       
+      // Sanitização do CPF e nomes
+      const cleanCPF = (payer.cpf || '').replace(/\D/g, '');
+      const firstName = (payer.firstName || '').trim();
+      const lastName = (payer.lastName || '').trim();
+
+      if (!cleanCPF || !firstName || !payer.email) {
+        console.error('[MP] Dados do pagador incompletos:', { firstName, email: payer.email, hasCPF: !!cleanCPF });
+        return res.status(400).json({ 
+          error: 'Dados do pagador incompletos. Verifique Nome, Email e CPF.' 
+        });
+      }
+
       const paymentData = {
-        transaction_amount: Number(totalAmount),
+        transaction_amount: cleanAmount,
         description: `Pedido #${String(orderId).slice(0, 8)} - NovaCustom`,
         payment_method_id: 'pix',
         payer: {
-          email: payer.email,
-          first_name: payer.firstName,
-          last_name: payer.lastName,
+          email: payer.email.trim(),
+          first_name: firstName,
+          last_name: lastName || firstName, // Fallback se não tiver sobrenome
           identification: {
             type: 'CPF',
-            number: payer.cpf.replace(/\D/g, ''),
+            number: cleanCPF,
           },
         },
         external_reference: String(orderId),
         notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
       };
 
-      console.log('[MP] Enviando body:', JSON.stringify(paymentData, null, 2));
+      console.log('[MP] Enviando payload para API do Mercado Pago...');
 
       const result = await payment.create({
         body: paymentData
       })
 
-      console.log('[MP] Resposta completa do pagamento:', JSON.stringify(result, null, 2));
+      console.log('[MP] Pagamento criado com sucesso! ID:', result.id);
+      
+      // Log detalhado do point_of_interaction para debug se necessário
+      if (!result.point_of_interaction?.transaction_data?.qr_code) {
+        console.warn('[MP] ATENÇÃO: QR Code não encontrado no point_of_interaction!');
+        console.log('[MP] Estrutura da resposta:', JSON.stringify(result, null, 2));
+      }
 
       return res.json({
         id: result.id,
         status: result.status,
-        qr_code: result.point_of_interaction?.transaction_data?.qr_code || result.qr_code,
-        qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64 || result.qr_code_base64,
-        ticket_url: result.point_of_interaction?.transaction_data?.ticket_url || result.ticket_url,
+        qr_code: result.point_of_interaction?.transaction_data?.qr_code || (result as any).qr_code,
+        qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64 || (result as any).qr_code_base64,
+        ticket_url: result.point_of_interaction?.transaction_data?.ticket_url || (result as any).ticket_url,
       })
     }
 
-    // Para outros métodos (cartão), mantemos o checkout pro por segurança/facilidade inicial
     return res.status(400).json({ error: 'Checkout transparente disponível apenas para PIX no momento.' })
   } catch (error: any) {
-    console.error('Error processing direct payment:', error.message || error)
+    console.error('[MP] Erro crítico ao processar pagamento:', error.message || error)
+    
     if (error.apiResponse) {
-      console.error('MP API Full Error:', JSON.stringify(error.apiResponse.body, null, 2))
+      const apiError = error.apiResponse.body;
+      console.error('[MP] Erro detalhado da API:', JSON.stringify(apiError, null, 2));
+      
       return res.status(500).json({ 
         success: false, 
         error: error.message,
-        details: error.apiResponse.body 
+        details: apiError
       })
     }
+    
     res.status(500).json({ success: false, error: error.message })
   }
 })

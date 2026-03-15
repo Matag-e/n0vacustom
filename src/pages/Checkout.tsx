@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { ArrowLeft, CreditCard, Truck, ShieldCheck, ShoppingBag, Copy, CheckCircle2, QrCode } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, ShieldCheck, ShoppingBag, Copy, CheckCircle2, QrCode, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface PixResult {
+  id: number;
   qr_code: string;
   qr_code_base64: string;
   status: string;
+  ticket_url?: string;
 }
 
 export default function Checkout() {
@@ -20,6 +23,9 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showPixModal, setShowPixModal] = useState(false);
+
+  const PIX_KEY = "11991814636"; // Chave PIX da loja (Celular)
 
   // Form States
   const [formData, setFormData] = useState({
@@ -56,7 +62,8 @@ export default function Checkout() {
     
     try {
       const isPix = formData.paymentMethod === 'pix';
-      const totalAmount = isPix ? totalPrice * 0.95 : totalPrice;
+      const discount = isPix ? 0.95 : 1;
+      const totalAmount = Number((totalPrice * discount).toFixed(2));
 
       if (user) {
         // Salvar pedido no Supabase
@@ -103,30 +110,14 @@ export default function Checkout() {
           if (itemsError) throw itemsError;
 
           if (isPix) {
-            // Checkout Transparente para PIX
-            const response = await fetch('/api/payments/process-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                totalAmount: totalAmount,
-                paymentMethod: 'pix',
-                payer: {
-                  firstName: formData.firstName,
-                  lastName: formData.lastName,
-                  email: formData.email,
-                  cpf: formData.cpf,
-                },
-                orderId: orderData.id,
-              }),
+            // Se for PIX, agora usamos a chave estática da loja conforme solicitado
+            // O pedido é criado como 'pending' e o admin verifica manualmente
+            setPixResult({
+              id: orderData.id,
+              qr_code: PIX_KEY,
+              qr_code_base64: '', // Não temos base64 para a chave estática
+              status: 'pending'
             });
-
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.details?.message || errorData.error || 'Erro ao gerar PIX');
-            }
-
-            const data = await response.json();
-            setPixResult(data);
             clearCart();
             return;
           }
@@ -216,24 +207,20 @@ export default function Checkout() {
 
               {/* QR Code */}
               <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 inline-block mx-auto">
-                {pixResult.qr_code_base64 ? (
-                  <img 
-                    src={`data:image/png;base64,${pixResult.qr_code_base64}`} 
-                    alt="QR Code PIX" 
-                    className="w-48 h-48 md:w-64 md:h-64 mx-auto mix-blend-multiply"
-                  />
-                ) : (
-                  <div className="w-48 h-48 md:w-64 md:h-64 flex items-center justify-center text-gray-300">
-                    <QrCode className="w-20 h-20" />
-                  </div>
-                )}
+                <QRCodeSVG 
+                  value={pixResult.qr_code} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                  className="mx-auto mix-blend-multiply"
+                />
               </div>
 
               {/* Copia e Cola */}
               <div className="space-y-4">
-                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Ou use o PIX Copia e Cola</p>
+                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">Chave PIX (Celular)</p>
                 <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-mono text-gray-500 break-all text-left">
+                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-xl font-mono font-bold text-gray-900 tracking-wider text-center">
                     {pixResult.qr_code}
                   </div>
                   <button 
@@ -258,7 +245,7 @@ export default function Checkout() {
                 <div className="flex items-start gap-3 text-left bg-blue-50 p-4 rounded-2xl">
                   <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-0.5">!</div>
                   <p className="text-xs text-blue-700 leading-relaxed">
-                    A aprovação é instantânea. Após o pagamento, você receberá um e-mail de confirmação e poderá acompanhar o status em seu perfil.
+                    Seu pedido foi registrado! Após o pagamento via PIX para a chave acima, o envio será processado assim que o valor for identificado em nossa conta.
                   </p>
                 </div>
                 <button 
@@ -364,7 +351,10 @@ export default function Checkout() {
 
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'pix' }))}
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, paymentMethod: 'pix' }));
+                      setShowPixModal(true);
+                    }}
                     className={cn(
                       "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all gap-3 relative overflow-hidden",
                       formData.paymentMethod === 'pix' 
@@ -497,6 +487,92 @@ export default function Checkout() {
 
         </div>
       </div>
+
+      {/* PIX Modal (Static) */}
+      {showPixModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="bg-green-500 p-6 text-center relative">
+              <button 
+                onClick={() => setShowPixModal(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <ShieldCheck className="w-8 h-8 text-green-500" />
+              </div>
+              <h3 className="text-xl font-black text-white uppercase tracking-tight">Pagamento Via PIX</h3>
+              <p className="text-white/80 text-xs mt-1">Sua compra com 5% de desconto!</p>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-8 space-y-6 text-center">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valor com Desconto</span>
+                <p className="text-3xl font-black text-gray-900">
+                  R$ {(totalPrice * 0.95).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+
+              {/* QR Code */}
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 inline-block">
+                <QRCodeSVG 
+                  value={PIX_KEY} 
+                  size={180}
+                  level="H"
+                  includeMargin={true}
+                  className="mx-auto mix-blend-multiply"
+                />
+              </div>
+
+              {/* Chave PIX */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Chave PIX (Celular)</p>
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <span className="flex-1 font-mono text-lg font-bold text-gray-900 tracking-wider">
+                    {PIX_KEY}
+                  </span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(PIX_KEY);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={cn(
+                      "p-3 rounded-lg transition-all",
+                      copied ? "bg-green-500 text-white" : "bg-black text-white hover:bg-gray-800"
+                    )}
+                  >
+                    {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="bg-blue-50 p-4 rounded-xl text-left space-y-2">
+                <div className="flex gap-2 text-blue-700 font-bold text-xs uppercase tracking-wider">
+                  <div className="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px]">!</div>
+                  Como proceder?
+                </div>
+                <p className="text-[10px] text-blue-600 leading-relaxed">
+                  1. Copie a chave acima ou escaneie o QR Code.<br/>
+                  2. Realize o pagamento no app do seu banco.<br/>
+                  3. <strong>Clique no botão abaixo</strong> para finalizar seu pedido no site.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setShowPixModal(false)}
+                className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-gray-900 transition-all shadow-lg"
+              >
+                Já realizei o pagamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
