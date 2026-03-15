@@ -29,8 +29,20 @@ router.post('/create-preference', async (req: Request, res: Response) => {
   try {
     const { items, orderId, totalAmount, paymentMethod } = req.body
 
+    console.log('[MP] Recebendo pedido de preferência:', {
+      orderId,
+      paymentMethod,
+      totalAmount,
+      itemsCount: items?.length
+    });
+
     const client = getMPClient()
     const preference = new Preference(client)
+
+    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+      console.error('[MP] Erro: Token do Mercado Pago não configurado no .env');
+      return res.status(500).json({ error: 'Configuração do Mercado Pago incompleta.' });
+    }
 
     const origin = req.headers.origin || 'http://localhost:5173'
     
@@ -48,10 +60,10 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       currency_id: 'BRL',
       category_id: 'clothing'
     }] : (items ? items.map((item: any) => ({
-      id: String(item.product.id),
-      title: item.product.name,
-      unit_price: Number(Number(item.product.price).toFixed(2)),
-      quantity: Number(item.quantity),
+      id: String(item.product?.id || 'unknown'),
+      title: String(item.product?.name || 'Produto Sem Nome'),
+      unit_price: Number(Number(item.product?.price || 0).toFixed(2)),
+      quantity: Math.max(1, Number(item.quantity || 1)),
       currency_id: 'BRL',
       category_id: 'clothing'
     })) : [{
@@ -92,13 +104,14 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 
     res.json({ id: result.id, init_point: result.init_point })
   } catch (error: any) {
-    console.error('Error creating preference:', error.message || error)
+    console.error('[MP] Erro ao criar preferência:', error.message || error)
     if (error.apiResponse) {
-      console.error('MP API Full Error:', JSON.stringify(error.apiResponse.body, null, 2))
+      const mpApiError = error.apiResponse.body;
+      console.error('[MP] Erro Detalhado da API do Mercado Pago:', JSON.stringify(mpApiError, null, 2))
       return res.status(500).json({ 
         success: false, 
         error: error.message,
-        details: error.apiResponse.body 
+        details: mpApiError 
       })
     }
     res.status(500).json({ success: false, error: error.message })

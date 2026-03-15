@@ -94,52 +94,61 @@ export default function Checkout() {
       const discount = isPix ? 0.95 : 1;
       const totalAmount = Number((totalPrice * discount).toFixed(2));
 
-      // 1. CRIAR O PEDIDO NO SUPABASE (Se tiver usuário)
-      let orderId = Date.now(); // Fallback ID
+      // 1. CRIAR O PEDIDO NO SUPABASE
+      let orderId = String(Date.now()); // Fallback ID
 
-      if (user) {
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            user_id: user.id,
-            total_amount: totalAmount,
-            status: 'pending',
-            payment_method: formData.paymentMethod,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            cpf: formData.cpf,
-            phone: formData.phone,
-            cep: formData.cep,
-            address: formData.address,
-            number: formData.number,
-            complement: formData.complement,
-            district: formData.district,
-            city: formData.city,
-            state: formData.state,
-          })
-          .select()
-          .single();
+      const orderPayload = {
+        user_id: user?.id || null,
+        total_amount: totalAmount,
+        status: 'pending',
+        payment_method: formData.paymentMethod,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        cpf: formData.cpf,
+        phone: formData.phone,
+        cep: formData.cep,
+        address: formData.address,
+        number: formData.number,
+        complement: formData.complement,
+        district: formData.district,
+        city: formData.city,
+        state: formData.state,
+      };
 
-        if (orderError) throw orderError;
-        if (orderData) {
-          orderId = orderData.id;
-          
-          const orderItems = items.map(item => ({
-            order_id: orderData.id,
-            product_id: item.product.id,
-            quantity: item.quantity,
-            size: item.size,
-            price: item.product.price,
-            customization_name: item.customName,
-            customization_number: item.customNumber
-          }));
+      console.log('[Checkout] Salvando pedido no Supabase...');
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderPayload)
+        .select()
+        .single();
 
-          const { error: itemsError } = await supabase
-            .from('order_items')
-            .insert(orderItems);
+      if (orderError) {
+        console.error('[Checkout] Erro ao salvar pedido no Supabase:', orderError);
+        // Se for PIX, podemos prosseguir mesmo sem salvar no banco (para não perder a venda)
+        if (!isPix) throw new Error(`Erro ao registrar pedido: ${orderError.message}`);
+      }
+      
+      if (orderData) {
+        orderId = orderData.id;
+        console.log('[Checkout] Pedido salvo com sucesso. ID:', orderId);
+        
+        const orderItems = items.map(item => ({
+          order_id: orderData.id,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          size: item.size,
+          price: item.product.price,
+          customization_name: item.customName,
+          customization_number: item.customNumber
+        }));
 
-          if (itemsError) throw itemsError;
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) {
+          console.error('[Checkout] Erro ao salvar itens do pedido:', itemsError);
         }
       }
 
@@ -147,7 +156,7 @@ export default function Checkout() {
       if (isPix) {
         console.log('[Checkout] Finalizando como PIX Direto - Sem redirecionamento');
         setPixResult({
-          id: orderId,
+          id: orderId as any,
           qr_code: PIX_KEY,
           qr_code_base64: '',
           status: 'pending'
@@ -156,7 +165,7 @@ export default function Checkout() {
         return;
       }
 
-      // 3. SE NÃO FOR PIX, REDIRECIONAR PARA MERCADO PAGO (Só se tiver usuário ou implementar guest MP)
+      // 3. SE NÃO FOR PIX, REDIRECIONAR PARA MERCADO PAGO
       if (formData.paymentMethod === 'mercadopago') {
         console.log('[Checkout] Redirecionando para Mercado Pago (Cartão/Boleto)');
         const response = await fetch('/api/payments/create-preference', {
@@ -179,7 +188,15 @@ export default function Checkout() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.details?.message || errorData.error || 'Erro ao criar pagamento');
+          console.error('[Checkout] Erro na API do Mercado Pago:', errorData);
+          
+          // Tenta extrair a mensagem de erro mais específica da API do MP
+          const mpError = errorData.details?.message || 
+                          (errorData.details?.cause && errorData.details.cause[0]?.description) ||
+                          errorData.error || 
+                          'Erro ao criar preferência de pagamento';
+          
+          throw new Error(mpError);
         }
 
         const { init_point } = await response.json();
@@ -192,7 +209,11 @@ export default function Checkout() {
       }
       
     } catch (error: any) {
-      console.error('Error processing order:', error);
+      console.error('[Checkout] Erro detalhado no processamento:', {
+        message: error.message,
+        error: error,
+        stack: error.stack
+      });
       alert(`Houve um erro ao processar seu pedido: ${error.message}`);
     } finally {
       setLoading(false);
