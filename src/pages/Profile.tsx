@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote } from 'lucide-react';
+import { QRCodeModal } from '@/components/QRCodeModal';
 
 interface Order {
   id: string;
@@ -19,6 +20,8 @@ export default function Profile() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -75,6 +78,12 @@ export default function Profile() {
   }, [user, authLoading]);
 
   const handlePayNow = async (order: Order) => {
+    if (order.payment_method === 'pix') {
+      setSelectedOrder(order);
+      setIsModalOpen(true);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch('/api/payments/create-preference', {
@@ -89,6 +98,10 @@ export default function Profile() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error('Erro ao gerar preferência');
+      }
+
       const { init_point } = await response.json();
       
       if (init_point) {
@@ -98,7 +111,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error generating MP preference:', error);
-      alert('Erro de conexão. Tente novamente.');
+      alert('Erro de conexão ao Mercado Pago. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -315,7 +328,7 @@ export default function Profile() {
                                 }}
                                 className="bg-black text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-900 transition-colors flex items-center gap-1 shadow-sm"
                               >
-                                {order.payment_method === 'pix' ? 'Pagar com PIX (MP)' : 'Pagar com Mercado Pago'}
+                                {order.payment_method === 'pix' ? 'Pagar com PIX' : 'Pagar com Cartão'}
                                 <ChevronRight className="w-3 h-3" />
                               </button>
                             )}
@@ -338,6 +351,13 @@ export default function Profile() {
         </div>
       </div>
       
+      {selectedOrder && (
+        <QRCodeModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          order={selectedOrder}
+        />
+      )}
     </div>
   );
 }

@@ -41,13 +41,7 @@ export function QRCodeModal({ isOpen, onClose, order }: QRCodeModalProps) {
       updateTimer(); // Initial check
       const timer = setInterval(updateTimer, 1000);
 
-      const payload = generatePixPayload({
-        key: '12345678900', // Mock key
-        name: 'NOVA CUSTOM',
-        city: 'SAO PAULO',
-        amount: order.total_amount,
-        txid: order.id
-      });
+      const payload = generatePixPayload(order.total_amount, '11991814636');
       setPixPayload(payload);
 
       return () => clearInterval(timer);
