@@ -3,6 +3,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import ScrollToTop from '@/components/ScrollToTop';
 import Home from '@/pages/Home';
 import ProductDetails from '@/pages/ProductDetails';
 import Cart from '@/pages/Cart';
@@ -23,6 +24,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <Router>
+          <ScrollToTop />
           <Routes>
             {/* Admin Routes (Standalone Layout) */}
             <Route path="/admin" element={<AdminLayout />}>
