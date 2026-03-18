@@ -44,9 +44,11 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Configuração do Mercado Pago incompleta.' });
     }
 
-    const origin = req.headers.origin || 'http://localhost:5173'
+    const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
+    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5173')
+    const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
     
-    console.log('Origin used for back_urls:', origin)
+    console.log('[MP] Origin detectada:', origin)
 
     const cleanAmount = Number(Number(totalAmount).toFixed(2));
 
@@ -89,7 +91,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       items: mpItems,
       back_urls,
       external_reference: String(orderId),
-      notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
+      notification_url: notification_url,
       // Removido auto_return: 'approved' para evitar que o MP redirecione antes do fim real do fluxo em alguns casos
       payment_methods: {
         installments: 12,
@@ -228,6 +230,10 @@ router.post('/process-payment', async (req: Request, res: Response) => {
     const client = getMPClient()
     const payment = new Payment(client)
 
+    const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
+    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5173')
+    const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
+
     if (paymentMethod === 'pix') {
       console.log('[MP] Iniciando pagamento PIX direto para Order:', orderId);
       
@@ -257,7 +263,7 @@ router.post('/process-payment', async (req: Request, res: Response) => {
           },
         },
         external_reference: String(orderId),
-        notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
+        notification_url: notification_url,
       };
 
       console.log('[MP] Enviando payload para API do Mercado Pago...');
