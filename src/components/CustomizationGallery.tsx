@@ -10,38 +10,7 @@ interface CustomizationExample {
 }
 
 // Mock data - In a real app, this would come from the database based on the product ID
-const MOCK_CUSTOMIZATIONS: CustomizationExample[] = [
-  {
-    id: '1',
-    thumbnail: 'https://images.unsplash.com/photo-1614632537190-23e4146777db?q=80&w=200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1614632537190-23e4146777db?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1577212017184-80e68a2703bb?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1518605348486-965555d5b768?q=80&w=1200&auto=format&fit=crop'
-    ],
-    customerName: 'Cliente Matheus'
-  },
-  {
-    id: '2',
-    thumbnail: 'https://images.unsplash.com/photo-1589487391730-58f20eb2c308?q=80&w=200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1589487391730-58f20eb2c308?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1507436667083-261563724c08?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1522778119026-d647f0565c6a?q=80&w=1200&auto=format&fit=crop'
-    ],
-    customerName: 'Cliente João'
-  },
-  {
-    id: '3',
-    thumbnail: 'https://images.unsplash.com/photo-1507436667083-261563724c08?q=80&w=200&auto=format&fit=crop',
-    images: [
-      'https://images.unsplash.com/photo-1507436667083-261563724c08?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1614632537190-23e4146777db?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1589487391730-58f20eb2c308?q=80&w=1200&auto=format&fit=crop'
-    ],
-    customerName: 'Cliente Ana'
-  }
-];
+const MOCK_CUSTOMIZATIONS: CustomizationExample[] = [];
 
 export function CustomizationGallery() {
   const [selectedCustomization, setSelectedCustomization] = useState<CustomizationExample | null>(null);
@@ -67,6 +36,8 @@ export function CustomizationGallery() {
     if (!selectedCustomization) return;
     setCurrentImageIndex((prev) => (prev - 1 + selectedCustomization.images.length) % selectedCustomization.images.length);
   };
+
+  if (MOCK_CUSTOMIZATIONS.length === 0) return null;
 
   return (
     <div className="w-full max-w-md mx-auto mb-6">

@@ -4,28 +4,28 @@ import { ArrowUpRight } from 'lucide-react';
 const lookbookItems = [
   {
     id: 1,
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Streetwear%20fashion%20model%20wearing%20vintage%20football%20jersey%20with%20jeans%20urban%20setting%20black%20and%20white&image_size=portrait_4_3",
+    image: "",
     title: "Casual Urbano",
     description: "Do estádio para as ruas.",
     link: "/lookbook/urbano"
   },
   {
     id: 2,
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Couple%20wearing%20matching%20football%20jerseys%20lifestyle%20photography%20black%20and%20white&image_size=portrait_4_3",
+    image: "",
     title: "Match Day",
     description: "Para torcer juntos.",
     link: "/lookbook/matchday"
   },
   {
     id: 3,
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Fashion%20model%20wearing%20oversized%20retro%20football%20shirt%20minimalist%20studio%20shot%20black%20and%20white&image_size=portrait_4_3",
+    image: "",
     title: "Retrô Chic",
     description: "Clássicos nunca morrem.",
     link: "/lookbook/retro"
   },
   {
     id: 4,
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Group%20of%20friends%20wearing%20football%20jerseys%20laughing%20candid%20shot%20black%20and%20white&image_size=portrait_4_3",
+    image: "",
     title: "Torcida Organizada",
     description: "A união faz a força.",
     link: "/lookbook/torcida"
@@ -55,12 +55,20 @@ export function LookbookGallery() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {lookbookItems.map((item) => (
-            <div key={item.id} className="group relative aspect-[3/4] overflow-hidden rounded-lg cursor-pointer">
-              <img 
-                src={item.image} 
-                alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
-              />
+            <div key={item.id} className="group relative aspect-[3/4] overflow-hidden rounded-lg cursor-pointer bg-zinc-900 border border-zinc-800">
+              {item.image ? (
+                <img 
+                  src={item.image} 
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-zinc-800 font-black text-2xl uppercase select-none opacity-20">
+                    CULTURE
+                  </span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
                 <h3 className="text-white text-xl font-medium mb-1 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
                   {item.title}

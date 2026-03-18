@@ -7,7 +7,7 @@ const categories = [
     id: 1,
     title: "LANÇAMENTOS",
     subtitle: "Nova Coleção",
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Modern%20minimalist%20football%20jersey%20black%20and%20white%20photography%20studio%20lighting&image_size=square",
+    image: "",
     link: "/lancamentos",
     size: "large" // occupy 2 columns on desktop
   },
@@ -15,7 +15,7 @@ const categories = [
     id: 2,
     title: "MAIS VENDIDOS",
     subtitle: "Os Preferidos",
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Stack%20of%20folded%20football%20jerseys%20high%20quality%20black%20and%20white%20detail&image_size=square",
+    image: "",
     link: "/mais-vendidos",
     size: "normal"
   },
@@ -23,7 +23,7 @@ const categories = [
     id: 3,
     title: "PERSONALIZADOS",
     subtitle: "Do Seu Jeito",
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Close%20up%20of%20football%20jersey%20custom%20name%20printing%20process%20black%20and%20white%20macro&image_size=square",
+    image: "",
     link: "/personalizados",
     size: "normal"
   },
@@ -31,7 +31,7 @@ const categories = [
     id: 4,
     title: "CLUBES",
     subtitle: "Nacionais e Internacionais",
-    image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Football%20stadium%20atmosphere%20black%20and%20white%20crowd%20cheering&image_size=landscape_16_9",
+    image: "",
     link: "/clubes",
     size: "large"
   }
@@ -63,11 +63,19 @@ export function MinimalCategories() {
           >
             {/* Background Image */}
             <div className="absolute inset-0 w-full h-full">
-              <img 
-                src={category.image} 
-                alt={category.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
-              />
+              {category.image ? (
+                <img 
+                  src={category.image} 
+                  alt={category.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
+                />
+              ) : (
+                <div className="w-full h-full bg-zinc-900 flex items-center justify-center border border-zinc-800">
+                  <span className="text-zinc-800 font-black text-4xl uppercase select-none opacity-20">
+                    NOVA
+                  </span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300"></div>
             </div>
             

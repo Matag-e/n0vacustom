@@ -29,17 +29,17 @@ export default function CustomizationService() {
   const portfolio = [
     {
       title: "Fonte Oficial Seleção",
-      image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=600",
+      image: "",
       tag: "Patch Original"
     },
     {
       title: "Nomes e Números Retrô",
-      image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=600",
+      image: "",
       tag: "Veludo Premium"
     },
     {
       title: "Patches de Campeão",
-      image: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=600",
+      image: "",
       tag: "Aplicação Oficial"
     }
   ];
@@ -90,8 +90,14 @@ export default function CustomizationService() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {portfolio.map((item, index) => (
-              <div key={index} className="group relative aspect-[3/4] rounded-3xl overflow-hidden shadow-xl">
-                <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              <div key={index} className="group relative aspect-[3/4] rounded-3xl overflow-hidden shadow-xl bg-zinc-100">
+                {item.image ? (
+                  <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-300 font-bold uppercase tracking-widest text-xs">
+                    Serviço de Personalização
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-8 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
                   <span className="text-primary font-bold text-xs uppercase tracking-widest mb-2 block">{item.tag}</span>

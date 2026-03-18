@@ -16,6 +16,7 @@ import CustomizationService from '@/pages/CustomizationService';
 import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
+import AdminProducts from '@/pages/Admin/Products';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             {/* Admin Routes (Standalone Layout) */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<AdminProducts />} />
               <Route path="inventory" element={<AdminInventory />} />
             </Route>
 

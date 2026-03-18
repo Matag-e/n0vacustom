@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { ShieldAlert, Loader2, LayoutDashboard, Package } from 'lucide-react';
+import { ShieldAlert, Loader2, LayoutDashboard, Package, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout() {
@@ -72,6 +72,18 @@ export default function AdminLayout() {
               >
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
+              </Link>
+              <Link 
+                to="/admin/products" 
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+                  location.pathname === "/admin/products" 
+                    ? "bg-white text-black shadow-sm" 
+                    : "text-gray-500 hover:text-gray-900"
+                )}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                Produtos
               </Link>
               <Link 
                 to="/admin/inventory" 

@@ -55,14 +55,14 @@ export default function Restoration() {
   const showcase = [
     {
       title: "Restauração de Silk",
-      before: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=400",
-      after: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=400",
+      before: "",
+      after: "",
       description: "Remoção de silk antigo craquelado e aplicação de novo material idêntico ao original."
     },
     {
       title: "Remoção de Manchas",
-      before: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400",
-      after: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400",
+      before: "",
+      after: "",
       description: "Tratamento químico especializado para remover manchas amareladas de guardado."
     }
   ];
@@ -73,11 +73,7 @@ export default function Restoration() {
       <section className="relative py-20 lg:py-32 overflow-hidden bg-black text-white">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black z-10"></div>
-          <img 
-            src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=2000" 
-            alt="Restoration Background" 
-            className="w-full h-full object-cover"
-          />
+          <div className="w-full h-full bg-zinc-900" />
         </div>
         
         <div className="container mx-auto px-6 relative z-20">
@@ -162,12 +158,20 @@ export default function Restoration() {
               <div key={index} className="space-y-6">
                 <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl group">
                    <div className="absolute inset-0 grid grid-cols-2">
-                      <div className="relative overflow-hidden">
-                         <img src={item.before} alt="Before" className="w-full h-full object-cover" />
+                      <div className="relative overflow-hidden bg-zinc-100">
+                         {item.before ? (
+                           <img src={item.before} alt="Before" className="w-full h-full object-cover" />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center text-zinc-300 font-bold uppercase tracking-widest text-xs">Antes</div>
+                         )}
                          <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase">Antes</div>
                       </div>
-                      <div className="relative overflow-hidden">
-                         <img src={item.after} alt="After" className="w-full h-full object-cover" />
+                      <div className="relative overflow-hidden bg-zinc-200">
+                         {item.after ? (
+                           <img src={item.after} alt="After" className="w-full h-full object-cover" />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center text-zinc-400 font-bold uppercase tracking-widest text-xs">Depois</div>
+                         )}
                          <div className="absolute top-4 right-4 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase shadow-lg">Depois</div>
                       </div>
                    </div>

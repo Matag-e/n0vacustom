@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote } from 'lucide-react';
+import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2 } from 'lucide-react';
 import { QRCodeModal } from '@/components/QRCodeModal';
 
 interface Order {
@@ -65,6 +65,27 @@ export default function Profile() {
       setLoading(false);
     }
   }, [user, authLoading]);
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.')) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      setOrders(orders.filter(o => o.id !== orderId));
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      alert('Erro ao excluir pedido: ' + (error.message || 'Verifique se o pedido já foi pago.'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePayNow = async (order: Order) => {
     if (order.payment_method === 'pix') {
@@ -310,15 +331,39 @@ export default function Profile() {
                             </span>
                             
                             {order.status === 'pending' && (
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteOrder(order.id);
+                                  }}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Excluir Pedido"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePayNow(order);
+                                  }}
+                                  className="bg-black text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-900 transition-colors flex items-center gap-1 shadow-sm"
+                                >
+                                  {order.payment_method === 'pix' ? 'Pagar com PIX' : 'Pagar com Cartão'}
+                                  <ChevronRight className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                            {order.status === 'cancelled' && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handlePayNow(order);
+                                  handleDeleteOrder(order.id);
                                 }}
-                                className="bg-black text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-900 transition-colors flex items-center gap-1 shadow-sm"
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                title="Excluir Pedido"
                               >
-                                {order.payment_method === 'pix' ? 'Pagar com PIX' : 'Pagar com Cartão'}
-                                <ChevronRight className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             )}
                           </div>

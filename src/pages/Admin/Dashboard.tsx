@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Package, Truck, CheckCircle2, Clock, XCircle, Search, 
-  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download
+  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download, Plus
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface Order {
@@ -262,6 +263,30 @@ Cidade: ${order.city} - ${order.state}`;
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-500 text-sm mt-1">Visão geral da sua loja Nova Custom.</p>
+        </div>
+        
+        <div className="flex flex-wrap gap-3">
+          <Link 
+            to="/admin/products"
+            className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg"
+          >
+            <Plus className="w-4 h-4" />
+            Cadastrar Produto
+          </Link>
+          <button 
+            onClick={exportToShippingCSV}
+            className="flex items-center gap-2 bg-white text-black border border-gray-200 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            Exportar CSV
+          </button>
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -312,13 +337,7 @@ Cidade: ${order.city} - ${order.state}`;
             />
           </div>
           
-          <button
-            onClick={exportToShippingCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            EXPORTAR PARA FRETE
-          </button>
+
         </div>
         
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">

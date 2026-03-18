@@ -9,30 +9,30 @@ const slides = [
     title: 'Manto Sagrado',
     subtitle: 'Nacionais',
     description: 'A paixão pelo futebol brasileiro em cada detalhe. Vista as cores do seu time com orgulho.',
-    image: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Brazilian%20football%20jerseys%20collection%20green%20and%20yellow%20stadium%20background%20high%20quality&image_size=landscape_16_9',
+    image: '',
     link: '/nacionais',
     buttonText: 'Explorar Nacionais',
-    color: 'from-green-900/80 to-black/40'
+    color: 'from-zinc-900 to-zinc-800'
   },
   {
     id: 2,
     title: 'Elite Europeia',
     subtitle: 'Internacionais',
     description: 'Os maiores clubes do mundo. Qualidade premium e design exclusivo para quem entende de futebol.',
-    image: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=European%20football%20jerseys%20collection%20champions%20league%20style%20dark%20moody&image_size=landscape_16_9',
+    image: '',
     link: '/internacionais',
     buttonText: 'Explorar Internacionais',
-    color: 'from-blue-900/80 to-black/40'
+    color: 'from-zinc-900 to-zinc-800'
   },
   {
     id: 3,
     title: 'Lendas do Futebol',
     subtitle: 'Retrô',
     description: 'Reviva a história com nossa coleção clássica. Camisas que marcaram época e gerações.',
-    image: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Retro%20football%20jerseys%20vintage%20style%20nostalgic%20atmosphere&image_size=landscape_16_9',
+    image: '',
     link: '/retro',
     buttonText: 'Ver Coleção Retrô',
-    color: 'from-yellow-900/80 to-black/40'
+    color: 'from-zinc-900 to-zinc-800'
   }
 ];
 
@@ -85,14 +85,22 @@ export function HeroCarousel() {
           )}
         >
           {/* Image with Parallax-like scale effect */}
-          <img 
-            src={slide.image} 
-            alt={slide.title} 
-            className={cn(
-              "w-full h-full object-cover transition-transform duration-[8000ms] ease-out",
-              currentSlide === index ? "scale-110" : "scale-100"
-            )}
-          />
+          {slide.image ? (
+            <img 
+              src={slide.image} 
+              alt={slide.title} 
+              className={cn(
+                "w-full h-full object-cover transition-transform duration-[8000ms] ease-out",
+                currentSlide === index ? "scale-110" : "scale-100"
+              )}
+            />
+          ) : (
+            <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+              <div className="text-zinc-800 font-black text-9xl uppercase select-none opacity-20">
+                NovaCustom
+              </div>
+            </div>
+          )}
           
           {/* Advanced Gradient Overlay */}
           <div className={cn(

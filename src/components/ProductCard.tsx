@@ -30,7 +30,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="group relative bg-white dark:bg-zinc-900 rounded-none overflow-hidden transition-all duration-300 border border-transparent hover:border-gray-100 dark:hover:border-zinc-800">
       <Link to={`/product/${product.id}`} className="block relative aspect-[4/5] overflow-hidden bg-gray-50 dark:bg-zinc-800">
-        {product.image_url ? (
+        {product.image_url && !product.image_url.includes('text_to_image') ? (
           <>
             {/* Main Image */}
             <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -56,8 +56,10 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400 text-xs uppercase tracking-widest">
-            Sem imagem
+          <div className="flex items-center justify-center h-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+            <div className="text-zinc-300 dark:text-zinc-600 font-black text-2xl uppercase select-none opacity-50">
+              Manto
+            </div>
           </div>
         )}
         
