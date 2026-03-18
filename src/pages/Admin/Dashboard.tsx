@@ -257,7 +257,7 @@ Cidade: ${order.city} - ${order.state}`;
   });
 
   const totalRevenue = orders
-    .filter(o => o.status !== 'cancelled' && o.status !== 'pending')
+    .filter(o => ['paid', 'shipped', 'completed'].includes(o.status))
     .reduce((acc, curr) => acc + curr.total_amount, 0);
 
   return (

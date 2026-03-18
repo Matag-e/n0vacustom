@@ -90,7 +90,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       back_urls,
       external_reference: String(orderId),
       notification_url: 'https://novacustom.vercel.app/api/payments/webhook',
-      auto_return: 'approved',
+      // Removido auto_return: 'approved' para evitar que o MP redirecione antes do fim real do fluxo em alguns casos
       payment_methods: {
         installments: 12,
       },
@@ -161,9 +161,21 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const orderId = paymentData.external_reference
       const status = paymentData.status
 
-      console.log(`Payment Status: ${status} for Order ID: ${orderId}`)
+      console.log(`[Webhook] Processando Pagamento: ID=${paymentId}, Status=${status}, Pedido=${orderId}`)
 
       if (status === 'approved') {
+        // Buscar status atual para não sobrescrever 'shipped' ou 'completed'
+        const { data: currentOrder } = await supabase
+          .from('orders')
+          .select('status, payment_method')
+          .eq('id', orderId)
+          .single()
+
+        if (currentOrder && (currentOrder.status === 'shipped' || currentOrder.status === 'completed')) {
+          console.log(`[Webhook] Pedido ${orderId} já está ${currentOrder.status}. Pulando atualização para 'paid'.`)
+          return res.status(200).send('OK')
+        }
+
         // Atualizar pedido no Supabase para 'paid'
         const { error: updateError } = await supabase
           .from('orders')
@@ -171,16 +183,17 @@ router.post('/webhook', async (req: Request, res: Response) => {
           .eq('id', orderId)
 
         if (updateError) {
-          console.error('Error updating order status in Supabase:', updateError)
+          console.error('[Webhook] Erro ao atualizar status no Supabase:', updateError)
         } else {
-          console.log(`Order ${orderId} marked as paid.`)
+          console.log(`[Webhook] Pedido ${orderId} marcado como PAGO.`)
         }
       } else if (status === 'rejected' || status === 'cancelled') {
-        // Opcional: Marcar como cancelado se rejeitado
+        // Só cancela se ainda estiver pendente
         await supabase
           .from('orders')
           .update({ status: 'cancelled' })
           .eq('id', orderId)
+          .eq('status', 'pending')
       }
     }
 

@@ -36,19 +36,8 @@ export default function Profile() {
 
         if (error) throw error;
         
-        // Filter orders:
-        // 1. Show all completed/cancelled orders
-        // 2. Show pending orders ONLY if created within the last 5 minutes
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        
-        const filteredOrders = (data || []).filter(order => {
-          if (order.status !== 'pending') return true;
-          
-          const orderDate = new Date(order.created_at);
-          return orderDate > fiveMinutesAgo;
-        });
-
-        setOrders(filteredOrders);
+        // Remove o filtro de 5 minutos que estava escondendo pedidos pendentes antigos
+        setOrders(data || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {
