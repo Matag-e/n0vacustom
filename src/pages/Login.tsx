@@ -6,8 +6,10 @@ import { supabase } from '@/lib/supabase';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -20,6 +22,33 @@ export default function Login() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError(null);
+    setSuccessMsg(null);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.email) {
+      setError('Por favor, insira seu e-mail para recuperar a senha.');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      
+      if (error) throw error;
+      
+      setSuccessMsg('Enviamos um link de recuperação para o seu e-mail.');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao enviar e-mail de recuperação.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,10 +143,14 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8">
           <div className="text-center lg:text-left">
             <h1 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">
-              {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+              {isResettingPassword 
+                ? 'Recuperar Senha' 
+                : isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
             </h1>
             <p className="text-gray-500 dark:text-gray-400">
-              {isLogin ? 'Entre para acessar seus pedidos e perfil.' : 'Preencha seus dados para começar.'}
+              {isResettingPassword
+                ? 'Digite seu e-mail para receber um link de redefinição.'
+                : isLogin ? 'Entre para acessar seus pedidos e perfil.' : 'Preencha seus dados para começar.'}
             </p>
           </div>
 
@@ -128,8 +161,15 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+          {successMsg && (
+            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-4 rounded-xl flex items-center gap-3 text-sm">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+              {successMsg}
+            </div>
+          )}
+
+          <form onSubmit={isResettingPassword ? handleResetPassword : handleSubmit} className="space-y-4">
+            {!isLogin && !isResettingPassword && (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nome Completo</label>
                 <div className="relative">
@@ -163,27 +203,37 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase ml-1">Senha</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none transition-all dark:text-white"
-                  placeholder="••••••••"
-                />
+            {!isResettingPassword && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Senha</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none transition-all dark:text-white"
+                    placeholder="••••••••"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            {isLogin && (
+            {!isResettingPassword && isLogin && (
               <div className="flex justify-end">
-                <a href="#" className="text-xs font-bold text-gray-500 hover:text-black dark:hover:text-white transition-colors">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsResettingPassword(true);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }} 
+                  className="text-xs font-bold text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+                >
                   Esqueceu a senha?
-                </a>
+                </button>
               </div>
             )}
 
@@ -192,7 +242,9 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? 'Entrar' : 'Criar Conta')}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                isResettingPassword ? 'Enviar Link' : (isLogin ? 'Entrar' : 'Criar Conta')
+              )}
             </button>
           </form>
 
@@ -222,13 +274,32 @@ export default function Login() {
 
           <div className="text-center">
             <p className="text-gray-500 text-sm">
-              {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="ml-2 font-bold text-black dark:text-white hover:underline"
-              >
-                {isLogin ? 'Cadastre-se' : 'Entrar'}
-              </button>
+              {isResettingPassword ? (
+                <button
+                  onClick={() => {
+                    setIsResettingPassword(false);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="font-bold text-black dark:text-white hover:underline"
+                >
+                  Voltar para o login
+                </button>
+              ) : (
+                <>
+                  {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+                  <button
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setError(null);
+                      setSuccessMsg(null);
+                    }}
+                    className="ml-2 font-bold text-black dark:text-white hover:underline"
+                  >
+                    {isLogin ? 'Cadastre-se' : 'Entrar'}
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>

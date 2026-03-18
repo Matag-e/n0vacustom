@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2 } from 'lucide-react';
+import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2, Heart } from 'lucide-react';
 import { QRCodeModal } from '@/components/QRCodeModal';
 
 interface Order {
@@ -13,6 +13,8 @@ interface Order {
   status: string;
   payment_method?: string;
 }
+
+import { Wishlist } from '@/components/Wishlist';
 
 export default function Profile() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -245,6 +247,15 @@ export default function Profile() {
               </div>
               <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-gradient-to-br from-primary/30 to-purple-600/30 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl"></div>
+            </div>
+
+            {/* Wishlist Sidebar */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                Meus Favoritos
+              </h3>
+              <Wishlist />
             </div>
           </div>
 

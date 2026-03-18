@@ -191,22 +191,28 @@ export default function Checkout() {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error('[Checkout] Erro na API do Mercado Pago:', errorData);
-          
-          // Tenta extrair a mensagem de erro mais específica da API do MP
-          const mpError = errorData.details?.message || 
-                          (errorData.details?.cause && errorData.details.cause[0]?.description) ||
-                          errorData.error || 
-                          'Erro ao criar preferência de pagamento';
-          
-          throw new Error(mpError);
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.indexOf("application/json") !== -1) {
+            const errorData = await response.json();
+            console.error('[Checkout] Erro na API do Mercado Pago:', errorData);
+            
+            const mpError = errorData.details?.message || 
+                            (errorData.details?.cause && errorData.details.cause[0]?.description) ||
+                            errorData.error || 
+                            'Erro ao criar preferência de pagamento';
+            
+            throw new Error(mpError);
+          } else {
+            const textError = await response.text();
+            console.error('[Checkout] Erro na API (Não-JSON):', textError);
+            throw new Error(`Erro no servidor: O pagamento não pôde ser processado.`);
+          }
         }
 
-        const { init_point } = await response.json();
-        if (init_point) {
+        const data = await response.json();
+        if (data.init_point) {
           clearCart();
-          window.location.href = init_point;
+          window.location.href = data.init_point;
           return;
         }
         throw new Error('Link de pagamento não gerado');

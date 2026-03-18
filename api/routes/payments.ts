@@ -41,7 +41,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
       console.error('[MP] Erro: Token do Mercado Pago não configurado no .env');
-      return res.status(500).json({ error: 'Configuração do Mercado Pago incompleta.' });
+      return res.status(400).json({ error: 'Configuração do Mercado Pago incompleta no servidor.' });
     }
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')

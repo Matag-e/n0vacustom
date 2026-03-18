@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 import ScrollToTop from '@/components/ScrollToTop';
 import Home from '@/pages/Home';
 import ProductDetails from '@/pages/ProductDetails';
@@ -10,12 +12,15 @@ import Cart from '@/pages/Cart';
 import Checkout from '@/pages/Checkout';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
+import UpdatePassword from '@/pages/UpdatePassword';
 import CategoryPage from '@/pages/CategoryPage';
 import FAQ from '@/pages/FAQ';
 import Contact from '@/pages/Contact';
 import Restoration from '@/pages/Restoration';
 import Shipping from '@/pages/Shipping';
 import Returns from '@/pages/Returns';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import TermsOfUse from '@/pages/TermsOfUse';
 import CustomizationService from '@/pages/CustomizationService';
 import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
@@ -24,10 +29,11 @@ import AdminProducts from '@/pages/Admin/Products';
 
 function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
-          <ScrollToTop />
+    <HelmetProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Router>
+            <ScrollToTop />
           <Routes>
             {/* Admin Routes (Standalone Layout) */}
             <Route path="/admin" element={<AdminLayout />}>
@@ -48,10 +54,13 @@ function App() {
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/update-password" element={<UpdatePassword />} />
                     <Route path="/restauracao" element={<Restoration />} />
                     <Route path="/personalizacao" element={<CustomizationService />} />
                     <Route path="/envio-e-entrega" element={<Shipping />} />
                     <Route path="/trocas-e-devolucoes" element={<Returns />} />
+                    <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                    <Route path="/termos-de-uso" element={<TermsOfUse />} />
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/contato" element={<Contact />} />
                     
@@ -68,13 +77,15 @@ function App() {
                     <Route path="/personalizados" element={<CategoryPage title="Personalizados" />} />
                   </Routes>
                 </main>
+                <WhatsAppButton />
                 <Footer />
               </div>
             } />
           </Routes>
         </Router>
-      </CartProvider>
-    </AuthProvider>
+        </CartProvider>
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 

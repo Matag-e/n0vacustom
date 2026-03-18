@@ -132,76 +132,70 @@ Cidade: ${order.city} - ${order.state}`;
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const html = `
+    // Gerar etiqueta ZPL (simulada como HTML para impressora térmica 10x15)
+    const shippingLabelHtml = `
       <html>
         <head>
-          <title>Declaração de Conteúdo - Pedido #${order.id.slice(0, 8)}</title>
+          <title>Etiqueta de Envio - Pedido #${order.id.slice(0, 8)}</title>
           <style>
-            body { font-family: sans-serif; padding: 20px; font-size: 12px; }
-            .box { border: 1px solid black; padding: 10px; margin-bottom: 10px; }
-            .header { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
-            .section-title { font-weight: bold; background: #eee; padding: 5px; margin-top: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid black; padding: 5px; text-align: left; }
-            .footer { margin-top: 30px; border-top: 1px solid black; padding-top: 10px; }
+            @media print {
+              @page { size: 100mm 150mm; margin: 0; }
+              body { margin: 0; padding: 0; }
+            }
+            body { font-family: Arial, sans-serif; width: 100mm; height: 150mm; padding: 5mm; box-sizing: border-box; border: 1px dashed #ccc; margin: 0 auto; }
+            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+            .logo { font-size: 20px; font-weight: bold; text-transform: uppercase; }
+            .tracking { text-align: center; margin: 15px 0; }
+            .barcode { height: 50px; background: #000; width: 80%; margin: 0 auto; } /* Simulação */
+            .address-box { border: 2px solid #000; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+            .label-title { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+            .recipient-name { font-size: 16px; font-weight: bold; }
+            .address-text { font-size: 12px; line-height: 1.4; margin-top: 5px; }
+            .sender-box { font-size: 10px; border-top: 1px solid #000; padding-top: 5px; margin-top: 10px; }
+            .footer { text-align: center; font-size: 10px; margin-top: 10px; font-weight: bold; }
           </style>
         </head>
         <body>
-          <div class="header">DECLARAÇÃO DE CONTEÚDO</div>
-          
-          <div class="box">
-            <div class="section-title">REMETENTE</div>
-            <p><strong>Nome:</strong> NOVA CUSTOM</p>
-            <p><strong>CPF/CNPJ:</strong> 49364325800</p>
-            <p><strong>Endereço:</strong> Rua Tetsuko Kanai, 1515</p>
-            <p><strong>Cidade/UF/CEP:</strong> São Paulo - SP - 05757280</p>
+          <div class="header">
+            <div class="logo">NOVA CUSTOM</div>
+            <div style="font-size: 12px;">Pedido: #${order.id.slice(0, 8)}</div>
           </div>
 
-          <div class="box">
-            <div class="section-title">DESTINATÁRIO</div>
-            <p><strong>Nome:</strong> ${order.first_name} ${order.last_name}</p>
-            <p><strong>CPF/CNPJ:</strong> ${order.cpf}</p>
-            <p><strong>Endereço:</strong> ${order.address}, ${order.number} ${order.complement ? `(${order.complement})` : ''}</p>
-            <p><strong>Bairro:</strong> ${order.district}</p>
-            <p><strong>Cidade/UF/CEP:</strong> ${order.city} - ${order.state} - ${order.cep}</p>
+          <div class="address-box">
+            <div class="label-title">DESTINATÁRIO</div>
+            <div class="recipient-name">${order.first_name} ${order.last_name}</div>
+            <div class="address-text">
+              ${order.address}, ${order.number} ${order.complement ? `(${order.complement})` : ''}<br>
+              ${order.district}<br>
+              ${order.city} - ${order.state}<br>
+              <strong>CEP: ${order.cep}</strong>
+            </div>
           </div>
 
-          <div class="box">
-            <div class="section-title">CONTEÚDO</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Quantidade</th>
-                  <th>Valor Unitário</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${order.order_items?.map(item => `
-                  <tr>
-                    <td>${item.product?.name || 'Produto'} (Tam: ${item.size || 'N/A'})</td>
-                    <td>${item.quantity || 0}</td>
-                    <td>R$ ${(item.price || 0).toFixed(2)}</td>
-                  </tr>
-                `).join('') || '<tr><td colspan="3">Nenhum item encontrado</td></tr>'}
-              </tbody>
-            </table>
+          <div class="tracking">
+            <div style="font-size: 12px; margin-bottom: 5px;">Rastreamento</div>
+            <div style="border: 1px solid #000; padding: 10px; font-family: monospace; font-weight: bold; font-size: 14px;">
+              ${order.tracking_code || 'PENDENTE DE POSTAGEM'}
+            </div>
+          </div>
+
+          <div class="sender-box">
+            <strong>REMETENTE:</strong><br>
+            NOVA CUSTOM - CNPJ: 49.364.325/0001-00<br>
+            Rua Tetsuko Kanai, 1515<br>
+            São Paulo - SP - 05757-280
           </div>
 
           <div class="footer">
-            <p>Declaro que não me enquadro no conceito de contribuinte previsto no art. 4º da Lei Complementar nº 87/96, logo não sou obrigado a emitir nota fiscal.</p>
-            <br><br>
-            <div style="text-align: center; border-top: 1px solid black; width: 300px; margin: 0 auto; padding-top: 5px;">
-              Assinatura do Remetente
-            </div>
+            Declaração de Conteúdo Simplificada Anexa
           </div>
-          
+
           <script>window.print();</script>
         </body>
       </html>
     `;
 
-    printWindow.document.write(html);
+    printWindow.document.write(shippingLabelHtml);
     printWindow.document.close();
   };
 
@@ -537,7 +531,7 @@ Cidade: ${order.city} - ${order.state}`;
                       className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-black bg-white border border-gray-200 px-3 py-2 rounded-lg transition-all w-full justify-center"
                     >
                       <FileText className="w-3 h-3" />
-                      GERAR DECLARAÇÃO DE CONTEÚDO
+                      IMPRIMIR ETIQUETA DE ENVIO
                     </button>
                   </div>
                 </div>

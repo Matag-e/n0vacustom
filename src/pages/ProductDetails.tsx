@@ -3,9 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/components/ProductCard';
 import { CustomizationGallery } from '@/components/CustomizationGallery';
-import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { Helmet } from 'react-helmet-async';
+
+import { ProductReviews } from '@/components/ProductReviews';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
@@ -19,8 +23,49 @@ export default function ProductDetails() {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [stockBySize, setStockBySize] = useState<Record<string, number>>({});
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+
+  useEffect(() => {
+    if (user && product) {
+      checkWishlistStatus();
+    }
+  }, [user, product]);
+
+  async function checkWishlistStatus() {
+    if (!user || !product) return;
+    const { data } = await supabase
+      .from('wishlist')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('product_id', product.id)
+      .maybeSingle();
+    setIsInWishlist(!!data);
+  }
+
+  async function toggleWishlist() {
+    if (!user) {
+      alert('Faça login para adicionar aos favoritos.');
+      return;
+    }
+    if (!product) return;
+
+    if (isInWishlist) {
+      const { error } = await supabase
+        .from('wishlist')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_id', product.id);
+      if (!error) setIsInWishlist(false);
+    } else {
+      const { error } = await supabase
+        .from('wishlist')
+        .insert({ user_id: user.id, product_id: product.id });
+      if (!error) setIsInWishlist(true);
+    }
+  }
 
   useEffect(() => {
     async function fetchProduct() {
@@ -177,6 +222,17 @@ export default function ProductDetails() {
 
   return (
     <div className="bg-white min-h-screen pb-20 pt-20 relative">
+      <Helmet>
+        <title>{product.name} | NovaCustom</title>
+        <meta name="description" content={product.description || `Compre ${product.name} na NovaCustom. Camisas de futebol tailandesas 1:1.`} />
+        <meta property="og:title" content={`${product.name} | NovaCustom`} />
+        <meta property="og:description" content={product.description || `Compre ${product.name} na NovaCustom. Camisas de futebol tailandesas 1:1.`} />
+        <meta property="og:image" content={product.image_url} />
+        <meta property="twitter:title" content={`${product.name} | NovaCustom`} />
+        <meta property="twitter:description" content={product.description || `Compre ${product.name} na NovaCustom. Camisas de futebol tailandesas 1:1.`} />
+        <meta property="twitter:image" content={product.image_url} />
+      </Helmet>
+
       {/* Back Button - Desktop Only (Floating) */}
       <div className="hidden lg:block fixed top-24 left-8 z-40 pointer-events-none">
         <Link to="/" className="pointer-events-auto inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-sm hover:bg-white transition-all text-gray-900 border border-gray-100">
@@ -277,6 +333,18 @@ export default function ProductDetails() {
                   <Ruler className="w-3 h-3" /> Guia de medidas
                 </button>
               </div>
+              
+              <button
+                onClick={toggleWishlist}
+                className={cn(
+                  "flex items-center gap-2 mb-4 text-sm font-medium transition-colors",
+                  isInWishlist ? "text-red-500 hover:text-red-600" : "text-gray-500 hover:text-black"
+                )}
+              >
+                <Heart className={cn("w-5 h-5", isInWishlist && "fill-current")} />
+                {isInWishlist ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              </button>
+
               <div className="grid grid-cols-5 gap-2">
                 {sizes.map((size) => {
                   const quantity = stockBySize[size] || 0;
@@ -383,6 +451,10 @@ export default function ProductDetails() {
         </div>
       </div>
       {showSizeGuide && <SizeGuideModal />}
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <ProductReviews productId={id || ''} />
+      </div>
     </div>
   );
 }
