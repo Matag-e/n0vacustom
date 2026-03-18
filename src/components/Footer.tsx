@@ -46,7 +46,7 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Suporte</h4>
             <ul className="space-y-3">
               <li><Link to="/faq" className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">FAQ</Link></li>
-              <li><Link to="/envio" className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Envio e Entrega</Link></li>
+              <li><Link to="/envio-e-entrega" className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Envio e Entrega</Link></li>
               <li><Link to="/trocas" className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Trocas e Devoluções</Link></li>
               <li><Link to="/contato" className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Contato</Link></li>
             </ul>

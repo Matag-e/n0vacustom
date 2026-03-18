@@ -13,6 +13,7 @@ import Login from '@/pages/Login';
 import CategoryPage from '@/pages/CategoryPage';
 import FAQ from '@/pages/FAQ';
 import Restoration from '@/pages/Restoration';
+import Shipping from '@/pages/Shipping';
 import CustomizationService from '@/pages/CustomizationService';
 import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
@@ -47,6 +48,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/restauracao" element={<Restoration />} />
                     <Route path="/personalizacao" element={<CustomizationService />} />
+                    <Route path="/envio-e-entrega" element={<Shipping />} />
                     <Route path="/faq" element={<FAQ />} />
                     
                     {/* Category Routes */}
