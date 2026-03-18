@@ -33,6 +33,12 @@ export default function AdminProducts() {
     image_back_url: '',
   });
 
+  const [stockData, setStockData] = useState<Record<string, string>>({
+    'P': '0', 'M': '0', 'G': '0', 'GG': '0', 'XG': '0', '2XG': '0', '3XL': '0'
+  });
+
+  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -42,7 +48,13 @@ export default function AdminProducts() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          product_stock (
+            size,
+            quantity
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -54,7 +66,7 @@ export default function AdminProducts() {
     }
   }
 
-  const handleOpenModal = (product: Product | null = null) => {
+  const handleOpenModal = (product: any | null = null) => {
     if (product) {
       setEditingProduct(product);
       setFormData({
@@ -65,6 +77,14 @@ export default function AdminProducts() {
         image_url: product.image_url || '',
         image_back_url: product.image_back_url || '',
       });
+
+      // Popular estoque se existir
+      const initialStock: Record<string, string> = {};
+      sizes.forEach(size => {
+        const item = product.product_stock?.find((s: any) => s.size === size);
+        initialStock[size] = item ? item.quantity.toString() : '0';
+      });
+      setStockData(initialStock);
     } else {
       setEditingProduct(null);
       setFormData({
@@ -75,6 +95,9 @@ export default function AdminProducts() {
         image_url: '',
         image_back_url: '',
       });
+      setStockData({
+        'P': '0', 'M': '0', 'G': '0', 'GG': '0', 'XG': '0', '2XG': '0', '3XL': '0'
+      });
     }
     setIsModalOpen(true);
   };
@@ -83,6 +106,9 @@ export default function AdminProducts() {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
 
     try {
+      // Deletar estoque primeiro devido a FK
+      await supabase.from('product_stock').delete().eq('product_id', id);
+      
       const { error } = await supabase
         .from('products')
         .delete()
@@ -101,7 +127,7 @@ export default function AdminProducts() {
     setIsSaving(true);
 
     try {
-      const productData = {
+      const productPayload = {
         name: formData.name,
         price: parseFloat(formData.price),
         category: formData.category,
@@ -110,19 +136,43 @@ export default function AdminProducts() {
         image_back_url: formData.image_back_url,
       };
 
+      let productId = editingProduct?.id;
+
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
-          .update(productData)
+          .update(productPayload)
           .eq('id', editingProduct.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
-          .insert([{ ...productData, stock: 0 }]);
+          .insert([{ ...productPayload, stock: 0 }])
+          .select()
+          .single();
 
         if (error) throw error;
+        productId = data.id;
+      }
+
+      // Salvar Estoque
+      if (productId) {
+        const stockItems = Object.entries(stockData).map(([size, quantity]) => ({
+          product_id: productId,
+          size,
+          quantity: parseInt(quantity) || 0
+        }));
+
+        const { error: stockError } = await supabase
+          .from('product_stock')
+          .upsert(stockItems, { onConflict: 'product_id,size' });
+
+        if (stockError) throw stockError;
+
+        // Atualizar estoque total na tabela products
+        const totalStock = stockItems.reduce((acc, curr) => acc + curr.quantity, 0);
+        await supabase.from('products').update({ stock: totalStock }).eq('id', productId);
       }
 
       setIsModalOpen(false);
@@ -328,6 +378,28 @@ export default function AdminProducts() {
                       onChange={e => setFormData({ ...formData, description: e.target.value })}
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Stock Management inside Modal */}
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h4 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Estoque por Tamanho
+                </h4>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+                  {sizes.map(size => (
+                    <div key={size} className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase block text-center">{size}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={stockData[size]}
+                        onChange={e => setStockData({ ...stockData, [size]: e.target.value })}
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-lg px-2 py-2 text-center text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 
