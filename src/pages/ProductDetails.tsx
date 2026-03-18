@@ -10,6 +10,10 @@ import { useCart } from '@/context/CartContext';
 import { Helmet } from 'react-helmet-async';
 
 import { ProductReviews } from '@/components/ProductReviews';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import ImageZoom from '@/components/ImageZoom';
+
+import { toast } from 'sonner';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
@@ -47,7 +51,7 @@ export default function ProductDetails() {
 
   async function toggleWishlist() {
     if (!user) {
-      alert('Faça login para adicionar aos favoritos.');
+      toast.error('Faça login para adicionar aos favoritos.');
       return;
     }
     if (!product) return;
@@ -201,7 +205,7 @@ export default function ProductDetails() {
 
   const handleAddToCart = () => {
     if (!selectedSize) {
-      alert('Por favor, selecione um tamanho.');
+      toast.error('Por favor, selecione um tamanho.');
       return;
     }
     
@@ -213,12 +217,40 @@ export default function ProductDetails() {
     
     setTimeout(() => {
       setIsAdding(false);
-      alert(`Adicionado ao carrinho: ${product.name}`);
+      // Toast já é chamado dentro do addToCart, removendo daqui para não duplicar
     }, 500);
   };
 
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
+
+  const getBreadcrumbLink = (category: string) => {
+    // Normalizar para minúsculas para comparação flexível
+    const normalized = category.toLowerCase().trim();
+    
+    const categoryMap: Record<string, string> = {
+      'clubes': '/clubes',
+      'seleções': '/selecoes',
+      'selecoes': '/selecoes',
+      'retrô': '/retro',
+      'retro': '/retro',
+      'brasileirão': '/brasileirao',
+      'brasileirao': '/brasileirao',
+      'artes custom': '/artes-custom',
+      'nacionais': '/nacionais',
+      'internacionais': '/internacionais',
+      'lançamentos': '/lancamentos',
+      'mais vendidos': '/mais-vendidos',
+      'personalizados': '/personalizados'
+    };
+
+    return categoryMap[normalized] || '/products';
+  };
+
+  const breadcrumbItems = [
+    { label: product.category || 'Produtos', href: product.category ? getBreadcrumbLink(product.category) : '/products' },
+    { label: product.name },
+  ];
 
   return (
     <div className="bg-white min-h-screen pb-20 pt-20 relative">
@@ -249,15 +281,20 @@ export default function ProductDetails() {
             </Link>
         </div>
 
+        {/* Desktop Breadcrumbs (Top Left) */}
+        <div className="hidden lg:block absolute top-24 left-24 z-30">
+           <Breadcrumbs items={breadcrumbItems} />
+        </div>
+
         {/* Left Column - Visuals (Sticky on Desktop) */}
         <div className="lg:w-2/3 bg-gray-50 relative min-h-[50vh] lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 flex flex-col items-center justify-center py-8 z-20">
           {/* Main Image */}
           <div className="relative w-full max-w-xl mx-auto p-8 lg:p-0 transition-all duration-700 flex-1 flex items-center justify-center">
             {product.image_url ? (
-              <img
+              <ImageZoom
                 src={activeImage === 'front' ? product.image_url : (product.image_back_url || product.image_url)}
                 alt={product.name}
-                className="w-full max-h-[60vh] object-contain drop-shadow-xl transform hover:scale-105 transition-transform duration-700"
+                className="w-full max-h-[60vh] drop-shadow-xl"
               />
             ) : (
               <div className="flex items-center justify-center h-96 text-gray-400">Sem imagem</div>

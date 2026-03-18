@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { Product } from '@/components/ProductCard';
+import { toast } from 'sonner';
 
 export interface CartItem {
   id: string; // Unique ID for cart item (combination of product id + options)
@@ -33,29 +34,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const addToCart = (product: Product, size: string, customName?: string, customNumber?: string) => {
-    setItems((prevItems) => {
-      // Create a unique ID based on product and options to differentiate items
-      const itemId = `${product.id}-${size}-${customName || ''}-${customNumber || ''}`;
-      
-      const existingItem = prevItems.find((item) => item.id === itemId);
+    // Check if item already exists
+    const itemId = `${product.id}-${size}-${customName || ''}-${customNumber || ''}`;
+    const existingItem = items.find((item) => item.id === itemId);
 
-      if (existingItem) {
-        return prevItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
+    if (existingItem) {
+      updateQuantity(itemId, existingItem.quantity + 1);
+      toast.success('Quantidade atualizada no carrinho', {
+        id: 'cart-update' // Prevent duplicate toasts
+      });
+      return;
+    }
 
-      return [
-        ...prevItems,
-        {
-          id: itemId,
-          product,
-          quantity: 1,
-          size,
-          customName,
-          customNumber,
-        },
-      ];
+    setItems((prevItems) => [
+      ...prevItems,
+      {
+        id: itemId,
+        product,
+        quantity: 1,
+        size,
+        customName,
+        customNumber,
+      },
+    ]);
+    toast.success('Produto adicionado ao carrinho', {
+      id: 'cart-add' // Prevent duplicate toasts
     });
   };
 

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { z } from 'zod'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -11,6 +12,33 @@ const __dirname = path.dirname(__filename)
 dotenv.config({ path: path.join(__dirname, '../../.env') })
 
 const router = Router()
+
+// Schemas de Validação (Zod)
+const CreatePreferenceSchema = z.object({
+  items: z.array(z.object({
+    product: z.object({
+      id: z.string(),
+      name: z.string(),
+      price: z.number().positive(),
+    }).optional(),
+    quantity: z.number().int().positive(),
+  })).optional(),
+  orderId: z.string().uuid(),
+  totalAmount: z.number().positive(),
+  paymentMethod: z.enum(['pix', 'credit_card', 'ticket']).optional(),
+});
+
+const ProcessPaymentSchema = z.object({
+  totalAmount: z.number().positive(),
+  paymentMethod: z.enum(['pix', 'credit_card', 'ticket']),
+  payer: z.object({
+    email: z.string().email(),
+    firstName: z.string(),
+    lastName: z.string().optional(),
+    cpf: z.string().min(11),
+  }),
+  orderId: z.string().uuid(),
+});
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -27,7 +55,15 @@ const getMPClient = () => {
 
 router.post('/create-preference', async (req: Request, res: Response) => {
   try {
-    const { items, orderId, totalAmount, paymentMethod } = req.body
+    // Validar Payload
+    const validation = CreatePreferenceSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      console.error('[MP] Payload inválido:', validation.error.errors);
+      return res.status(400).json({ error: 'Dados inválidos.', details: validation.error.errors });
+    }
+
+    const { items, orderId, totalAmount, paymentMethod } = validation.data
 
     console.log('[MP] Recebendo pedido de preferência:', {
       orderId,
@@ -45,7 +81,22 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     }
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
-    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5173')
+    
+    let origin = req.headers.origin;
+    
+    if (!origin && req.headers.referer) {
+      try {
+        const url = new URL(req.headers.referer);
+        origin = `${url.protocol}//${url.host}`;
+      } catch (e) {
+        console.warn('[MP] Invalid referer:', req.headers.referer);
+      }
+    }
+
+    if (!origin) {
+       origin = isProduction ? 'https://novacustom.vercel.app' : 'http://localhost:5173';
+    }
+    
     const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
     
     console.log('[MP] Origin detectada:', origin)
@@ -142,6 +193,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     if (paymentId) {
       console.log(`Processing Webhook for Payment ID: ${paymentId}`)
+      
+      // Validação de Segurança: Verificar se a notificação é genuína consultando a API
+      // O MP recomenda validar a assinatura do header x-signature, mas consultar a API também é seguro
+      
       const client = getMPClient()
       const payment = new Payment(client)
 
@@ -188,6 +243,32 @@ router.post('/webhook', async (req: Request, res: Response) => {
           console.error('[Webhook] Erro ao atualizar status no Supabase:', updateError)
         } else {
           console.log(`[Webhook] Pedido ${orderId} marcado como PAGO.`)
+          
+          // BAIXA DE ESTOQUE AUTOMÁTICA
+          console.log(`[Webhook] Iniciando baixa de estoque para o pedido ${orderId}...`)
+          const { data: orderItems, error: itemsError } = await supabase
+            .from('order_items')
+            .select('product_id, quantity')
+            .eq('order_id', orderId)
+
+          if (itemsError) {
+            console.error('[Webhook] Erro ao buscar itens para baixa de estoque:', itemsError)
+          } else if (orderItems) {
+            for (const item of orderItems) {
+              if (!item.product_id) continue;
+              
+              const { error: stockError } = await supabase.rpc('decrement_stock', {
+                p_id: item.product_id,
+                amount: item.quantity
+              })
+              
+              if (stockError) {
+                console.error(`[Webhook] Erro ao baixar estoque do produto ${item.product_id}:`, stockError)
+              } else {
+                console.log(`[Webhook] Estoque baixado: Produto ${item.product_id}, Qtd ${item.quantity}`)
+              }
+            }
+          }
         }
       } else if (status === 'rejected' || status === 'cancelled') {
         // Só cancela se ainda estiver pendente
@@ -210,7 +291,15 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
 router.post('/process-payment', async (req: Request, res: Response) => {
   try {
-    const { totalAmount, paymentMethod, payer, orderId } = req.body
+    // Validar Payload
+    const validation = ProcessPaymentSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      console.error('[MP] Payload de pagamento inválido:', validation.error.errors);
+      return res.status(400).json({ error: 'Dados de pagamento inválidos.', details: validation.error.errors });
+    }
+
+    const { totalAmount, paymentMethod, payer, orderId } = validation.data
 
     // Garantir que o valor seja um número válido e arredondado
     const cleanAmount = Number(Number(totalAmount).toFixed(2));
@@ -231,7 +320,22 @@ router.post('/process-payment', async (req: Request, res: Response) => {
     const payment = new Payment(client)
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
-    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5173')
+    
+    let origin = req.headers.origin;
+    
+    if (!origin && req.headers.referer) {
+      try {
+        const url = new URL(req.headers.referer);
+        origin = `${url.protocol}//${url.host}`;
+      } catch (e) {
+        console.warn('[MP] Invalid referer:', req.headers.referer);
+      }
+    }
+
+    if (!origin) {
+       origin = isProduction ? 'https://novacustom.vercel.app' : 'http://localhost:5173';
+    }
+    
     const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
 
     if (paymentMethod === 'pix') {

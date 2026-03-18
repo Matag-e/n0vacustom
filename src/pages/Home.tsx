@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ProductCard, Product } from '@/components/ProductCard';
+import { ProductCard } from '@/components/ProductCard';
 import { ArrowRight, ShieldCheck, Truck, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { MinimalCategories } from '@/components/MinimalCategories';
 import { FloatingQuote } from '@/components/FloatingQuote';
 import { BenefitsBar } from '@/components/BenefitsBar';
+import { Helmet } from 'react-helmet-async';
+import { Product } from '@/types';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -28,7 +30,7 @@ export default function Home() {
           setProducts(data);
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Home: Error fetching products:', error);
       } finally {
         setLoading(false);
       }
@@ -39,6 +41,14 @@ export default function Home() {
 
   return (
     <div className="space-y-12 pb-12">
+      <Helmet>
+        <title>NovaCustom | Camisas de Futebol Tailandesas 1:1</title>
+        <meta name="description" content="Sua loja definitiva de camisas de time tailandesas 1:1. Qualidade premium, personalização oficial e entrega para todo o Brasil." />
+        <meta property="og:title" content="NovaCustom | Camisas de Futebol Tailandesas 1:1" />
+        <meta property="og:description" content="Sua loja definitiva de camisas de time tailandesas 1:1. Qualidade premium, personalização oficial e entrega para todo o Brasil." />
+        <meta property="og:image" content="/og-image.jpg" />
+      </Helmet>
+      
       {/* Hero Section */}
       <HeroCarousel />
       

@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -21,20 +20,16 @@ export default function Login() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(null);
-    setSuccessMsg(null);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email) {
-      setError('Por favor, insira seu e-mail para recuperar a senha.');
+      toast.error('Por favor, insira seu e-mail para recuperar a senha.');
       return;
     }
     
     setLoading(true);
-    setError(null);
-    setSuccessMsg(null);
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
@@ -43,9 +38,9 @@ export default function Login() {
       
       if (error) throw error;
       
-      setSuccessMsg('Enviamos um link de recuperação para o seu e-mail.');
+      toast.success('Enviamos um link de recuperação para o seu e-mail.');
     } catch (err: any) {
-      setError(err.message || 'Erro ao enviar e-mail de recuperação.');
+      toast.error(err.message || 'Erro ao enviar e-mail de recuperação.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +49,6 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
       if (isLogin) {
@@ -63,7 +57,6 @@ export default function Login() {
           password: formData.password,
         });
         if (error) {
-          // Improve error message
           if (error.message === 'Invalid login credentials') {
             throw new Error('Email ou senha incorretos.');
           }
@@ -72,9 +65,9 @@ export default function Login() {
           }
           throw error;
         }
+        toast.success('Login realizado com sucesso!');
         navigate('/profile');
       } else {
-        // Sign Up
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -87,28 +80,26 @@ export default function Login() {
         
         if (error) throw error;
         
-        // Tenta logar automaticamente se a sessão não vier direto
         if (data.session) {
+          toast.success('Cadastro realizado com sucesso!');
           navigate('/profile');
         } else if (data.user) {
-          // Se criou o usuário mas não veio a sessão, tenta fazer login explícito
-          // Isso resolve casos onde o "Confirm Email" está desligado mas o auto-login falha
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          const { data: signInData } = await supabase.auth.signInWithPassword({
             email: formData.email,
             password: formData.password,
           });
 
           if (signInData.session) {
+            toast.success('Cadastro realizado com sucesso!');
             navigate('/profile');
           } else {
-            // Se falhar o login explícito, aí sim assume que precisa confirmar
-            alert('Cadastro realizado! Se necessário, verifique seu email.');
+            toast.success('Cadastro realizado! Se necessário, verifique seu email.');
             setIsLogin(true);
           }
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro. Tente novamente.');
+      toast.error(err.message || 'Ocorreu um erro. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -153,20 +144,6 @@ export default function Login() {
                 : isLogin ? 'Entre para acessar seus pedidos e perfil.' : 'Preencha seus dados para começar.'}
             </p>
           </div>
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl flex items-center gap-3 text-sm">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              {error}
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-4 rounded-xl flex items-center gap-3 text-sm">
-              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-              {successMsg}
-            </div>
-          )}
 
           <form onSubmit={isResettingPassword ? handleResetPassword : handleSubmit} className="space-y-4">
             {!isLogin && !isResettingPassword && (
@@ -227,8 +204,6 @@ export default function Login() {
                   type="button"
                   onClick={() => {
                     setIsResettingPassword(true);
-                    setError(null);
-                    setSuccessMsg(null);
                   }} 
                   className="text-xs font-bold text-gray-500 hover:text-black dark:hover:text-white transition-colors"
                 >
@@ -278,8 +253,6 @@ export default function Login() {
                 <button
                   onClick={() => {
                     setIsResettingPassword(false);
-                    setError(null);
-                    setSuccessMsg(null);
                   }}
                   className="font-bold text-black dark:text-white hover:underline"
                 >
@@ -291,8 +264,6 @@ export default function Login() {
                   <button
                     onClick={() => {
                       setIsLogin(!isLogin);
-                      setError(null);
-                      setSuccessMsg(null);
                     }}
                     className="ml-2 font-bold text-black dark:text-white hover:underline"
                   >
