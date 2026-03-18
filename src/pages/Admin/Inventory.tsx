@@ -53,7 +53,8 @@ export default function AdminInventory() {
     }
   }
 
-  async function updateStockSize(productId: string, size: string, newQuantity: number) {
+  async function updateStockSize(productId: string, size: string, isAvailable: boolean) {
+    const newQuantity = isAvailable ? 999 : 0;
     setSavingStock({ productId, size });
     try {
       const { error } = await supabase
@@ -89,7 +90,7 @@ export default function AdminInventory() {
       setEditingStock(null);
     } catch (error) {
       console.error('Error updating stock size:', error);
-      alert('Erro ao atualizar estoque do tamanho.');
+      alert('Erro ao atualizar disponibilidade do tamanho.');
     } finally {
       setSavingStock(null);
     }
@@ -106,8 +107,8 @@ export default function AdminInventory() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Controle de Estoque</h1>
-          <p className="text-gray-500 text-sm mt-1">Gerencie a quantidade disponível de cada produto.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Controle de Disponibilidade</h1>
+          <p className="text-gray-500 text-sm mt-1">Marque quais tamanhos estão disponíveis para venda.</p>
         </div>
         
         <button 
@@ -142,23 +143,23 @@ export default function AdminInventory() {
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Produto</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Categoria</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs text-right">Preço</th>
-                <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs text-center">Total</th>
+                <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs text-center">Status</th>
                 {sizes.map(size => (
-                  <th key={size} className="px-4 py-4 font-bold text-gray-500 uppercase text-xs text-center w-16">{size}</th>
+                  <th key={size} className="px-4 py-4 font-bold text-gray-500 uppercase text-xs text-center w-24">{size}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={11} className="px-6 py-12 text-center text-gray-500">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
                     Carregando produtos...
                   </td>
                 </tr>
               ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={11} className="px-6 py-12 text-center text-gray-500">
                     Nenhum produto encontrado.
                   </td>
                 </tr>
@@ -187,48 +188,38 @@ export default function AdminInventory() {
                     <td className="px-6 py-4 text-right font-medium text-gray-900">
                       R$ {product.price.toFixed(2).replace('.', ',')}
                     </td>
-                    <td className="px-6 py-4 text-center font-bold">
-                      {product.stock}
+                    <td className="px-6 py-4 text-center">
+                      {product.stock > 0 ? (
+                        <span className="text-green-600 font-bold text-[10px] uppercase tracking-wider bg-green-50 px-2 py-1 rounded">Em Estoque</span>
+                      ) : (
+                        <span className="text-red-600 font-bold text-[10px] uppercase tracking-wider bg-red-50 px-2 py-1 rounded">Esgotado</span>
+                      )}
                     </td>
                     
                     {/* Sizes Columns */}
                     {sizes.map(size => {
                       const stockItem = product.product_stock?.find(s => s.size === size);
-                      const quantity = stockItem?.quantity || 0;
-                      const isEditing = editingStock?.productId === product.id && editingStock?.size === size;
+                      const isAvailable = (stockItem?.quantity || 0) > 0;
                       const isSaving = savingStock?.productId === product.id && savingStock?.size === size;
 
                       return (
                         <td key={size} className="px-4 py-4 text-center">
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              min="0"
-                              className="w-16 text-center border border-gray-300 rounded px-1 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                              value={editingStock.value}
-                              onChange={(e) => setEditingStock({ ...editingStock, value: e.target.value })}
-                              autoFocus
-                              onBlur={() => updateStockSize(product.id, size, parseInt(editingStock.value) || 0)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') updateStockSize(product.id, size, parseInt(editingStock.value) || 0);
-                                if (e.key === 'Escape') setEditingStock(null);
-                              }}
-                            />
-                          ) : (
-                            <button
-                              onClick={() => setEditingStock({ productId: product.id, size, value: quantity.toString() })}
-                              className={cn(
-                                "w-10 h-8 rounded-md text-sm font-medium transition-colors hover:ring-2 hover:ring-gray-200 focus:outline-none focus:ring-2 focus:ring-black relative",
-                                quantity === 0 ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-900"
-                              )}
-                            >
-                              {isSaving ? (
-                                <Loader2 className="w-3 h-3 animate-spin mx-auto" />
-                              ) : (
-                                quantity
-                              )}
-                            </button>
-                          )}
+                          <button
+                            onClick={() => updateStockSize(product.id, size, !isAvailable)}
+                            disabled={isSaving}
+                            className={cn(
+                              "w-full py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                              isAvailable 
+                                ? "bg-black text-white shadow-sm" 
+                                : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                            )}
+                          >
+                            {isSaving ? (
+                              <Loader2 className="w-3 h-3 animate-spin mx-auto" />
+                            ) : (
+                              isAvailable ? 'SIM' : 'NÃO'
+                            )}
+                          </button>
                         </td>
                       );
                     })}

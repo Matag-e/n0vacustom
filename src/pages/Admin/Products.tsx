@@ -33,8 +33,8 @@ export default function AdminProducts() {
     image_back_url: '',
   });
 
-  const [stockData, setStockData] = useState<Record<string, string>>({
-    'P': '0', 'M': '0', 'G': '0', 'GG': '0', 'XG': '0', '2XG': '0', '3XL': '0'
+  const [stockData, setStockData] = useState<Record<string, boolean>>({
+    'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false
   });
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
@@ -79,10 +79,10 @@ export default function AdminProducts() {
       });
 
       // Popular estoque se existir
-      const initialStock: Record<string, string> = {};
+      const initialStock: Record<string, boolean> = {};
       sizes.forEach(size => {
         const item = product.product_stock?.find((s: any) => s.size === size);
-        initialStock[size] = item ? item.quantity.toString() : '0';
+        initialStock[size] = item ? item.quantity > 0 : false;
       });
       setStockData(initialStock);
     } else {
@@ -96,7 +96,7 @@ export default function AdminProducts() {
         image_back_url: '',
       });
       setStockData({
-        'P': '0', 'M': '0', 'G': '0', 'GG': '0', 'XG': '0', '2XG': '0', '3XL': '0'
+        'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false
       });
     }
     setIsModalOpen(true);
@@ -158,10 +158,10 @@ export default function AdminProducts() {
 
       // Salvar Estoque
       if (productId) {
-        const stockItems = Object.entries(stockData).map(([size, quantity]) => ({
+        const stockItems = Object.entries(stockData).map(([size, isAvailable]) => ({
           product_id: productId,
           size,
-          quantity: parseInt(quantity) || 0
+          quantity: isAvailable ? 999 : 0 // Usamos 999 para disponível, 0 para indisponível
         }));
 
         const { error: stockError } = await supabase
@@ -170,7 +170,7 @@ export default function AdminProducts() {
 
         if (stockError) throw stockError;
 
-        // Atualizar estoque total na tabela products
+        // Atualizar estoque total na tabela products (soma das quantidades)
         const totalStock = stockItems.reduce((acc, curr) => acc + curr.quantity, 0);
         await supabase.from('products').update({ stock: totalStock }).eq('id', productId);
       }
@@ -385,20 +385,26 @@ export default function AdminProducts() {
               <div className="mt-8 pt-8 border-t border-gray-100">
                 <h4 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                   <Package className="w-4 h-4" />
-                  Estoque por Tamanho
+                  Disponibilidade por Tamanho
                 </h4>
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
                   {sizes.map(size => (
-                    <div key={size} className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase block text-center">{size}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={stockData[size]}
-                        onChange={e => setStockData({ ...stockData, [size]: e.target.value })}
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-lg px-2 py-2 text-center text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
-                      />
-                    </div>
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setStockData({ ...stockData, [size]: !stockData[size] })}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-1",
+                        stockData[size]
+                          ? "border-black bg-black text-white"
+                          : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200"
+                      )}
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest">{size}</span>
+                      <span className="text-[8px] font-bold uppercase opacity-60">
+                        {stockData[size] ? 'Disponível' : 'Esgotado'}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
