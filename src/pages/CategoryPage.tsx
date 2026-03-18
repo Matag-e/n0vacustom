@@ -113,7 +113,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     fetchProducts();
   }, [category, sortBy, priceRange]);
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG'];
+  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
 
   const toggleSize = (size: string) => {
     setSelectedSizes(prev => 

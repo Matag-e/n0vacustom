@@ -20,7 +20,7 @@ export default function ProductDetails() {
   const [stockBySize, setStockBySize] = useState<Record<string, number>>({});
   const { addToCart } = useCart();
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG'];
+  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
 
   useEffect(() => {
     async function fetchProduct() {
@@ -131,6 +131,16 @@ export default function ProductDetails() {
                   <td className="px-4 py-3 font-medium">XG</td>
                   <td className="px-4 py-3 text-gray-500">60 cm</td>
                   <td className="px-4 py-3 text-gray-500">77 cm</td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium">2XG</td>
+                  <td className="px-4 py-3 text-gray-500">62 cm</td>
+                  <td className="px-4 py-3 text-gray-500">79 cm</td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium">3XL</td>
+                  <td className="px-4 py-3 text-gray-500">64 cm</td>
+                  <td className="px-4 py-3 text-gray-500">81 cm</td>
                 </tr>
               </tbody>
             </table>

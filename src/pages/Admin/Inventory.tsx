@@ -100,7 +100,7 @@ export default function AdminInventory() {
     product.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG'];
+  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
 
   return (
     <div className="space-y-8">
