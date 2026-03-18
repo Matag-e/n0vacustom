@@ -153,6 +153,16 @@ export function Navigation() {
               >
                 Personalização
               </Link>
+
+              <Link
+                to="/contato"
+                className={cn(
+                  "font-medium transition-colors hover:opacity-80 text-sm uppercase tracking-wide",
+                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary"
+                )}
+              >
+                Contato
+              </Link>
             </div>
 
             {/* Icons (Right) */}
@@ -257,6 +267,14 @@ export function Navigation() {
               onClick={() => setIsOpen(false)}
             >
               Restauração
+            </Link>
+
+            <Link
+              to="/contato"
+              className="block px-4 py-3 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+              onClick={() => setIsOpen(false)}
+            >
+              Contato
             </Link>
             
             <div className="border-t border-gray-100 pt-4 mt-2">

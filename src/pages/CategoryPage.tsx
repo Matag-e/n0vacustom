@@ -14,6 +14,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
   const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Filter states
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
@@ -23,14 +24,12 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     async function fetchProducts() {
       setLoading(true);
       try {
-        let query = supabase.from('products').select('*');
+        // Fetch products with their stock info
+        let query = supabase
+          .from('products')
+          .select('*, product_stock(*)');
         
-        // Ajuste na query inicial para não limitar demais antes do filtro JS
-        // Se for "clubes", queremos buscar tudo que NÃO é seleção e NÃO é retro, mas o ilike 'clubes' pode ser restritivo demais se o produto não tiver a palavra "clubes"
-        // Então, para categorias complexas, melhor buscar tudo e filtrar no JS (já que o banco é pequeno por enquanto)
-        if (category === 'clubes' || category === 'selecoes') {
-           query = supabase.from('products').select('*');
-        } else if (category) {
+        if (category && category !== 'clubes' && category !== 'selecoes' && category !== 'retro' && category !== 'nacional' && category !== 'internacional') {
            query = query.ilike('category', `%${category}%`);
         }
 
@@ -38,61 +37,66 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
 
         if (error) throw error;
 
-        if (data) {let filteredData = [...data];
+        if (data) {
+          let filteredData = [...data];
 
-          // Apply client-side filtering for price
-          filteredData = filteredData.filter(p => p.price <= priceRange[1]);
+          // 1. Search Filter (by Name or Description)
+          if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            filteredData = filteredData.filter(p => 
+              p.name.toLowerCase().includes(term) || 
+              (p.description || '').toLowerCase().includes(term)
+            );
+          }
+
+          // 2. Price Filter
+          filteredData = filteredData.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
           
-          // Lógica de Filtragem de Categorias
+          // 3. Size Filter (Only products that have at least one of the selected sizes with quantity > 0)
+          if (selectedSizes.length > 0) {
+            filteredData = filteredData.filter(p => {
+              const stock = p.product_stock || [];
+              return selectedSizes.some(size => 
+                stock.some((s: any) => s.size === size && s.quantity > 0)
+              );
+            });
+          }
+          
+          // 4. Category Logic (Keep existing logic but refine)
           if (category === 'clubes') {
-             // Clubes: Tudo que NÃO é "seleção" e NÃO é "retro"
              filteredData = filteredData.filter(p => {
                const cat = (p.category || '').toLowerCase();
                const name = p.name.toLowerCase();
-               // Se tiver "seleção" ou "retro" ou "portugal" (ou outros países) no nome ou categoria, NÃO é clube
                const isSelecao = cat.includes('seleção') || cat.includes('selecao') || name.includes('seleção') || name.includes('selecao') || name.includes('portugal') || name.includes('brasil') || name.includes('argentina') || name.includes('frança') || name.includes('alemanha') || name.includes('espanha') || name.includes('inglaterra') || name.includes('itália');
                const isRetro = cat.includes('retro') || name.includes('retro');
                const isCustom = cat.includes('custom');
                return !isSelecao && !isRetro && !isCustom;
              });
           } else if (category === 'selecoes') {
-             // Seleções: Tudo que TEM "seleção" no nome ou categoria OU categoria é "selecoes" (sem acento) OU nomes de países comuns
              filteredData = filteredData.filter(p => {
                const cat = (p.category || '').toLowerCase();
                const name = p.name.toLowerCase();
                return cat.includes('seleção') || cat.includes('selecao') || name.includes('seleção') || name.includes('selecao') || cat === 'selecoes' || name.includes('portugal') || name.includes('brasil') || name.includes('argentina') || name.includes('frança') || name.includes('alemanha') || name.includes('espanha') || name.includes('inglaterra') || name.includes('itália');
              });
           } else if (category === 'retro') {
-             // Retrô: Tudo que TEM "retro" no nome ou categoria
              filteredData = filteredData.filter(p => {
                const cat = (p.category || '').toLowerCase();
                const name = p.name.toLowerCase();
                return cat.includes('retro') || name.includes('retro');
              });
           } else if (category === 'nacional') {
-             // Nacionais: Tem "brasileirão" ou "nacional" ou times brasileiros conhecidos (simplificado)
-             // Assumindo que produtos nacionais tenham categoria 'nacional' ou 'brasileirão'
              filteredData = filteredData.filter(p => {
                const cat = (p.category || '').toLowerCase();
                return cat.includes('nacional') || cat.includes('brasileirão');
              });
           } else if (category === 'internacional') {
-             // Internacionais: Categoria contém internacional ou ligas europeias
              filteredData = filteredData.filter(p => {
                const cat = (p.category || '').toLowerCase();
                return cat.includes('internacional') || cat.includes('europeu');
              });
-          } else if (category) {
-             // Outras categorias genéricas
-             filteredData = filteredData.filter(p => 
-               (p.category || '').toLowerCase().includes(category.toLowerCase())
-             );
           }
-          // if (selectedSizes.length > 0) {
-          //   filteredData = filteredData.filter(p => p.sizes && selectedSizes.some(s => p.sizes.includes(s)));
-          // }
 
-          // Apply client-side sorting
+          // 5. Sorting
           if (sortBy === 'newest') {
             filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           } else if (sortBy === 'price-asc') {
@@ -111,7 +115,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     }
 
     fetchProducts();
-  }, [category, sortBy, priceRange]);
+  }, [category, sortBy, priceRange, selectedSizes, searchTerm]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
 
@@ -138,7 +142,9 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Buscar..." 
+                placeholder="Buscar por nome..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full md:w-64 pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-zinc-900 border border-transparent focus:border-black dark:focus:border-white rounded-lg text-sm transition-all outline-none"
               />
             </div>
@@ -237,11 +243,27 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-gray-50 dark:bg-zinc-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
+                <Search className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Nenhum produto encontrado</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Tente ajustar seus filtros ou buscar por outro termo.</p>
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setPriceRange([0, 1000]);
+                    setSelectedSizes([]);
+                  }}
+                  className="mt-6 text-primary font-bold uppercase text-xs tracking-widest border-b border-primary pb-1 hover:opacity-80 transition-opacity"
+                >
+                  Limpar todos os filtros
+                </button>
               </div>
             )}
           </div>

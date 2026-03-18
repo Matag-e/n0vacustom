@@ -12,6 +12,7 @@ import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
 import CategoryPage from '@/pages/CategoryPage';
 import FAQ from '@/pages/FAQ';
+import Contact from '@/pages/Contact';
 import Restoration from '@/pages/Restoration';
 import Shipping from '@/pages/Shipping';
 import Returns from '@/pages/Returns';
@@ -52,6 +53,7 @@ function App() {
                     <Route path="/envio-e-entrega" element={<Shipping />} />
                     <Route path="/trocas-e-devolucoes" element={<Returns />} />
                     <Route path="/faq" element={<FAQ />} />
+                    <Route path="/contato" element={<Contact />} />
                     
                     {/* Category Routes */}
                     <Route path="/clubes" element={<CategoryPage title="Clubes" category="clubes" />} />
