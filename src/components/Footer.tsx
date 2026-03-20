@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Mail, ArrowRight, CreditCard, Landmark, QrCode } from 'lucide-react';
+import { Instagram, Mail, ArrowRight, CreditCard, Landmark, QrCode, Music2 } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -15,14 +15,11 @@ export function Footer() {
               A NovaCustom é a sua loja premium de mantos exclusivos. Qualidade tailandesa 1:1, personalização oficial e a paixão pelo futebol em cada detalhe.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="w-9 h-9 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+              <a href="https://www.instagram.com/n0vacustom" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
-                <Twitter className="w-4 h-4" />
+              <a href="https://www.tiktok.com/@n0vacustom" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-gray-50 dark:bg-zinc-900 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+                <Music2 className="w-4 h-4" />
               </a>
             </div>
           </div>
