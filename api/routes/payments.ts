@@ -107,9 +107,9 @@ router.post('/create-preference', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Configuração do Mercado Pago incompleta no servidor.' });
     }
 
-    const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
-    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5174')
-    const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
+    const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('novacustom.com.br')
+    const origin = isProduction ? 'https://www.novacustom.com.br' : (req.headers.origin || 'http://localhost:5174')
+    const notification_url = 'https://www.novacustom.com.br/api/payments/webhook'
     
     console.log('[MP] Origin detectada:', origin)
 
@@ -350,9 +350,9 @@ router.post('/process-payment', async (req: Request, res: Response) => {
     const client = getMPClient()
     const payment = new Payment(client)
 
-    const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
-    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5174')
-    const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
+    const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('novacustom.com.br')
+    const origin = isProduction ? 'https://www.novacustom.com.br' : (req.headers.origin || 'http://localhost:5174')
+    const notification_url = 'https://www.novacustom.com.br/api/payments/webhook'
 
     if (paymentMethod === 'pix') {
       console.log('[MP] Iniciando pagamento PIX direto para Order:', orderId);
