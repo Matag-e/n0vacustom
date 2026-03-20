@@ -23,7 +23,7 @@ const categories = [
     id: 3,
     title: "PERSONALIZADOS",
     subtitle: "Do Seu Jeito",
-    image: "/personalizados.jpg.jpeg",
+    image: "/personalizados.jpeg",
     link: "/personalizados",
     size: "normal"
   },
