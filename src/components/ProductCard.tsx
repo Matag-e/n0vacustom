@@ -16,6 +16,7 @@ export interface Product {
   league?: string | null;
   year?: string | null;
   stock?: number;
+  sales_count?: number;
   product_stock?: any[];
   created_at: string;
 }

@@ -40,7 +40,7 @@ export function Navigation() {
     { name: 'Clubes', path: '/clubes' },
     { name: 'Seleções', path: '/selecoes' },
     { name: 'Retrô', path: '/retro' },
-    { name: 'Artes Custom', path: '/artes-custom' },
+    { name: 'Personalizados', path: '/personalizados' },
   ];
 
   return (

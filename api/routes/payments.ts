@@ -284,6 +284,21 @@ router.post('/webhook', async (req: Request, res: Response) => {
         } else {
           console.log(`[Webhook] Pedido ${orderId} marcado como PAGO com sucesso.`)
 
+          // --- Incrementar Contador de Vendas dos Produtos ---
+          try {
+            const { error: salesError } = await supabase.rpc('increment_product_sales', { 
+              order_uuid: orderId 
+            })
+            if (salesError) {
+              console.error('[Webhook] Erro ao incrementar vendas:', salesError)
+            } else {
+              console.log('[Webhook] Contador de vendas atualizado para o pedido:', orderId)
+            }
+          } catch (salesErr) {
+            console.error('[Webhook] Falha crítica ao incrementar vendas:', salesErr)
+          }
+          // --------------------------------------------------
+
           // --- Envio de E-mail de Pagamento Aprovado ---
           try {
             if (currentOrder.email && process.env.RESEND_API_KEY && !currentOrder.email_payment_confirmed_sent) {

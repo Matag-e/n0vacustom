@@ -35,12 +35,12 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     async function fetchProducts() {
       setLoading(true);
       try {
-        // Fetch products with their stock info
+        // Fetch products with their stock info and reviews for "mais-vendidos"
         let query = supabase
           .from('products')
-          .select('*, product_stock(*)');
+          .select('*, product_stock(*), reviews(*)');
         
-        if (category && category !== 'clubes' && category !== 'selecoes' && category !== 'retro' && category !== 'nacional' && category !== 'internacional') {
+        if (category && !['clubes', 'selecoes', 'retro', 'artes-custom', 'personalizados', 'lancamentos', 'mais-vendidos'].includes(category)) {
            query = query.ilike('category', `%${category}%`);
         }
 
@@ -96,7 +96,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                const name = p.name.toLowerCase();
                const isSelecao = cat.includes('seleção') || cat.includes('selecao') || name.includes('seleção') || name.includes('selecao') || name.includes('portugal') || name.includes('brasil') || name.includes('argentina') || name.includes('frança') || name.includes('alemanha') || name.includes('espanha') || name.includes('inglaterra') || name.includes('itália');
                const isRetro = cat.includes('retro') || name.includes('retro');
-               const isCustom = cat.includes('custom');
+               const isCustom = cat.includes('custom') || cat.includes('personalizado');
                return !isSelecao && !isRetro && !isCustom;
              });
           } else if (category === 'selecoes') {
@@ -111,15 +111,30 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                const name = p.name.toLowerCase();
                return cat.includes('retro') || name.includes('retro');
              });
+          } else if (category === 'artes-custom' || category === 'personalizados') {
+             filteredData = filteredData.filter(p => {
+               const cat = (p.category || '').toLowerCase();
+               const name = p.name.toLowerCase();
+               return cat.includes('custom') || cat.includes('personalizado') || name.includes('custom') || name.includes('personalizado');
+             });
+          } else if (category === 'lancamentos') {
+             const threeDaysAgo = new Date();
+             threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+             filteredData = filteredData.filter(p => new Date(p.created_at) >= threeDaysAgo);
+          } else if (category === 'mais-vendidos') {
+             filteredData = filteredData.filter(p => (p.sales_count || 0) > 0 || (p.reviews?.length || 0) > 0);
+             filteredData.sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0));
           }
 
-          // 7. Sorting
-          if (sortBy === 'newest') {
-            filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          } else if (sortBy === 'price-asc') {
-            filteredData.sort((a, b) => a.price - b.price);
-          } else if (sortBy === 'price-desc') {
-            filteredData.sort((a, b) => b.price - a.price);
+          // 7. Sorting (Override if not already sorted by category logic)
+          if (category !== 'mais-vendidos') {
+            if (sortBy === 'newest') {
+              filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            } else if (sortBy === 'price-asc') {
+              filteredData.sort((a, b) => a.price - b.price);
+            } else if (sortBy === 'price-desc') {
+              filteredData.sort((a, b) => b.price - a.price);
+            }
           }
 
           setProducts(filteredData);

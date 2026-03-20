@@ -17,6 +17,7 @@ interface Product {
   country?: string;
   league?: string;
   year?: string;
+  sales_count?: number;
   product_stock?: {
     size: string;
     quantity: number;

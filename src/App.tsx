@@ -115,10 +115,9 @@ function App() {
                     <Route path="/clubes" element={<CategoryPage title="Clubes" category="clubes" />} />
                     <Route path="/selecoes" element={<CategoryPage title="Seleções" category="selecoes" />} />
                     <Route path="/retro" element={<CategoryPage title="Retrô" category="retro" />} />
-                    <Route path="/artes-custom" element={<CategoryPage title="Artes Custom" category="artes-custom" />} />
-                    <Route path="/lancamentos" element={<CategoryPage title="Lançamentos" />} />
-                    <Route path="/mais-vendidos" element={<CategoryPage title="Mais Vendidos" />} />
-                    <Route path="/personalizados" element={<CategoryPage title="Personalizados" />} />
+                    <Route path="/personalizados" element={<CategoryPage title="Personalizados" category="personalizados" />} />
+                    <Route path="/lancamentos" element={<CategoryPage title="Lançamentos" category="lancamentos" />} />
+                    <Route path="/mais-vendidos" element={<CategoryPage title="Mais Vendidos" category="mais-vendidos" />} />
                     
                     {/* 404 Catch-all */}
                     <Route path="*" element={<NotFound />} />
