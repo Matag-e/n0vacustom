@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { Navigation } from '@/components/Navigation';
@@ -55,6 +56,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Toaster position="top-center" richColors />
+          <Analytics />
           <Router>
             <ScrollToTop />
           <Routes>
