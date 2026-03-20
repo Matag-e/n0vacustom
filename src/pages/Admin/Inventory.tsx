@@ -4,6 +4,7 @@ import {
   Package, Search, Save, AlertTriangle, CheckCircle2, Loader2, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -47,7 +48,7 @@ export default function AdminInventory() {
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      alert('Erro ao carregar produtos.');
+      toast.error('Erro ao carregar produtos.');
     } finally {
       setLoading(false);
     }
@@ -88,9 +89,10 @@ export default function AdminInventory() {
       }));
 
       setEditingStock(null);
+      toast.success('Estoque atualizado!');
     } catch (error) {
       console.error('Error updating stock size:', error);
-      alert('Erro ao atualizar disponibilidade do tamanho.');
+      toast.error('Erro ao atualizar disponibilidade.');
     } finally {
       setSavingStock(null);
     }

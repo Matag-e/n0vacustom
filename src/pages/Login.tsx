@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -11,6 +11,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/profile';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -66,7 +68,7 @@ export default function Login() {
           throw error;
         }
         toast.success('Login realizado com sucesso!');
-        navigate('/profile');
+        navigate(redirectTo);
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
@@ -82,16 +84,16 @@ export default function Login() {
         
         if (data.session) {
           toast.success('Cadastro realizado com sucesso!');
-          navigate('/profile');
+          navigate(redirectTo);
         } else if (data.user) {
           const { data: signInData } = await supabase.auth.signInWithPassword({
             email: formData.email,
             password: formData.password,
           });
-
+          
           if (signInData.session) {
             toast.success('Cadastro realizado com sucesso!');
-            navigate('/profile');
+            navigate(redirectTo);
           } else {
             toast.success('Cadastro realizado! Se necessário, verifique seu email.');
             setIsLogin(true);
@@ -200,15 +202,12 @@ export default function Login() {
 
             {!isResettingPassword && isLogin && (
               <div className="flex justify-end">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setIsResettingPassword(true);
-                  }} 
+                <Link 
+                  to="/forgot-password"
                   className="text-xs font-bold text-gray-500 hover:text-black dark:hover:text-white transition-colors"
                 >
                   Esqueceu a senha?
-                </button>
+                </Link>
               </div>
             )}
 

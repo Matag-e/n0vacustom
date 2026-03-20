@@ -1,5 +1,6 @@
-import { X, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, LogIn } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
@@ -11,6 +12,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { items, removeFromCart, updateQuantity, totalPrice } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +42,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const handleCheckout = () => {
     onClose();
-    navigate('/checkout');
+    if (user) {
+      navigate('/checkout');
+    } else {
+      navigate('/login?redirect=/checkout');
+    }
   };
 
   return (
@@ -100,29 +106,29 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             items.map((item) => (
               <div key={item.id} className="flex gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="w-20 h-24 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700 overflow-hidden flex-shrink-0">
-                  <img src={item.product.image_url || ''} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal" />
+                  <img src={item.product?.image_url || ''} alt={item.product?.name} className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal" />
                 </div>
                 <div className="flex-1 flex flex-col justify-between py-1">
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{item.product.name}</h3>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{item.product?.name}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tamanho: {item.size}</p>
-                    {(item.customName || item.customNumber) && (
-                       <p className="text-[10px] text-gray-400 mt-0.5">
-                         Personalizado: {item.customNumber} - {item.customName}
+                    {item.isCustomized && (
+                       <p className="text-[10px] text-primary font-bold mt-0.5 uppercase">
+                         Personalizado: {item.customName} {item.customNumber && `#${item.customNumber}`}
                        </p>
                     )}
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center border border-gray-200 dark:border-zinc-700 rounded-lg">
                       <button 
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
                         className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-l-lg transition-colors"
                       >
                         -
                       </button>
                       <span className="w-8 text-center text-xs font-bold text-gray-900 dark:text-white">{item.quantity}</span>
                       <button 
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
                         className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-r-lg transition-colors"
                       >
                         +
@@ -130,7 +136,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        R$ {(item.product.price * item.quantity).toFixed(2).replace('.', ',')}
+                        R$ {((item.product?.price || 0 + (item.isCustomized ? 30 : 0)) * (item.quantity || 0)).toFixed(2).replace('.', ',')}
                       </span>
                       <button 
                         onClick={() => removeFromCart(item.id)}
@@ -163,8 +169,17 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               onClick={handleCheckout}
               className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 group"
             >
-              Finalizar Compra
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {user ? (
+                <>
+                  Finalizar Compra
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              ) : (
+                <>
+                  Login para Finalizar
+                  <LogIn className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
             <button 
               onClick={() => {

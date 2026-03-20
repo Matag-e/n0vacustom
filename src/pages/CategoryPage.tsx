@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
+import { ProductCardSkeleton } from '@/components/Skeleton';
 import { Filter, ChevronDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
   // Filter states
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [inStockOnly, setInStockOnly] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -52,7 +54,12 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
           // 2. Price Filter
           filteredData = filteredData.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
           
-          // 3. Size Filter (Only products that have at least one of the selected sizes with quantity > 0)
+          // 3. Availability Filter
+          if (inStockOnly) {
+            filteredData = filteredData.filter(p => (p.stock || 0) > 0);
+          }
+          
+          // 4. Size Filter (Only products that have at least one of the selected sizes with quantity > 0)
           if (selectedSizes.length > 0) {
             filteredData = filteredData.filter(p => {
               const stock = p.product_stock || [];
@@ -227,6 +234,22 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                 ))}
               </div>
             </div>
+
+            {/* Availability Filter */}
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Disponibilidade</h3>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input 
+                  type="checkbox" 
+                  checked={inStockOnly}
+                  onChange={(e) => setInStockOnly(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 dark:border-zinc-800 text-black dark:text-white focus:ring-black dark:focus:ring-white"
+                />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  Apenas em estoque
+                </span>
+              </label>
+            </div>
           </aside>
 
           {/* Product Grid */}
@@ -234,13 +257,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-zinc-900 animate-pulse h-[400px]">
-                    <div className="bg-gray-200 dark:bg-zinc-800 h-[300px] w-full mb-4"></div>
-                    <div className="px-2 space-y-3">
-                      <div className="bg-gray-200 dark:bg-zinc-800 h-4 w-3/4"></div>
-                      <div className="bg-gray-200 dark:bg-zinc-800 h-3 w-1/4"></div>
-                    </div>
-                  </div>
+                  <ProductCardSkeleton key={i} />
                 ))}
               </div>
             ) : products.length > 0 ? (
@@ -259,6 +276,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                     setSearchTerm('');
                     setPriceRange([0, 1000]);
                     setSelectedSizes([]);
+                    setInStockOnly(false);
                   }}
                   className="mt-6 text-primary font-bold uppercase text-xs tracking-widest border-b border-primary pb-1 hover:opacity-80 transition-opacity"
                 >

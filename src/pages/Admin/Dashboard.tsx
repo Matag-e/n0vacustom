@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -77,7 +78,7 @@ export default function AdminDashboard() {
       setOrders(data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      alert('Erro ao carregar pedidos.');
+      toast.error('Erro ao carregar pedidos.');
     } finally {
       setLoading(false);
     }
@@ -93,9 +94,10 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      toast.success('Status atualizado!');
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Erro ao atualizar status.');
+      toast.error('Erro ao atualizar status.');
     }
   }
 
@@ -109,10 +111,10 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       setOrders(orders.map(o => o.id === orderId ? { ...o, tracking_code: code } : o));
-      alert('Código de rastreio salvo!');
+      toast.success('Código de rastreio salvo!');
     } catch (error) {
       console.error('Error updating tracking:', error);
-      alert('Erro ao salvar código.');
+      toast.error('Erro ao salvar código.');
     }
   }
 
@@ -125,7 +127,7 @@ Bairro: ${order.district}
 Cidade: ${order.city} - ${order.state}`;
     
     navigator.clipboard.writeText(text);
-    alert('Endereço copiado para a área de transferência!');
+    toast.success('Endereço copiado!');
   };
 
   const printDeclaration = (order: Order) => {
@@ -203,7 +205,7 @@ Cidade: ${order.city} - ${order.state}`;
     const paidOrders = orders.filter(o => o.status === 'paid');
     
     if (paidOrders.length === 0) {
-      alert('Nenhum pedido pago encontrado para exportar.');
+      toast.error('Nenhum pedido pago encontrado para exportar.');
       return;
     }
 

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Star, User, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Review {
   id: string;
@@ -55,7 +56,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   async function handleSubmitReview(e: React.FormEvent) {
     e.preventDefault();
-    if (!user) return alert('Faça login para avaliar.');
+    if (!user) {
+      toast.error('Faça login para avaliar.');
+      return;
+    }
     
     setSubmitting(true);
     try {
@@ -74,9 +78,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       setNewComment('');
       setNewRating(5);
       fetchReviews(); // Recarrega a lista
+      toast.success('Avaliação enviada com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar avaliação:', error);
-      alert('Erro ao enviar avaliação. Tente novamente.');
+      toast.error('Erro ao enviar avaliação. Tente novamente.');
     } finally {
       setSubmitting(false);
     }

@@ -4,6 +4,7 @@ import {
   Plus, Search, Edit2, Trash2, X, Upload, Save, Loader2, Package, Image as ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -116,9 +117,10 @@ export default function AdminProducts() {
 
       if (error) throw error;
       setProducts(products.filter(p => p.id !== id));
+      toast.success('Produto excluído com sucesso!');
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Erro ao excluir produto.');
+      toast.error('Erro ao excluir produto.');
     }
   };
 
@@ -177,9 +179,10 @@ export default function AdminProducts() {
 
       setIsModalOpen(false);
       fetchProducts();
+      toast.success(editingProduct ? 'Produto atualizado!' : 'Produto criado!');
     } catch (error: any) {
       console.error('Error saving product:', error);
-      alert('Erro ao salvar produto: ' + (error.message || 'Erro desconhecido'));
+      toast.error('Erro ao salvar produto: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsSaving(false);
     }

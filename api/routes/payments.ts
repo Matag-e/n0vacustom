@@ -6,43 +6,46 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { z } from 'zod'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-dotenv.config({ path: path.join(__dirname, '../../.env') })
-
-const router = Router()
-
-// Schemas de Validação (Zod)
+// Validation Schemas
 const CreatePreferenceSchema = z.object({
   items: z.array(z.object({
     product: z.object({
       id: z.string(),
       name: z.string(),
-      price: z.number().positive(),
-    }).optional(),
-    quantity: z.number().int().positive(),
-  })).optional(),
-  orderId: z.string().uuid(),
+      price: z.number(),
+    }),
+    quantity: z.number().min(1),
+  })).min(1),
+  orderId: z.string().or(z.number()),
   totalAmount: z.number().positive(),
-  paymentMethod: z.enum(['pix', 'credit_card', 'ticket']).optional(),
-});
+  paymentMethod: z.enum(['pix', 'mercadopago']),
+})
 
 const ProcessPaymentSchema = z.object({
   totalAmount: z.number().positive(),
-  paymentMethod: z.enum(['pix', 'credit_card', 'ticket']),
+  paymentMethod: z.literal('pix'),
+  orderId: z.string().or(z.number()),
   payer: z.object({
     email: z.string().email(),
-    firstName: z.string(),
+    firstName: z.string().min(1),
     lastName: z.string().optional(),
     cpf: z.string().min(11),
   }),
-  orderId: z.string().uuid(),
-});
+})
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+dotenv.config({ path: path.join(__dirname, '../../.env') })
+
+console.log('[MP] Carregando variáveis de ambiente...');
+console.log('[MP] VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Definida' : 'NÃO DEFINIDA');
+
+const router = Router()
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+  process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'placeholder'
 )
 
 // Inicializamos o cliente dentro da rota ou usamos uma função para garantir que pegue o valor atual do process.env
@@ -53,17 +56,41 @@ const getMPClient = () => {
   })
 }
 
+/**
+ * @swagger
+ * /api/payments/create-preference:
+ *   post:
+ *     summary: Cria uma preferência de pagamento no Mercado Pago
+ *     tags: [Payments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [items, orderId, totalAmount, paymentMethod]
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               orderId:
+ *                 type: string
+ *               totalAmount:
+ *                 type: number
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [pix, mercadopago]
+ *     responses:
+ *       200:
+ *         description: Preferência criada com sucesso
+ *       400:
+ *         description: Dados inválidos
+ */
 router.post('/create-preference', async (req: Request, res: Response) => {
   try {
-    // Validar Payload
-    const validation = CreatePreferenceSchema.safeParse(req.body);
-    
-    if (!validation.success) {
-      console.error('[MP] Payload inválido:', validation.error.errors);
-      return res.status(400).json({ error: 'Dados inválidos.', details: validation.error.errors });
-    }
-
-    const { items, orderId, totalAmount, paymentMethod } = validation.data
+    const validatedData = CreatePreferenceSchema.parse(req.body)
+    const { items, orderId, totalAmount, paymentMethod } = validatedData
 
     console.log('[MP] Recebendo pedido de preferência:', {
       orderId,
@@ -81,22 +108,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
     }
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
-    
-    let origin = req.headers.origin;
-    
-    if (!origin && req.headers.referer) {
-      try {
-        const url = new URL(req.headers.referer);
-        origin = `${url.protocol}//${url.host}`;
-      } catch (e) {
-        console.warn('[MP] Invalid referer:', req.headers.referer);
-      }
-    }
-
-    if (!origin) {
-       origin = isProduction ? 'https://novacustom.vercel.app' : 'http://localhost:5173';
-    }
-    
+    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5174')
     const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
     
     console.log('[MP] Origin detectada:', origin)
@@ -172,7 +184,14 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 })
 
 /**
- * Webhook do Mercado Pago (IPN / Webhooks)
+ * @swagger
+ * /api/payments/webhook:
+ *   post:
+ *     summary: Webhook para receber notificações de pagamento do Mercado Pago
+ *     tags: [Payments]
+ *     responses:
+ *       200:
+ *         description: OK
  */
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
@@ -193,10 +212,6 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     if (paymentId) {
       console.log(`Processing Webhook for Payment ID: ${paymentId}`)
-      
-      // Validação de Segurança: Verificar se a notificação é genuína consultando a API
-      // O MP recomenda validar a assinatura do header x-signature, mas consultar a API também é seguro
-      
       const client = getMPClient()
       const payment = new Payment(client)
 
@@ -217,58 +232,51 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
       const orderId = paymentData.external_reference
       const status = paymentData.status
+      const statusDetail = paymentData.status_detail
 
-      console.log(`[Webhook] Processando Pagamento: ID=${paymentId}, Status=${status}, Pedido=${orderId}`)
+      console.log(`[Webhook] Processando Pagamento: ID=${paymentId}, Status=${status}, Detail=${statusDetail}, Pedido=${orderId}`)
 
       if (status === 'approved') {
+        if (!orderId) {
+          console.error('[Webhook] Erro: external_reference (orderId) não encontrado no pagamento MP')
+          return res.status(200).send('OK')
+        }
+
         // Buscar status atual para não sobrescrever 'shipped' ou 'completed'
-        const { data: currentOrder } = await supabase
+        const { data: currentOrder, error: fetchError } = await supabase
           .from('orders')
           .select('status, payment_method')
           .eq('id', orderId)
-          .single()
+          .maybeSingle()
 
-        if (currentOrder && (currentOrder.status === 'shipped' || currentOrder.status === 'completed')) {
-          console.log(`[Webhook] Pedido ${orderId} já está ${currentOrder.status}. Pulando atualização para 'paid'.`)
+        if (fetchError) {
+          console.error('[Webhook] Erro ao buscar pedido no Supabase:', fetchError)
+          return res.status(200).send('OK')
+        }
+
+        if (!currentOrder) {
+          console.error(`[Webhook] Erro: Pedido ${orderId} não encontrado no banco de dados`)
+          return res.status(200).send('OK')
+        }
+
+        if (currentOrder.status === 'shipped' || currentOrder.status === 'completed' || currentOrder.status === 'paid') {
+          console.log(`[Webhook] Pedido ${orderId} já está ${currentOrder.status}. Pulando atualização.`)
           return res.status(200).send('OK')
         }
 
         // Atualizar pedido no Supabase para 'paid'
         const { error: updateError } = await supabase
           .from('orders')
-          .update({ status: 'paid' })
+          .update({ 
+            status: 'paid',
+            updated_at: new Date().toISOString()
+          })
           .eq('id', orderId)
 
         if (updateError) {
           console.error('[Webhook] Erro ao atualizar status no Supabase:', updateError)
         } else {
-          console.log(`[Webhook] Pedido ${orderId} marcado como PAGO.`)
-          
-          // BAIXA DE ESTOQUE AUTOMÁTICA
-          console.log(`[Webhook] Iniciando baixa de estoque para o pedido ${orderId}...`)
-          const { data: orderItems, error: itemsError } = await supabase
-            .from('order_items')
-            .select('product_id, quantity')
-            .eq('order_id', orderId)
-
-          if (itemsError) {
-            console.error('[Webhook] Erro ao buscar itens para baixa de estoque:', itemsError)
-          } else if (orderItems) {
-            for (const item of orderItems) {
-              if (!item.product_id) continue;
-              
-              const { error: stockError } = await supabase.rpc('decrement_stock', {
-                p_id: item.product_id,
-                amount: item.quantity
-              })
-              
-              if (stockError) {
-                console.error(`[Webhook] Erro ao baixar estoque do produto ${item.product_id}:`, stockError)
-              } else {
-                console.log(`[Webhook] Estoque baixado: Produto ${item.product_id}, Qtd ${item.quantity}`)
-              }
-            }
-          }
+          console.log(`[Webhook] Pedido ${orderId} marcado como PAGO com sucesso.`)
         }
       } else if (status === 'rejected' || status === 'cancelled') {
         // Só cancela se ainda estiver pendente
@@ -289,17 +297,40 @@ router.post('/webhook', async (req: Request, res: Response) => {
   }
 })
 
+/**
+ * @swagger
+ * /api/payments/process-payment:
+ *   post:
+ *     summary: Processa um pagamento PIX direto (Checkout Transparente)
+ *     tags: [Payments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [totalAmount, paymentMethod, payer, orderId]
+ *             properties:
+ *               totalAmount:
+ *                 type: number
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [pix]
+ *               orderId:
+ *                 type: string
+ *               payer:
+ *                 type: object
+ *                 required: [email, firstName, cpf]
+ *     responses:
+ *       200:
+ *         description: Pagamento criado, retorna dados do PIX
+ *       400:
+ *         description: Dados inválidos
+ */
 router.post('/process-payment', async (req: Request, res: Response) => {
   try {
-    // Validar Payload
-    const validation = ProcessPaymentSchema.safeParse(req.body);
-    
-    if (!validation.success) {
-      console.error('[MP] Payload de pagamento inválido:', validation.error.errors);
-      return res.status(400).json({ error: 'Dados de pagamento inválidos.', details: validation.error.errors });
-    }
-
-    const { totalAmount, paymentMethod, payer, orderId } = validation.data
+    const validatedData = ProcessPaymentSchema.parse(req.body)
+    const { totalAmount, paymentMethod, payer, orderId } = validatedData
 
     // Garantir que o valor seja um número válido e arredondado
     const cleanAmount = Number(Number(totalAmount).toFixed(2));
@@ -320,22 +351,7 @@ router.post('/process-payment', async (req: Request, res: Response) => {
     const payment = new Payment(client)
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('vercel.app')
-    
-    let origin = req.headers.origin;
-    
-    if (!origin && req.headers.referer) {
-      try {
-        const url = new URL(req.headers.referer);
-        origin = `${url.protocol}//${url.host}`;
-      } catch (e) {
-        console.warn('[MP] Invalid referer:', req.headers.referer);
-      }
-    }
-
-    if (!origin) {
-       origin = isProduction ? 'https://novacustom.vercel.app' : 'http://localhost:5173';
-    }
-    
+    const origin = isProduction ? 'https://novacustom.vercel.app' : (req.headers.origin || 'http://localhost:5174')
     const notification_url = 'https://novacustom.vercel.app/api/payments/webhook'
 
     if (paymentMethod === 'pix') {

@@ -10,9 +10,6 @@ import { useCart } from '@/context/CartContext';
 import { Helmet } from 'react-helmet-async';
 
 import { ProductReviews } from '@/components/ProductReviews';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import ImageZoom from '@/components/ImageZoom';
-
 import { toast } from 'sonner';
 
 export default function ProductDetails() {
@@ -22,6 +19,7 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [customName, setCustomName] = useState('');
   const [customNumber, setCustomNumber] = useState('');
+  const [wantsCustomization, setWantsCustomization] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [activeImage, setActiveImage] = useState<'front' | 'back'>('front');
   const [showSizeGuide, setShowSizeGuide] = useState(false);
@@ -62,12 +60,18 @@ export default function ProductDetails() {
         .delete()
         .eq('user_id', user.id)
         .eq('product_id', product.id);
-      if (!error) setIsInWishlist(false);
+      if (!error) {
+        setIsInWishlist(false);
+        toast.success('Removido dos favoritos');
+      }
     } else {
       const { error } = await supabase
         .from('wishlist')
         .insert({ user_id: user.id, product_id: product.id });
-      if (!error) setIsInWishlist(true);
+      if (!error) {
+        setIsInWishlist(true);
+        toast.success('Adicionado aos favoritos');
+      }
     }
   }
 
@@ -209,48 +213,30 @@ export default function ProductDetails() {
       return;
     }
     
+    if (wantsCustomization && (!customName || !customNumber)) {
+      toast.error('Por favor, preencha o nome e o número para personalização.');
+      return;
+    }
+
     if (!product) return;
 
     setIsAdding(true);
     
-    addToCart(product, selectedSize, customName, customNumber);
+    addToCart(product, selectedSize, wantsCustomization, customName, customNumber);
     
     setTimeout(() => {
       setIsAdding(false);
-      // Toast já é chamado dentro do addToCart, removendo daqui para não duplicar
+      toast.success(`${product.name} adicionado ao carrinho!`, {
+        action: {
+          label: 'Ver Carrinho',
+          onClick: () => window.location.href = '/cart'
+        },
+      });
     }, 500);
   };
 
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
-
-  const getBreadcrumbLink = (category: string) => {
-    // Normalizar para minúsculas para comparação flexível
-    const normalized = category.toLowerCase().trim();
-    
-    const categoryMap: Record<string, string> = {
-      'clubes': '/clubes',
-      'seleções': '/selecoes',
-      'selecoes': '/selecoes',
-      'retrô': '/retro',
-      'retro': '/retro',
-      'brasileirão': '/brasileirao',
-      'brasileirao': '/brasileirao',
-      'artes custom': '/artes-custom',
-      'nacionais': '/nacionais',
-      'internacionais': '/internacionais',
-      'lançamentos': '/lancamentos',
-      'mais vendidos': '/mais-vendidos',
-      'personalizados': '/personalizados'
-    };
-
-    return categoryMap[normalized] || '/products';
-  };
-
-  const breadcrumbItems = [
-    { label: product.category || 'Produtos', href: product.category ? getBreadcrumbLink(product.category) : '/products' },
-    { label: product.name },
-  ];
 
   return (
     <div className="bg-white min-h-screen pb-20 pt-20 relative">
@@ -281,20 +267,15 @@ export default function ProductDetails() {
             </Link>
         </div>
 
-        {/* Desktop Breadcrumbs (Top Left) */}
-        <div className="hidden lg:block absolute top-24 left-24 z-30">
-           <Breadcrumbs items={breadcrumbItems} />
-        </div>
-
         {/* Left Column - Visuals (Sticky on Desktop) */}
         <div className="lg:w-2/3 bg-gray-50 relative min-h-[50vh] lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 flex flex-col items-center justify-center py-8 z-20">
           {/* Main Image */}
           <div className="relative w-full max-w-xl mx-auto p-8 lg:p-0 transition-all duration-700 flex-1 flex items-center justify-center">
             {product.image_url ? (
-              <ImageZoom
+              <img
                 src={activeImage === 'front' ? product.image_url : (product.image_back_url || product.image_url)}
                 alt={product.name}
-                className="w-full max-h-[60vh] drop-shadow-xl"
+                className="w-full max-h-[60vh] object-contain drop-shadow-xl transform hover:scale-105 transition-transform duration-700"
               />
             ) : (
               <div className="flex items-center justify-center h-96 text-gray-400">Sem imagem</div>
@@ -339,7 +320,7 @@ export default function ProductDetails() {
             </h1>
             <div className="flex items-baseline gap-4 mb-6">
               <span className="text-3xl font-medium text-gray-900">
-                R$ {product.price.toFixed(2).replace('.', ',')}
+                R$ {(product.price + (wantsCustomization ? 30 : 0)).toFixed(2).replace('.', ',')}
               </span>
               {(product.stock ?? 0) > 0 ? (
                 <span className="text-sm text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
@@ -413,47 +394,66 @@ export default function ProductDetails() {
               </div>
             </div>
 
-            {/* Customization */}
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">Personalize</span>
-                <span className="text-xs text-gray-400 font-normal ml-auto">(Opcional)</span>
-              </div>
-              <div className="space-y-3">
+            {/* Customization Toggle */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-primary" />
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nome</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: SILVA"
-                    value={customName}
-                    onChange={(e) => {
-                      setCustomName(e.target.value);
-                      // Opcional: mudar para costas quando começa a digitar, mas sem preview
-                      if (!customName && e.target.value) setActiveImage('back');
-                    }}
-                    maxLength={12}
-                    className="w-full bg-white border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-300 shadow-sm transition-all uppercase"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Número</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 10"
-                    value={customNumber}
-                    onChange={(e) => {
-                      if (/^\d*$/.test(e.target.value)) {
-                        setCustomNumber(e.target.value);
-                        if (!customNumber && e.target.value) setActiveImage('back');
-                      }
-                    }}
-                    maxLength={2}
-                    className="w-full bg-white border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-300 shadow-sm transition-all"
-                  />
+                  <p className="text-sm font-bold text-gray-900">Personalização (+ R$ 30,00)</p>
+                  <p className="text-xs text-gray-500">Adicione seu nome e número favoritos</p>
                 </div>
               </div>
+              <button
+                onClick={() => setWantsCustomization(!wantsCustomization)}
+                className={cn(
+                  "w-12 h-6 rounded-full transition-colors relative",
+                  wantsCustomization ? "bg-primary" : "bg-gray-200"
+                )}
+              >
+                <div className={cn(
+                  "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                  wantsCustomization ? "left-7" : "left-1"
+                )} />
+              </button>
             </div>
+
+            {/* Customization Inputs */}
+            {wantsCustomization && (
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nome</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: SILVA"
+                      value={customName}
+                      onChange={(e) => {
+                        setCustomName(e.target.value);
+                        if (!customName && e.target.value) setActiveImage('back');
+                      }}
+                      maxLength={12}
+                      className="w-full bg-white border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-300 shadow-sm transition-all uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Número</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 10"
+                      value={customNumber}
+                      onChange={(e) => {
+                        if (/^\d*$/.test(e.target.value)) {
+                          setCustomNumber(e.target.value);
+                          if (!customNumber && e.target.value) setActiveImage('back');
+                        }
+                      }}
+                      maxLength={2}
+                      className="w-full bg-white border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-300 shadow-sm transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* CTA */}
             <div className="space-y-4 pt-4">

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2, Heart } from 'lucide-react';
 import { QRCodeModal } from '@/components/QRCodeModal';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -83,7 +84,7 @@ export default function Profile() {
       setOrders(orders.filter(o => o.id !== orderId));
     } catch (error: any) {
       console.error('Error deleting order:', error);
-      alert('Erro ao excluir pedido: ' + (error.message || 'Verifique se o pedido já foi pago.'));
+      toast.error('Erro ao excluir pedido: ' + (error.message || 'Verifique se o pedido já foi pago.'));
     } finally {
       setLoading(false);
     }
@@ -119,11 +120,11 @@ export default function Profile() {
       if (init_point) {
         window.location.href = init_point;
       } else {
-        alert('Houve um erro ao gerar o pagamento. Tente novamente mais tarde.');
+        toast.error('Houve um erro ao gerar o pagamento. Tente novamente mais tarde.');
       }
     } catch (error) {
       console.error('Error generating MP preference:', error);
-      alert('Erro de conexão ao Mercado Pago. Tente novamente.');
+      toast.error('Erro de conexão ao Mercado Pago. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -218,13 +219,21 @@ export default function Profile() {
 
             {/* Dashboard Stats */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group hover:border-black transition-colors">
+              <button 
+                onClick={() => {
+                  const element = document.getElementById('orders-section');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group hover:border-black transition-colors"
+              >
                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-black group-hover:text-white transition-colors">
                     <ShoppingBag className="w-5 h-5" />
                  </div>
                  <span className="text-2xl font-black text-gray-900">{orders.length}</span>
                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pedidos</span>
-              </div>
+              </button>
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group hover:border-green-500 transition-colors">
                  <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-500 group-hover:text-white transition-colors">
                     <CheckCircle2 className="w-5 h-5" />
@@ -261,7 +270,7 @@ export default function Profile() {
 
           {/* Main Content / Orders */}
           <div className="lg:col-span-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <h2 id="orders-section" className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 scroll-mt-24">
               <Package className="w-5 h-5" />
               Histórico de Pedidos
             </h2>

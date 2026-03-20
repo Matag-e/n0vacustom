@@ -1,10 +1,12 @@
 import { useCart } from '@/context/CartContext';
-import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, totalPrice } = useCart();
+  const { user } = useAuth();
 
   if (items.length === 0) {
     return (
@@ -68,12 +70,14 @@ export default function Cart() {
                     
                     <div className="space-y-1 text-sm text-gray-500">
                       <p>Tamanho: <span className="font-medium text-gray-900">{item.size}</span></p>
-                      {(item.customName || item.customNumber) && (
-                        <div className="flex items-center gap-2">
-                          <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-700">
-                            Personalizado
-                          </span>
-                          <span className="text-gray-700 font-medium">
+                      {item.isCustomized && (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-primary/10 px-2 py-0.5 rounded text-[10px] font-bold text-primary uppercase tracking-wider">
+                              Personalizado (+ R$ 30)
+                            </span>
+                          </div>
+                          <span className="text-gray-900 font-bold uppercase text-xs">
                             {item.customName} {item.customNumber && `#${item.customNumber}`}
                           </span>
                         </div>
@@ -101,7 +105,7 @@ export default function Cart() {
                     </div>
                     
                     <span className="text-lg font-bold text-gray-900">
-                      R$ {(item.product.price * item.quantity).toFixed(2).replace('.', ',')}
+                      R$ {((item.product.price + (item.isCustomized ? 30 : 0)) * item.quantity).toFixed(2).replace('.', ',')}
                     </span>
                   </div>
                 </div>
@@ -139,10 +143,17 @@ export default function Cart() {
                 </div>
               </div>
               
-              <Link to="/checkout" className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
-                Finalizar Compra
-                <ArrowRight className="h-5 w-5" />
-              </Link>
+              {user ? (
+                <Link to="/checkout" className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
+                  Finalizar Compra
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              ) : (
+                <Link to="/login?redirect=/checkout" className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
+                  Login para Finalizar
+                  <LogIn className="h-5 w-5" />
+                </Link>
+              )}
               
               <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
                 <Shield className="h-3 w-3" />

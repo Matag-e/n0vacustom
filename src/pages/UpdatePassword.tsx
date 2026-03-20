@@ -11,17 +11,18 @@ export default function UpdatePassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Verifica se há um token de recuperação na URL (hash gerado pelo Supabase)
-    const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) {
-      // Se não houver token, redireciona para login
-      // Nota: o Supabase geralmente lida com a sessão automaticamente quando o usuário clica no link
-      supabase.auth.getSession().then(({ data }) => {
-        if (!data.session) {
+    // Supabase handles the session automatically via the recovery link.
+    // If we have a session, we stay. If not, we check if we're in recovery mode.
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        // If no session and no hash (which might have been consumed), go to login
+        if (!window.location.hash.includes('access_token')) {
           navigate('/login');
         }
-      });
-    }
+      }
+    };
+    checkSession();
   }, [navigate]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {

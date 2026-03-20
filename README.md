@@ -1,57 +1,69 @@
-# React + TypeScript + Vite
+# Nova Custom - E-commerce de Mantos Exclusivos
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Nova Custom é uma plataforma de e-commerce premium especializada em camisas de futebol (Clubes, Seleções, Retrô) com foco em personalização e experiência do usuário.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologias
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Frontend
+- **React 18** (Vite)
+- **TypeScript**
+- **Tailwind CSS** (Estilização)
+- **Lucide React** (Ícones)
+- **Sonner** (Notificações Toast)
+- **React Router Dom** (Navegação)
+- **Framer Motion** (Animações)
 
-## Expanding the ESLint configuration
+### Backend & Infraestrutura
+- **Node.js** com **Express**
+- **Supabase** (Banco de dados PostgreSQL, Autenticação e Storage)
+- **Mercado Pago API** (Integração de pagamentos via Cartão e Pix)
+- **Zod** (Validação de dados)
+- **Express Rate Limit** (Segurança)
+- **Swagger/OpenAPI** (Documentação da API)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ✨ Funcionalidades Principais
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- **📦 Catálogo Dinâmico**: Filtros avançados por categoria, preço e disponibilidade.
+- **🎨 Personalização de Produtos**: Adição de nome e número com taxa dinâmica (+ R$ 30,00).
+- **🛒 Carrinho Inteligente**: Gerenciamento de itens com persistência local.
+- **🔐 Autenticação Obrigatória**: Sistema de login e cadastro via Supabase para acompanhamento de pedidos.
+- **💳 Checkout Completo**:
+  - Pagamento via **PIX Copia e Cola** (com 5% de desconto automático).
+  - Pagamento via **Cartão de Crédito** integrado ao Mercado Pago.
+- **📱 Área do Cliente**: Histórico de pedidos, status de pagamento em tempo real e lista de desejos.
+- **🛠 Painel Administrativo**: Gestão de estoque, controle de produtos e dashboard de vendas.
+- **🔄 Recuperação de Senha**: Fluxo completo de redefinição de senha via e-mail.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠 Configuração Local
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1.  **Clone o repositório**:
+    ```bash
+    git clone https://github.com/seu-usuario/n0vacustom.git
+    cd n0vacustom
+    ```
 
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+2.  **Instale as dependências**:
+    ```bash
+    npm install
+    ```
+
+3.  **Variáveis de Ambiente**:
+    Crie um arquivo `.env` na raiz com as seguintes chaves:
+    ```env
+    VITE_SUPABASE_URL=sua_url_supabase
+    VITE_SUPABASE_ANON_KEY=sua_chave_anon_supabase
+    SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role
+    MERCADOPAGO_ACCESS_TOKEN=seu_token_mp
+    ```
+
+4.  **Inicie o servidor de desenvolvimento**:
+    ```bash
+    npm run dev
+    ```
+    - Frontend: `http://localhost:5174`
+    - API: `http://localhost:3001`
+    - Docs API: `http://localhost:3001/api-docs`
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.

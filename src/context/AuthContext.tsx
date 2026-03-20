@@ -24,10 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('Password recovery mode detected');
+        // We can't use navigate() here directly because we're outside of Router context usually,
+        // but since this is a SPA, we can use window.location
+        if (window.location.pathname !== '/update-password') {
+          window.location.href = '/update-password';
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
