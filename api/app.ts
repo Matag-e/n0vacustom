@@ -25,36 +25,36 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // load env
-const envPath = path.join(__dirname, '../.env')
-dotenv.config({ path: envPath })
-console.log('[API] Carregando .env de:', envPath)
+dotenv.config()
 console.log('[API] VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Definida' : 'NÃO DEFINIDA')
 
 const app: express.Application = express()
 
 app.set('trust proxy', 1)
 
-// Swagger configuration
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Nova Custom API',
-      version: '1.0.0',
-      description: 'API para o e-commerce Nova Custom',
-    },
-    servers: [
-      {
-        url: 'http://localhost:3001',
-        description: 'Servidor de Desenvolvimento',
+// Swagger configuration (only in dev)
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerOptions = {
+    definition: {
+      openapi: '3.0.0',
+      info: {
+        title: 'Nova Custom API',
+        version: '1.0.0',
+        description: 'API para o e-commerce Nova Custom',
       },
-    ],
-  },
-  apis: ['./api/routes/*.ts'], // Path to the API docs
-}
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Servidor de Desenvolvimento',
+        },
+      ],
+    },
+    apis: ['./api/routes/*.ts', './api/routes/*.js'],
+  }
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+  const swaggerSpec = swaggerJsdoc(swaggerOptions)
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+}
 
 // Rate limiting
 const limiter = rateLimit({

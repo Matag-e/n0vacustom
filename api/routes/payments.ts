@@ -35,10 +35,7 @@ const ProcessPaymentSchema = z.object({
   }),
 })
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-dotenv.config({ path: path.join(__dirname, '../../.env') })
+dotenv.config()
 
 console.log('[MP] Carregando variáveis de ambiente...');
 console.log('[MP] VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Definida' : 'NÃO DEFINIDA');

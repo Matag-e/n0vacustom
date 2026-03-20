@@ -1,5 +1,15 @@
 import express from 'express'
-import { supabase } from '../../lib/supabase.js'
+import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+dotenv.config()
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+)
 
 const router = express.Router()
 
