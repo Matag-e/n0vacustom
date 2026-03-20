@@ -12,6 +12,9 @@ export interface Product {
   image_url: string | null;
   image_back_url?: string | null;
   category: string | null;
+  country?: string | null;
+  league?: string | null;
+  year?: string | null;
   stock?: number;
   product_stock?: any[];
   created_at: string;

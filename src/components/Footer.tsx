@@ -28,8 +28,8 @@ export function Footer() {
           <div className="space-y-6">
             <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">Navegação</h4>
             <ul className="space-y-3">
-              <li><Link to="/nacionais" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Nacionais</Link></li>
-              <li><Link to="/internacionais" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Internacionais</Link></li>
+              <li><Link to="/clubes" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Clubes</Link></li>
+              <li><Link to="/selecoes" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Seleções</Link></li>
               <li><Link to="/retro" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Coleção Retrô</Link></li>
               <li><Link to="/personalizacao" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Serviços de Personalização</Link></li>
               <li><Link to="/restauracao" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors text-sm font-medium">Restauração de Mantos</Link></li>

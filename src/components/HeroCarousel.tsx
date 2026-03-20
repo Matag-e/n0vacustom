@@ -10,28 +10,28 @@ const slides = [
     subtitle: 'Nacionais',
     description: 'A paixão pelo futebol brasileiro em cada detalhe. Vista as cores do seu time com orgulho.',
     image: '/CARRO 1.jpeg',
-    link: '/nacionais',
-    buttonText: 'Explorar Nacionais',
+    link: '/clubes',
+    buttonText: 'Explorar Clubes',
     color: 'from-zinc-900 to-zinc-800'
   },
   {
     id: 2,
-    title: 'Elite Europeia',
-    subtitle: 'Internacionais',
-    description: 'Os maiores clubes do mundo. Qualidade premium e design exclusivo para quem entende de futebol.',
+    title: 'Vida Nova ao Manto',
+    subtitle: 'Restauração',
+    description: 'Sua camisa antiga merece brilhar novamente. Especialistas em restauração de mantos históricos.',
     image: '/CARRO 2.jpeg',
-    link: '/internacionais',
-    buttonText: 'Explorar Internacionais',
+    link: '/restauracao',
+    buttonText: 'Ver Restauração',
     color: 'from-zinc-900 to-zinc-800'
   },
   {
     id: 3,
-    title: 'Lendas do Futebol',
-    subtitle: 'Retrô',
-    description: 'Reviva a história com nossa coleção clássica. Camisas que marcaram época e gerações.',
+    title: 'Seu Estilo Único',
+    subtitle: 'Personalização',
+    description: 'Nomes, números e patches oficiais. Deixe seu manto com a sua cara e exclusividade total.',
     image: '/CARRO 3.jpeg',
-    link: '/retro',
-    buttonText: 'Ver Coleção Retrô',
+    link: '/personalizacao',
+    buttonText: 'Personalizar Agora',
     color: 'from-zinc-900 to-zinc-800'
   }
 ];

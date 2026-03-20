@@ -25,6 +25,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [loading, setLoading] = useState(true);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
 
@@ -70,13 +71,14 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
           product_id: productId,
           rating: newRating,
           comment: newComment,
-          // image_url: ... (implementar upload depois se necessário)
+          image_url: newImageUrl || null,
         });
 
       if (error) throw error;
 
       setNewComment('');
       setNewRating(5);
+      setNewImageUrl('');
       fetchReviews(); // Recarrega a lista
       toast.success('Avaliação enviada com sucesso!');
     } catch (error) {
@@ -159,7 +161,17 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                   </button>
                 )}
               </div>
-              <p className="text-gray-600 text-sm leading-relaxed">{review.comment}</p>
+              <p className="text-gray-600 text-sm leading-relaxed mb-4">{review.comment}</p>
+              {review.image_url && (
+                <div className="relative aspect-[4/3] w-full max-w-[200px] rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:scale-105 transition-transform duration-300">
+                  <img 
+                    src={review.image_url} 
+                    alt="Foto da avaliação" 
+                    className="w-full h-full object-cover"
+                    onClick={() => window.open(review.image_url, '_blank')}
+                  />
+                </div>
+              )}
             </div>
           ))
         )}
@@ -201,6 +213,20 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 className="w-full bg-gray-50 border-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-black focus:border-transparent transition-all resize-none"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Foto (URL)</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  placeholder="https://sua-imagem.com/foto.jpg"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
             </div>
 
             <button

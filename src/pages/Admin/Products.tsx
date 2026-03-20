@@ -14,6 +14,9 @@ interface Product {
   image_back_url?: string;
   category: string;
   description: string;
+  country?: string;
+  league?: string;
+  year?: string;
   stock: number;
 }
 
@@ -32,6 +35,9 @@ export default function AdminProducts() {
     description: '',
     image_url: '',
     image_back_url: '',
+    country: '',
+    league: '',
+    year: '',
   });
 
   const [stockData, setStockData] = useState<Record<string, boolean>>({
@@ -77,6 +83,9 @@ export default function AdminProducts() {
         description: product.description || '',
         image_url: product.image_url || '',
         image_back_url: product.image_back_url || '',
+        country: product.country || '',
+        league: product.league || '',
+        year: product.year || '',
       });
 
       // Popular estoque se existir
@@ -95,6 +104,9 @@ export default function AdminProducts() {
         description: '',
         image_url: '',
         image_back_url: '',
+        country: '',
+        league: '',
+        year: '',
       });
       setStockData({
         'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false
@@ -136,6 +148,9 @@ export default function AdminProducts() {
         description: formData.description,
         image_url: formData.image_url,
         image_back_url: formData.image_back_url,
+        country: formData.country || null,
+        league: formData.league || null,
+        year: formData.year || null,
       };
 
       let productId = editingProduct?.id;
@@ -348,6 +363,35 @@ export default function AdminProducts() {
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value })}
                     />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">País</label>
+                      <input
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-black outline-none transition-all"
+                        placeholder="Brasil"
+                        value={formData.country}
+                        onChange={e => setFormData({ ...formData, country: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Liga</label>
+                      <input
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-black outline-none transition-all"
+                        placeholder="La Liga"
+                        value={formData.league}
+                        onChange={e => setFormData({ ...formData, league: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Ano</label>
+                      <input
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-black outline-none transition-all"
+                        placeholder="2024"
+                        value={formData.year}
+                        onChange={e => setFormData({ ...formData, year: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
 

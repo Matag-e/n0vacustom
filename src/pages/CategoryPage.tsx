@@ -22,6 +22,14 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [selectedLeagues, setSelectedLeagues] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+
+  // Derived filter options from products
+  const countries = Array.from(new Set(products.map(p => p.country).filter(Boolean))) as string[];
+  const leagues = Array.from(new Set(products.map(p => p.league).filter(Boolean))) as string[];
+  const years = Array.from(new Set(products.map(p => p.year).filter(Boolean))) as string[];
 
   useEffect(() => {
     async function fetchProducts() {
@@ -69,8 +77,19 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
               );
             });
           }
+
+          // 5. Smart Filters (Country, League, Year)
+          if (selectedCountries.length > 0) {
+            filteredData = filteredData.filter(p => p.country && selectedCountries.includes(p.country));
+          }
+          if (selectedLeagues.length > 0) {
+            filteredData = filteredData.filter(p => p.league && selectedLeagues.includes(p.league));
+          }
+          if (selectedYears.length > 0) {
+            filteredData = filteredData.filter(p => p.year && selectedYears.includes(p.year));
+          }
           
-          // 4. Category Logic (Keep existing logic but refine)
+          // 6. Category Logic (Keep existing logic but refine)
           if (category === 'clubes') {
              filteredData = filteredData.filter(p => {
                const cat = (p.category || '').toLowerCase();
@@ -92,19 +111,9 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                const name = p.name.toLowerCase();
                return cat.includes('retro') || name.includes('retro');
              });
-          } else if (category === 'nacional') {
-             filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase();
-               return cat.includes('nacional') || cat.includes('brasileirão');
-             });
-          } else if (category === 'internacional') {
-             filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase();
-               return cat.includes('internacional') || cat.includes('europeu');
-             });
           }
 
-          // 5. Sorting
+          // 7. Sorting
           if (sortBy === 'newest') {
             filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           } else if (sortBy === 'price-asc') {
@@ -123,7 +132,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     }
 
     fetchProducts();
-  }, [category, sortBy, priceRange, selectedSizes, searchTerm]);
+  }, [category, sortBy, priceRange, selectedSizes, searchTerm, inStockOnly, selectedCountries, selectedLeagues, selectedYears]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
 
@@ -254,6 +263,81 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                 </span>
               </label>
             </div>
+
+            {/* Country Filter */}
+            {countries.length > 0 && (
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">País</h3>
+                <div className="flex flex-wrap gap-2">
+                  {countries.map((country) => (
+                    <button
+                      key={country}
+                      onClick={() => setSelectedCountries(prev => 
+                        prev.includes(country) ? prev.filter(c => c !== country) : [...prev, country]
+                      )}
+                      className={cn(
+                        "px-3 py-1.5 text-[10px] font-bold border transition-all uppercase rounded-full",
+                        selectedCountries.includes(country)
+                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                      )}
+                    >
+                      {country}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* League Filter */}
+            {leagues.length > 0 && (
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Liga</h3>
+                <div className="flex flex-wrap gap-2">
+                  {leagues.map((league) => (
+                    <button
+                      key={league}
+                      onClick={() => setSelectedLeagues(prev => 
+                        prev.includes(league) ? prev.filter(l => l !== league) : [...prev, league]
+                      )}
+                      className={cn(
+                        "px-3 py-1.5 text-[10px] font-bold border transition-all uppercase rounded-full",
+                        selectedLeagues.includes(league)
+                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                      )}
+                    >
+                      {league}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Year Filter */}
+            {years.length > 0 && (
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Ano</h3>
+                <div className="flex flex-wrap gap-2">
+                  {years.map((year) => (
+                    <button
+                      key={year}
+                      onClick={() => setSelectedYears(prev => 
+                        prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
+                      )}
+                      className={cn(
+                        "px-3 py-1.5 text-[10px] font-bold border transition-all uppercase rounded-full",
+                        selectedYears.includes(year)
+                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                      )}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </aside>
 
           {/* Product Grid */}
@@ -281,6 +365,9 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                     setPriceRange([0, 1000]);
                     setSelectedSizes([]);
                     setInStockOnly(false);
+                    setSelectedCountries([]);
+                    setSelectedLeagues([]);
+                    setSelectedYears([]);
                   }}
                   className="mt-6 text-primary font-bold uppercase text-xs tracking-widest border-b border-primary pb-1 hover:opacity-80 transition-opacity"
                 >

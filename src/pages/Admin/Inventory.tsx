@@ -13,6 +13,9 @@ interface Product {
   stock: number;
   image_url: string;
   category: string;
+  country?: string;
+  league?: string;
+  year?: string;
   product_stock?: {
     size: string;
     quantity: number;

@@ -27,6 +27,7 @@ import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
 import AdminProducts from '@/pages/Admin/Products';
+import NotFound from '@/pages/NotFound';
 
 import { Toaster } from 'sonner';
 import { useLocation } from 'react-router-dom';
@@ -93,11 +94,12 @@ function App() {
                     <Route path="/selecoes" element={<CategoryPage title="Seleções" category="selecoes" />} />
                     <Route path="/retro" element={<CategoryPage title="Retrô" category="retro" />} />
                     <Route path="/artes-custom" element={<CategoryPage title="Artes Custom" category="artes-custom" />} />
-                    <Route path="/nacionais" element={<CategoryPage title="Nacionais" category="nacional" />} />
-                    <Route path="/internacionais" element={<CategoryPage title="Internacionais" category="internacional" />} />
                     <Route path="/lancamentos" element={<CategoryPage title="Lançamentos" />} />
                     <Route path="/mais-vendidos" element={<CategoryPage title="Mais Vendidos" />} />
                     <Route path="/personalizados" element={<CategoryPage title="Personalizados" />} />
+                    
+                    {/* 404 Catch-all */}
+                    <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
                 <WhatsAppWrapper />
