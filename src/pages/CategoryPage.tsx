@@ -4,6 +4,7 @@ import { ProductCard, Product } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { Filter, ChevronDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Helmet } from 'react-helmet-async';
 
 interface CategoryPageProps {
   title: string;
@@ -134,6 +135,9 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
 
   return (
     <div className="bg-white dark:bg-black min-h-screen pt-24 pb-20 transition-colors duration-300">
+      <Helmet>
+        <title>{`${title} | NovaCustom`}</title>
+      </Helmet>
       {/* Header */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 mb-12">
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-gray-100 dark:border-zinc-800 pb-8">

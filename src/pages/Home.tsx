@@ -8,6 +8,7 @@ import { HeroCarousel } from '@/components/HeroCarousel';
 import { MinimalCategories } from '@/components/MinimalCategories';
 import { FloatingQuote } from '@/components/FloatingQuote';
 import { BenefitsBar } from '@/components/BenefitsBar';
+import { Helmet } from 'react-helmet-async';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -40,6 +41,9 @@ export default function Home() {
 
   return (
     <div className="space-y-12 pb-12">
+      <Helmet>
+        <title>NovaCustom | Personalize seu Manto</title>
+      </Helmet>
       {/* Hero Section */}
       <HeroCarousel />
       

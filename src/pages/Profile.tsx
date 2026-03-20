@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2, Heart } from 'lucide-react';
 import { QRCodeModal } from '@/components/QRCodeModal';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 
 interface Order {
   id: string;
@@ -159,8 +160,11 @@ export default function Profile() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-24 pb-20">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+    <div className="bg-gray-50 dark:bg-black min-h-screen pt-24 pb-20 transition-colors duration-300">
+      <Helmet>
+        <title>Meu Perfil | NovaCustom</title>
+      </Helmet>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         
         {showSuccess && (
           <div className="mb-8 bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">

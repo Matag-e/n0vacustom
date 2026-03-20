@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Helmet } from 'react-helmet-async';
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, totalPrice } = useCart();
@@ -31,6 +32,9 @@ export default function Cart() {
 
   return (
     <div className="bg-white min-h-screen pt-24 pb-20">
+      <Helmet>
+        <title>Sua Sacola | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
         <h1 className="text-3xl font-black text-gray-900 mb-8 tracking-tight">Sua Sacola ({items.length})</h1>
         
