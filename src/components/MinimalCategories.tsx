@@ -15,7 +15,7 @@ const categories = [
     id: 2,
     title: "MAIS VENDIDOS",
     subtitle: "Os Preferidos",
-    image: "",
+    image: "/mais vendidos.jpeg",
     link: "/mais-vendidos",
     size: "normal"
   },
@@ -23,7 +23,7 @@ const categories = [
     id: 3,
     title: "PERSONALIZADOS",
     subtitle: "Do Seu Jeito",
-    image: "",
+    image: "/personalizados.jpg.jpeg",
     link: "/personalizados",
     size: "normal"
   },

@@ -92,21 +92,6 @@ export function Footer() {
               <span className="text-[10px] font-bold uppercase tracking-widest">Boleto</span>
             </div>
           </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tecnologia</span>
-              <div className="bg-black text-white px-2 py-1 rounded text-[10px] font-black tracking-tighter">
-                SUPABASE
-              </div>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pagamentos</span>
-              <div className="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-black tracking-tighter">
-                MERCADO PAGO
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Copyright */}
