@@ -18,6 +18,7 @@ import { ZodError } from 'zod'
 import authRoutes from './routes/auth.js'
 import paymentRoutes from './routes/payments.js'
 import emailRoutes from './routes/emails.js'
+import sitemapRoutes from './routes/sitemap.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -81,6 +82,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use('/api/auth', authRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/emails', emailRoutes)
+app.use('/api/sitemap', sitemapRoutes)
 
 /**
  * health

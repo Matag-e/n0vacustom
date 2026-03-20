@@ -98,6 +98,28 @@
   }
   .animate-slide-up-fade {
     animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0; /* Start hidden */
   }
+}
+
+/* Custom Sonner Toasts */
+[data-sonner-toast] {
+  border-left: 4px solid #6D28D9 !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  border-left-color: #10B981 !important; /* Green for success */
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-left-color: #EF4444 !important; /* Red for error */
+}
+
+[data-sonner-toast][data-type="info"] {
+  border-left-color: #6D28D9 !important; /* Purple for info */
+}
+
+.dark [data-sonner-toast] {
+  background: #18181b !important;
+  color: #ffffff !important;
+  border-color: #27272a !important;
 }

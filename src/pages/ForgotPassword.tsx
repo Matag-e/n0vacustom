@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -65,6 +66,9 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-8 relative">
+      <Helmet>
+        <title>Recuperar Senha | NovaCustom</title>
+      </Helmet>
       <Link to="/login" className="absolute top-8 left-8 flex items-center text-sm font-bold text-gray-400 hover:text-black transition-colors">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Voltar

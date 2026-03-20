@@ -43,6 +43,12 @@ export default function Home() {
     <div className="space-y-12 pb-12">
       <Helmet>
         <title>NovaCustom | Personalize seu Manto</title>
+        <meta name="description" content="A NovaCustom é a sua loja premium de mantos exclusivos. Qualidade tailandesa 1:1, personalização oficial e a paixão pelo futebol em cada detalhe." />
+        <meta property="og:title" content="NovaCustom | Personalize seu Manto" />
+        <meta property="og:description" content="Mantos exclusivos com qualidade premium 1:1. Personalize com seu nome e número oficial." />
+        <meta property="og:image" content="https://n0vacustom.com/logo-social.png" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
       {/* Hero Section */}
       <HeroCarousel />

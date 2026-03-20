@@ -9,6 +9,7 @@ import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
 import { QRCodeSVG } from 'qrcode.react';
 import { generatePixPayload } from '@/lib/pix';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 
 interface PixResult {
   id: number;
@@ -27,6 +28,8 @@ export default function Checkout() {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [discount, setDiscount] = useState<{ type: 'percentage' | 'fixed', value: number, code: string } | null>(null);
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
@@ -86,6 +89,68 @@ export default function Checkout() {
     state: '',
     paymentMethod: 'pix' as 'mercadopago' | 'pix',
   });
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .eq('active', true)
+        .single();
+
+      if (error || !data) {
+        toast.error('Cupom inválido ou expirado');
+        return;
+      }
+
+      // Verificar validade
+      const now = new Date();
+      if (data.expires_at && new Date(data.expires_at) < now) {
+        toast.error('Este cupom já expirou');
+        return;
+      }
+
+      if (data.usage_limit && data.usage_count >= data.usage_limit) {
+        toast.error('Este cupom atingiu o limite de usos');
+        return;
+      }
+
+      setDiscount({
+        type: data.type,
+        value: data.value,
+        code: data.code
+      });
+      toast.success(`Cupom ${data.code} aplicado!`);
+    } catch (err) {
+      toast.error('Erro ao aplicar cupom');
+    }
+  };
+
+  const calculateTotal = () => {
+    let subtotal = totalPrice;
+    let discountAmount = 0;
+
+    if (discount) {
+      if (discount.type === 'percentage') {
+        discountAmount = subtotal * (discount.value / 100);
+      } else {
+        discountAmount = discount.value;
+      }
+    }
+
+    const afterCoupon = subtotal - discountAmount;
+    const pixDiscount = formData.paymentMethod === 'pix' ? afterCoupon * 0.05 : 0;
+    
+    return {
+      subtotal,
+      discountAmount,
+      pixDiscount,
+      total: Math.max(0, afterCoupon - pixDiscount)
+    };
+  };
 
   // Mandatory Login Check
   useEffect(() => {
@@ -169,13 +234,13 @@ export default function Checkout() {
     setLoading(true);
     
     try {
-      const discount = isPix ? 0.95 : 1;
-      const totalAmount = Number((totalPrice * discount).toFixed(2));
+      const { total, discountAmount, pixDiscount } = calculateTotal();
+      const totalAmount = Number(total.toFixed(2));
 
       // 1. CRIAR O PEDIDO NO SUPABASE
       let orderId = String(Date.now()); // Fallback ID
 
-      const orderPayload = {
+      const orderPayload: any = {
         user_id: user.id,
         total_amount: totalAmount,
         status: 'pending',
@@ -194,6 +259,11 @@ export default function Checkout() {
         state: formData.state,
       };
 
+      if (discount) {
+        orderPayload.coupon_code = discount.code;
+        orderPayload.discount_amount = discountAmount;
+      }
+
       console.log('[Checkout] Salvando pedido no Supabase...');
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -210,6 +280,11 @@ export default function Checkout() {
       if (orderData) {
         orderId = orderData.id;
         console.log('[Checkout] Pedido salvo com sucesso. ID:', orderId);
+
+        // Incrementar uso do cupom se existir
+        if (discount) {
+          await supabase.rpc('increment_coupon_usage', { coupon_code: discount.code });
+        }
 
         try {
           const { data } = await supabase.auth.getSession()
@@ -499,6 +574,9 @@ export default function Checkout() {
 
   return (
     <div className="bg-gray-50 min-h-screen pt-24 pb-20">
+      <Helmet>
+        <title>Finalizar Pedido | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         
         {/* Header Simples */}
@@ -682,28 +760,69 @@ export default function Checkout() {
               </div>
 
               <div className="space-y-3 pt-4 border-t border-gray-100 mb-8">
+                {/* Cupom de Desconto */}
+                <div className="pb-4 border-b border-gray-100">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Cupom de Desconto</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="CUPOM10"
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-black outline-none transition-all uppercase"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="bg-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                  {discount && (
+                    <div className="mt-2 flex items-center justify-between bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                      <span className="text-[10px] font-bold text-green-700 uppercase">Cupom {discount.code} aplicado!</span>
+                      <button 
+                        onClick={() => setDiscount(null)}
+                        className="text-green-700 hover:text-green-900"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Subtotal</span>
                   <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
                 </div>
+                
+                {discount && (
+                  <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span>Desconto ({discount.code})</span>
+                    <span>- R$ {calculateTotal().discountAmount.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Frete</span>
                   <span className="text-green-600 font-bold uppercase text-xs">Grátis</span>
                 </div>
+                
                 {formData.paymentMethod === 'pix' && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Desconto PIX (5%)</span>
-                    <span>- R$ {(totalPrice * 0.05).toFixed(2).replace('.', ',')}</span>
+                    <span className="flex items-center gap-1">
+                      Desconto PIX (5%)
+                      <span className="bg-green-100 text-green-700 text-[8px] px-1.5 py-0.5 rounded-full font-black">OFF</span>
+                    </span>
+                    <span>- R$ {calculateTotal().pixDiscount.toFixed(2).replace('.', ',')}</span>
                   </div>
                 )}
+                
                 <div className="flex justify-between items-end pt-4 border-t border-gray-100">
                   <span className="font-bold text-gray-900">Total</span>
                   <span className="text-2xl font-black text-gray-900">
-                    R$ {
-                      formData.paymentMethod === 'pix' 
-                        ? (totalPrice * 0.95).toFixed(2).replace('.', ',') 
-                        : totalPrice.toFixed(2).replace('.', ',')
-                    }
+                    R$ {calculateTotal().total.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               </div>

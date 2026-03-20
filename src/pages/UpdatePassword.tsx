@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Lock, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export default function UpdatePassword() {
   const [password, setPassword] = useState('');
@@ -55,6 +56,9 @@ export default function UpdatePassword() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Helmet>
+        <title>Nova Senha | NovaCustom</title>
+      </Helmet>
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-4">

@@ -1,5 +1,6 @@
 import { Truck, Clock, ShieldCheck, Mail, MapPin, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Helmet } from 'react-helmet-async';
 
 export default function Shipping() {
   const sections = [
@@ -37,6 +38,9 @@ export default function Shipping() {
 
   return (
     <div className="pt-32 pb-20 bg-white min-h-screen">
+      <Helmet>
+        <title>Envio e Entrega | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tighter mb-4">Envio e Entrega</h1>

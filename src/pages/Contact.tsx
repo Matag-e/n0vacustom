@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageCircle, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageCircle, Clock, Instagram, Facebook } from 'lucide-react';
 import { maskPhone } from '@/lib/masks';
+import { Helmet } from 'react-helmet-async';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -53,6 +54,9 @@ export default function Contact() {
 
   return (
     <div className="pt-32 pb-20 bg-white min-h-screen">
+      <Helmet>
+        <title>Fale Conosco | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-16">
           <span className="text-primary font-bold tracking-[0.3em] uppercase text-sm block mb-4">Contato</span>

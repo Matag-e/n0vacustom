@@ -27,6 +27,7 @@ import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
 import AdminProducts from '@/pages/Admin/Products';
+import AdminCoupons from '@/pages/Admin/Coupons';
 import NotFound from '@/pages/NotFound';
 
 import { Toaster } from 'sonner';
@@ -55,16 +56,37 @@ function App() {
     <HelmetProvider>
       <AuthProvider>
         <CartProvider>
-          <Toaster position="top-center" richColors />
+          <Toaster 
+            position="top-right" 
+            toastOptions={{
+              style: {
+                background: '#FFFFFF',
+                color: '#000000',
+                border: '1px solid #E5E7EB',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                padding: '16px',
+              },
+            }}
+            containerStyle={{
+              top: '100px',
+              right: '24px',
+            }}
+          />
           <Router>
             <ScrollToTop />
           <Routes>
             {/* Admin Routes (Standalone Layout) */}
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminProducts />} />
-              <Route path="inventory" element={<AdminInventory />} />
-            </Route>
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="products" element={<AdminProducts />} />
+                      <Route path="inventory" element={<AdminInventory />} />
+                      <Route path="coupons" element={<AdminCoupons />} />
+                    </Route>
 
             {/* Public Routes (Main Layout) */}
             <Route path="*" element={

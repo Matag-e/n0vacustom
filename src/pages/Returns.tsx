@@ -1,4 +1,5 @@
 import { RefreshCcw, ShieldAlert, CheckCircle2, Mail, MessageSquare, AlertCircle } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export default function Returns() {
   const sections = [
@@ -36,6 +37,9 @@ export default function Returns() {
 
   return (
     <div className="pt-32 pb-20 bg-white min-h-screen">
+      <Helmet>
+        <title>Trocas e Devoluções | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tighter mb-4">Trocas e Devoluções</h1>

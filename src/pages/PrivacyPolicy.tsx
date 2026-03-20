@@ -1,8 +1,12 @@
 import { Shield, Lock, Eye, FileText, Database, UserCheck } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white pt-32 pb-20">
+      <Helmet>
+        <title>Política de Privacidade | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-16 space-y-4">

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 
 interface Product {
   id: string;
@@ -210,6 +211,9 @@ export default function AdminProducts() {
 
   return (
     <div className="space-y-8">
+      <Helmet>
+        <title>Produtos Admin | NovaCustom</title>
+      </Helmet>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Produtos</h1>

@@ -4,6 +4,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -109,6 +110,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black flex transition-colors duration-300">
+      <Helmet>
+        <title>{isLogin ? 'Login' : 'Criar Conta'} | NovaCustom</title>
+      </Helmet>
       
       {/* Left Column - Image/Branding (Hidden on Mobile) */}
       <div className="hidden lg:flex w-1/2 bg-gray-100 dark:bg-zinc-900 relative overflow-hidden items-center justify-center">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, Camera, MessageCircle, Clock, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Helmet } from 'react-helmet-async';
 import { maskPhone } from '@/lib/masks';
 
 export default function Restoration() {
@@ -68,7 +69,10 @@ export default function Restoration() {
   ];
 
   return (
-    <div className="bg-white min-h-screen pt-20">
+    <div className="bg-white min-h-screen pt-24 pb-20 overflow-hidden">
+      <Helmet>
+        <title>Restauração de Mantos | NovaCustom</title>
+      </Helmet>
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 overflow-hidden bg-black text-white">
         <div className="absolute inset-0 opacity-20">

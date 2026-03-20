@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { 
   Plus, Minus, Search, HelpCircle, Truck, CreditCard, 
   RotateCcw, ShieldCheck, Shirt, MessageCircle 
@@ -75,6 +76,9 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-white pt-32 pb-20">
+      <Helmet>
+        <title>Dúvidas Frequentes | NovaCustom</title>
+      </Helmet>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-16 space-y-4">

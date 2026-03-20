@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 
 interface Order {
   id: string;
@@ -310,6 +311,9 @@ Cidade: ${order.city} - ${order.state}`;
 
   return (
     <div className="space-y-8">
+      <Helmet>
+        <title>Dashboard Admin | NovaCustom</title>
+      </Helmet>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>

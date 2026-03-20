@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sparkles, Type, ShieldCheck, MessageCircle, ArrowRight, CheckCircle2, Zap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { maskPhone } from '@/lib/masks';
+import { Helmet } from 'react-helmet-async';
 
 export default function CustomizationService() {
   const [formData, setFormData] = useState({
@@ -45,7 +46,10 @@ export default function CustomizationService() {
   ];
 
   return (
-    <div className="bg-white min-h-screen pt-20">
+    <div className="bg-white min-h-screen pt-24 pb-20">
+      <Helmet>
+        <title>Personalização de Mantos | NovaCustom</title>
+      </Helmet>
       {/* Hero Section */}
       <section className="relative py-20 bg-zinc-950 text-white overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
