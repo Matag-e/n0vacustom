@@ -25,13 +25,30 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [loading, setLoading] = useState(true);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
 
   useEffect(() => {
     fetchReviews();
   }, [productId]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error('A imagem deve ter no máximo 5MB');
+        return;
+      }
+      setNewImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   async function fetchReviews() {
     try {
@@ -64,6 +81,26 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     
     setSubmitting(true);
     try {
+      let uploadedImageUrl = null;
+
+      if (newImageFile) {
+        const fileExt = newImageFile.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${productId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('review-images')
+          .upload(filePath, newImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('review-images')
+          .getPublicUrl(filePath);
+        
+        uploadedImageUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('reviews')
         .insert({
@@ -71,19 +108,20 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
           product_id: productId,
           rating: newRating,
           comment: newComment,
-          image_url: newImageUrl || null,
+          image_url: uploadedImageUrl,
         });
 
       if (error) throw error;
 
       setNewComment('');
       setNewRating(5);
-      setNewImageUrl('');
+      setNewImageFile(null);
+      setImagePreview(null);
       fetchReviews(); // Recarrega a lista
       toast.success('Avaliação enviada com sucesso!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao enviar avaliação:', error);
-      toast.error('Erro ao enviar avaliação. Tente novamente.');
+      toast.error(error.message || 'Erro ao enviar avaliação. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -216,16 +254,44 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Foto (URL)</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="https://sua-imagem.com/foto.jpg"
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                />
-                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Foto do Produto</label>
+              <div className="flex flex-col gap-4">
+                <div className="relative group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="review-image-upload"
+                  />
+                  <label 
+                    htmlFor="review-image-upload"
+                    className="flex items-center justify-center gap-2 w-full bg-gray-50 border border-dashed border-gray-200 rounded-xl px-4 py-8 text-sm text-gray-500 hover:border-black hover:text-black transition-all cursor-pointer"
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                    {newImageFile ? 'Trocar foto selecionada' : 'Selecionar foto do dispositivo'}
+                  </label>
+                </div>
+
+                {imagePreview && (
+                  <div className="relative aspect-[4/3] w-full max-w-[200px] rounded-xl overflow-hidden border border-gray-100 shadow-sm animate-in fade-in zoom-in">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview da avaliação" 
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewImageFile(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute top-2 right-2 bg-black/60 text-white p-1 rounded-full hover:bg-black transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
