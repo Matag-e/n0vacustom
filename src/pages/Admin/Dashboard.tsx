@@ -95,6 +95,15 @@ export default function AdminDashboard() {
       
       setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
       toast.success('Status atualizado!');
+
+      if (newStatus === 'shipped') {
+        const order = orders.find(o => o.id === orderId)
+        if (!order?.tracking_code) {
+          toast.error('Defina o código de rastreio para disparar o e-mail de envio.')
+        } else {
+          await triggerOrderShippedEmail(orderId)
+        }
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Erro ao atualizar status.');
@@ -112,9 +121,51 @@ export default function AdminDashboard() {
       
       setOrders(orders.map(o => o.id === orderId ? { ...o, tracking_code: code } : o));
       toast.success('Código de rastreio salvo!');
+
+      const order = orders.find(o => o.id === orderId)
+      if (order?.status === 'shipped') {
+        await triggerOrderShippedEmail(orderId)
+      }
     } catch (error) {
       console.error('Error updating tracking:', error);
       toast.error('Erro ao salvar código.');
+    }
+  }
+
+  async function triggerOrderShippedEmail(orderId: string) {
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token
+      if (!token) {
+        toast.error('Sessão expirada. Faça login novamente.')
+        return
+      }
+
+      const response = await fetch('/api/emails/order-shipped', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderId }),
+      })
+
+      const json = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        toast.error('Erro ao enviar e-mail de envio.')
+        console.error('order-shipped email error:', json)
+        return
+      }
+
+      if (json?.skipped) {
+        return
+      }
+
+      toast.success('E-mail de envio disparado!')
+    } catch (err) {
+      console.error('triggerOrderShippedEmail error:', err)
+      toast.error('Erro ao disparar e-mail de envio.')
     }
   }
 

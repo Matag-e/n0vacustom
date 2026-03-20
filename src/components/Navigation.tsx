@@ -17,8 +17,6 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
-  // Check if we are on the home page to apply transparent effect
-  const isHome = location.pathname === '/';
   const isAdmin = user?.email === 'novacustom2k26@gmail.com';
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -42,7 +40,7 @@ export function Navigation() {
     { name: 'Clubes', path: '/clubes' },
     { name: 'Seleções', path: '/selecoes' },
     { name: 'Retrô', path: '/retro' },
-    { name: 'Brasileirão', path: '/brasileirao' },
+    { name: 'Nacionais', path: '/nacionais' },
     { name: 'Artes Custom', path: '/artes-custom' },
   ];
 
@@ -51,9 +49,9 @@ export function Navigation() {
       <nav 
         className={cn(
           "fixed top-0 w-full z-40 transition-all duration-300",
-          isHome && !scrolled && !isOpen
-            ? "bg-transparent text-white backdrop-blur-sm" 
-            : "bg-white/80 dark:bg-black/80 backdrop-blur-md text-gray-900 dark:text-gray-100 shadow-sm border-b border-gray-200/50 dark:border-gray-800/50"
+          !scrolled && !isOpen
+            ? "bg-transparent text-gray-900 dark:text-white" 
+            : "bg-white/60 dark:bg-black/60 backdrop-blur-xl text-gray-900 dark:text-gray-100 shadow-sm border-b border-gray-200/50 dark:border-gray-800/50"
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,10 +61,7 @@ export function Navigation() {
             <div className="md:hidden flex items-center">
               <button
                 onClick={toggleMenu}
-                className={cn(
-                  "focus:outline-none transition-colors p-2 -ml-2",
-                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary"
-                )}
+                className="focus:outline-none transition-colors p-2 -ml-2 text-gray-700 hover:text-primary dark:text-gray-200"
               >
                 {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -78,10 +73,7 @@ export function Navigation() {
                 <img 
                   src="/logo.svg" 
                   alt="NovaCustom" 
-                  className={cn(
-                    "h-16 md:h-20 w-auto transition-all duration-300",
-                    isHome && !scrolled && !isOpen && "brightness-0 invert"
-                  )} 
+                  className="h-16 md:h-20 w-auto transition-all duration-300" 
                 />
               </Link>
             </div>
@@ -90,10 +82,7 @@ export function Navigation() {
             <div className="hidden md:flex space-x-8 items-center mx-auto">
               <Link
                 to="/"
-                className={cn(
-                  "font-medium transition-colors hover:opacity-80 text-sm uppercase tracking-wide",
-                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary"
-                )}
+                className="font-medium transition-colors hover:text-primary text-sm uppercase tracking-wide text-gray-700 dark:text-gray-200"
               >
                 Home
               </Link>
@@ -105,10 +94,7 @@ export function Navigation() {
                 onMouseLeave={() => setIsDropdownOpen(false)}
               >
                 <button
-                  className={cn(
-                    "flex items-center gap-1 font-medium transition-colors hover:opacity-80 text-sm uppercase tracking-wide focus:outline-none",
-                    isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary"
-                  )}
+                  className="flex items-center gap-1 font-medium transition-colors hover:text-primary text-sm uppercase tracking-wide focus:outline-none text-gray-700 dark:text-gray-200"
                 >
                   Camisas
                   <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isDropdownOpen ? "rotate-180" : "")} />
@@ -136,30 +122,21 @@ export function Navigation() {
 
               <Link
                 to="/restauracao"
-                className={cn(
-                  "font-medium transition-colors hover:opacity-80 text-sm uppercase tracking-wide",
-                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary"
-                )}
+                className="font-medium transition-colors hover:text-primary text-sm uppercase tracking-wide text-gray-700 dark:text-gray-200"
               >
                 Restauração
               </Link>
 
               <Link
                 to="/personalizacao"
-                className={cn(
-                  "font-medium transition-colors hover:opacity-80 text-sm uppercase tracking-wide",
-                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary"
-                )}
+                className="font-medium transition-colors hover:text-primary text-sm uppercase tracking-wide text-gray-700 dark:text-gray-200"
               >
                 Personalização
               </Link>
 
               <Link
                 to="/contato"
-                className={cn(
-                  "font-medium transition-colors hover:opacity-80 text-sm uppercase tracking-wide",
-                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary"
-                )}
+                className="font-medium transition-colors hover:text-primary text-sm uppercase tracking-wide text-gray-700 dark:text-gray-200"
               >
                 Contato
               </Link>
@@ -169,14 +146,11 @@ export function Navigation() {
             <div className="flex items-center space-x-4 md:space-x-6">
               <button 
                 onClick={toggleCart}
-                className={cn(
-                  "relative transition-colors hover:opacity-80 focus:outline-none",
-                  isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary"
-                )}
+                className="relative transition-colors hover:text-primary focus:outline-none text-gray-700 dark:text-gray-200"
               >
                 <ShoppingCart className="h-6 w-6" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white dark:border-black">
                     {totalItems}
                   </span>
                 )}
@@ -187,26 +161,17 @@ export function Navigation() {
                 {user ? (
                   <>
                     {isAdmin && (
-                      <Link to="/admin" className={cn(
-                        "transition-colors hover:opacity-80 flex items-center gap-1 bg-black text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20",
-                        isHome && !scrolled && !isOpen ? "bg-white/20" : "bg-black"
-                      )}>
+                      <Link to="/admin" className="transition-colors hover:opacity-80 flex items-center gap-1 bg-black text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
                         <ShieldCheck className="h-3 w-3" />
                         Admin
                       </Link>
                     )}
-                     <Link to="/profile" className={cn(
-                       "transition-colors hover:opacity-80",
-                       isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-primary"
-                     )}>
+                     <Link to="/profile" className="transition-colors hover:text-primary text-gray-700 dark:text-gray-200">
                       <UserIcon className="h-6 w-6" />
                     </Link>
                     <button
                       onClick={() => signOut()}
-                      className={cn(
-                        "transition-colors hover:opacity-80",
-                        isHome && !scrolled && !isOpen ? "text-white" : "text-gray-700 hover:text-red-500"
-                      )}
+                      className="transition-colors hover:text-red-500 text-gray-700 dark:text-gray-200"
                     >
                       <LogOut className="h-5 w-5" />
                     </button>
@@ -214,12 +179,7 @@ export function Navigation() {
                 ) : (
                   <Link
                     to="/login"
-                    className={cn(
-                      "px-6 py-2 rounded-full font-medium transition-all duration-300 text-sm uppercase tracking-wide",
-                      isHome && !scrolled && !isOpen
-                        ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm" 
-                        : "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                    )}
+                    className="px-6 py-2 rounded-full font-medium transition-all duration-300 text-sm uppercase tracking-wide bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm"
                   >
                     Login
                   </Link>

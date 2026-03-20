@@ -92,7 +92,6 @@ function App() {
                     <Route path="/clubes" element={<CategoryPage title="Clubes" category="clubes" />} />
                     <Route path="/selecoes" element={<CategoryPage title="Seleções" category="selecoes" />} />
                     <Route path="/retro" element={<CategoryPage title="Retrô" category="retro" />} />
-                    <Route path="/brasileirao" element={<CategoryPage title="Brasileirão" category="brasileirao" />} />
                     <Route path="/artes-custom" element={<CategoryPage title="Artes Custom" category="artes-custom" />} />
                     <Route path="/nacionais" element={<CategoryPage title="Nacionais" category="nacional" />} />
                     <Route path="/internacionais" element={<CategoryPage title="Internacionais" category="internacional" />} />

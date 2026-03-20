@@ -171,6 +171,28 @@ export default function Checkout() {
       if (orderData) {
         orderId = orderData.id;
         console.log('[Checkout] Pedido salvo com sucesso. ID:', orderId);
+
+        try {
+          const { data } = await supabase.auth.getSession()
+          const token = data.session?.access_token
+          if (token) {
+            const emailRes = await fetch('/api/emails/order-confirmation', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ orderId }),
+            })
+
+            if (!emailRes.ok) {
+              const json = await emailRes.json().catch(() => ({}))
+              console.error('[Checkout] Email confirmação (pedido) falhou:', json)
+            }
+          }
+        } catch (emailErr) {
+          console.error('[Checkout] Falha ao disparar e-mail de confirmação:', emailErr)
+        }
         
         const orderItems = items.map(item => ({
           order_id: orderData.id,

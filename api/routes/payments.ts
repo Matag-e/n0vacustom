@@ -5,6 +5,8 @@ import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { z } from 'zod'
+import { resend, EMAIL_FROM } from '../lib/resend.js'
+import { orderPaidTemplate } from '../emails/templates.js'
 
 // Validation Schemas
 const CreatePreferenceSchema = z.object({
@@ -245,7 +247,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         // Buscar status atual para não sobrescrever 'shipped' ou 'completed'
         const { data: currentOrder, error: fetchError } = await supabase
           .from('orders')
-          .select('status, payment_method')
+          .select('status, payment_method, email, first_name, email_payment_confirmed_sent')
           .eq('id', orderId)
           .maybeSingle()
 
@@ -277,6 +279,26 @@ router.post('/webhook', async (req: Request, res: Response) => {
           console.error('[Webhook] Erro ao atualizar status no Supabase:', updateError)
         } else {
           console.log(`[Webhook] Pedido ${orderId} marcado como PAGO com sucesso.`)
+
+          // --- Envio de E-mail de Pagamento Aprovado ---
+          try {
+            if (currentOrder.email && process.env.RESEND_API_KEY && !currentOrder.email_payment_confirmed_sent) {
+              await resend.emails.send({
+                from: EMAIL_FROM,
+                to: currentOrder.email,
+                subject: 'Pagamento Confirmado! 🔥 NovaCustom',
+                html: orderPaidTemplate(String(orderId).slice(0, 8), currentOrder.first_name || 'Cliente'),
+              });
+              await supabase
+                .from('orders')
+                .update({ email_payment_confirmed_sent: true })
+                .eq('id', orderId)
+              console.log(`[Email] Confirmação de pagamento enviada para: ${currentOrder.email}`);
+            }
+          } catch (emailErr) {
+            console.error('[Email] Erro ao enviar confirmação de pagamento:', emailErr);
+          }
+          // ---------------------------------------------
         }
       } else if (status === 'rejected' || status === 'cancelled') {
         // Só cancela se ainda estiver pendente

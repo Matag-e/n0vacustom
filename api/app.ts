@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url'
 import { ZodError } from 'zod'
 import authRoutes from './routes/auth.js'
 import paymentRoutes from './routes/payments.js'
+import emailRoutes from './routes/emails.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -29,6 +30,8 @@ console.log('[API] Carregando .env de:', envPath)
 console.log('[API] VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Definida' : 'NÃO DEFINIDA')
 
 const app: express.Application = express()
+
+app.set('trust proxy', 1)
 
 // Swagger configuration
 const swaggerOptions = {
@@ -55,9 +58,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  max: 600, // Limit each IP to 600 requests per `window` (here, per 15 minutes)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req: Request) => req.path === '/payments/webhook',
   message: {
     success: false,
     error: 'Muitas requisições vindas deste IP, tente novamente mais tarde.',
@@ -76,6 +80,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
  */
 app.use('/api/auth', authRoutes)
 app.use('/api/payments', paymentRoutes)
+app.use('/api/emails', emailRoutes)
 
 /**
  * health
