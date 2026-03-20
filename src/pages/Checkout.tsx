@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 
 interface PixResult {
   id: number;
+  orderId: string;
   qr_code: string;
   qr_code_base64: string;
   status: string;
@@ -30,6 +31,44 @@ export default function Checkout() {
   const [copied, setCopied] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
   const [pixPayload, setPixPayload] = useState("");
+  const [isPaid, setIsPaid] = useState(false);
+
+  // Polling para verificar se o PIX foi pago
+  useEffect(() => {
+    let interval: any;
+
+    if (pixResult && !isPaid) {
+      console.log('[Checkout] Iniciando polling para verificar pagamento do pedido:', pixResult.orderId);
+      
+      interval = setInterval(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('orders')
+            .select('status')
+            .eq('id', pixResult.orderId)
+            .maybeSingle();
+
+          if (error) {
+            console.error('[Checkout] Erro ao verificar status do pedido:', error);
+            return;
+          }
+
+          if (data?.status === 'paid') {
+            console.log('[Checkout] Pagamento confirmado via polling!');
+            setIsPaid(true);
+            clearInterval(interval);
+            toast.success('Pagamento confirmado com sucesso!');
+          }
+        } catch (err) {
+          console.error('[Checkout] Erro no polling:', err);
+        }
+      }, 5000); // Verifica a cada 5 segundos
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [pixResult, isPaid]);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -215,18 +254,49 @@ export default function Checkout() {
 
       // 2. TRATAR PAGAMENTO
       if (isPix) {
-        console.log('[Checkout] Finalizando como PIX Direto - Gerando Payload BR Code');
-        const pixPayload = generatePixPayload(totalAmount, PIX_KEY);
+        console.log('[Checkout] Finalizando como PIX Direto via Mercado Pago API');
         
-        setPixResult({
-          id: orderId as any,
-          qr_code: pixPayload, // Agora enviamos o payload BR Code completo
-          qr_code_base64: '',
-          status: 'pending',
-          amount: totalAmount
-        });
-        clearCart();
-        return;
+        try {
+          const response = await fetch('/api/payments/process-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              totalAmount: totalAmount,
+              paymentMethod: 'pix',
+              orderId: orderId,
+              payer: {
+                email: formData.email,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                cpf: formData.cpf.replace(/\D/g, ''),
+              }
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+            throw new Error(errorData.error || errorData.details?.message || 'Erro ao gerar pagamento PIX');
+          }
+
+          const data = await response.json();
+          console.log('[Checkout] Pagamento PIX gerado com sucesso:', data);
+
+          setPixResult({
+            id: data.id,
+            orderId: orderId,
+            qr_code: data.qr_code,
+            qr_code_base64: data.qr_code_base64,
+            status: data.status,
+            amount: totalAmount,
+            ticket_url: data.ticket_url
+          });
+          
+          clearCart();
+          return;
+        } catch (pixErr: any) {
+          console.error('[Checkout] Erro ao processar PIX no servidor:', pixErr);
+          throw new Error(`Erro ao gerar PIX: ${pixErr.message}`);
+        }
       }
 
       // 3. SE NÃO FOR PIX, REDIRECIONAR PARA MERCADO PAGO
@@ -304,72 +374,110 @@ export default function Checkout() {
         <div className="container mx-auto px-4 max-w-2xl">
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
             {/* Header Sucesso */}
-            <div className="bg-black p-10 text-center text-white space-y-4">
-              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20 animate-in zoom-in duration-500">
+            <div className={cn(
+              "p-10 text-center text-white space-y-4 transition-colors duration-500",
+              isPaid ? "bg-green-600" : "bg-black"
+            )}>
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-in zoom-in duration-500",
+                isPaid ? "bg-white text-green-600" : "bg-green-500 text-white shadow-green-500/20"
+              )}>
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h2 className="text-3xl font-black uppercase tracking-tight">Pedido Realizado!</h2>
-              <p className="text-gray-400 text-sm">Agora falta pouco para seu manto estar a caminho.</p>
+              <h2 className="text-3xl font-black uppercase tracking-tight">
+                {isPaid ? 'Pagamento Confirmado!' : 'Pedido Realizado!'}
+              </h2>
+              <p className={cn(
+                "text-sm",
+                isPaid ? "text-green-50" : "text-gray-400"
+              )}>
+                {isPaid 
+                  ? 'Seu pagamento foi identificado. Estamos preparando seu pedido!' 
+                  : 'Agora falta pouco para seu manto estar a caminho.'}
+              </p>
             </div>
 
-            {/* Instruções PIX */}
+            {/* Instruções PIX ou Sucesso */}
             <div className="p-8 md:p-12 space-y-8 text-center">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Valor do Pagamento</span>
-                <p className="text-4xl font-black text-gray-900">
-                  R$ {pixResult.amount.toFixed(2).replace('.', ',')}
-                </p>
-              </div>
+              {!isPaid ? (
+                <>
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Valor do Pagamento</span>
+                    <p className="text-4xl font-black text-gray-900">
+                      R$ {pixResult.amount.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
 
-              {/* QR Code */}
-              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 inline-block mx-auto">
-                <QRCodeSVG 
-                  value={pixResult.qr_code} 
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                  className="mx-auto mix-blend-multiply"
-                />
-              </div>
+                  {/* QR Code */}
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 inline-block mx-auto">
+                    <QRCodeSVG 
+                      value={pixResult.qr_code} 
+                      size={200}
+                      level="H"
+                      includeMargin={true}
+                      className="mx-auto mix-blend-multiply"
+                    />
+                  </div>
 
-              {/* Copia e Cola */}
-              <div className="space-y-4">
-                <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">PIX Copia e Cola (BR Code)</p>
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-[10px] font-mono text-gray-500 break-all text-left">
-                    {pixResult.qr_code}
+                  {/* Copia e Cola */}
+                  <div className="space-y-4">
+                    <p className="text-sm font-bold text-gray-900 uppercase tracking-wide">PIX Copia e Cola (BR Code)</p>
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 text-[10px] font-mono text-gray-500 break-all text-left">
+                        {pixResult.qr_code}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(pixResult.qr_code);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className={cn(
+                          "flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-all",
+                          copied ? "bg-green-500 text-white" : "bg-black text-white hover:bg-gray-800"
+                        )}
+                      >
+                        {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        {copied ? 'Copiado' : 'Copiar'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Avisos */}
+                  <div className="pt-8 border-t border-gray-100 space-y-4">
+                    <div className="flex items-start gap-3 text-left bg-blue-50 p-4 rounded-2xl">
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-0.5">!</div>
+                      <p className="text-xs text-blue-700 leading-relaxed">
+                        Seu pedido foi registrado! Após o pagamento via PIX para a chave acima, o envio será processado assim que o valor for identificado em nossa conta.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="py-10 space-y-6">
+                  <div className="bg-green-50 p-6 rounded-3xl border border-green-100">
+                    <p className="text-green-800 font-medium">
+                      Obrigado pela sua compra! Você receberá um e-mail com os detalhes do seu pedido em instantes.
+                    </p>
                   </div>
                   <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(pixResult.qr_code);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className={cn(
-                      "flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold uppercase tracking-widest transition-all",
-                      copied ? "bg-green-500 text-white" : "bg-black text-white hover:bg-gray-800"
-                    )}
+                    onClick={() => navigate('/profile')}
+                    className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
                   >
-                    {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copied ? 'Copiado' : 'Copiar'}
+                    Ver Meus Pedidos
                   </button>
                 </div>
-              </div>
-
-              {/* Avisos */}
-              <div className="pt-8 border-t border-gray-100 space-y-4">
-                <div className="flex items-start gap-3 text-left bg-blue-50 p-4 rounded-2xl">
-                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-0.5">!</div>
-                  <p className="text-xs text-blue-700 leading-relaxed">
-                    Seu pedido foi registrado! Após o pagamento via PIX para a chave acima, o envio será processado assim que o valor for identificado em nossa conta.
-                  </p>
-                </div>
-                <button 
-                  onClick={() => navigate('/profile')}
-                  className="text-sm font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
-                >
-                  Ver meus pedidos
-                </button>
+              )}
+              
+              <div className="pt-4">
+                {!isPaid && (
+                  <button 
+                    onClick={() => navigate('/profile')}
+                    className="text-sm font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
+                  >
+                    Ver meus pedidos
+                  </button>
+                )}
               </div>
             </div>
           </div>

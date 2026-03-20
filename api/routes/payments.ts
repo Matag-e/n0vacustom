@@ -213,7 +213,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
     }
 
     if (paymentId) {
-      console.log(`Processing Webhook for Payment ID: ${paymentId}`)
+      console.log(`[Webhook] Processando notificação para Payment ID: ${paymentId}`)
       const client = getMPClient()
       const payment = new Payment(client)
 
@@ -222,12 +222,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
       let retries = 3
       while (retries > 0) {
         try {
+          console.log(`[Webhook] Buscando dados do pagamento ${paymentId} (Tentativa ${4 - retries}/3)...`)
           paymentData = await payment.get({ id: paymentId })
           break
         } catch (err: any) {
-          console.log(`MP Payment Fetch Attempt Failed. Retries left: ${retries - 1}`)
+          console.error(`[Webhook] Erro ao buscar pagamento ${paymentId}:`, err.message || err)
           retries--
-          if (retries === 0) throw err
+          if (retries === 0) {
+            console.error(`[Webhook] Esgotadas as tentativas para o pagamento ${paymentId}`)
+            throw err
+          }
           await new Promise(resolve => setTimeout(resolve, 2000)) // Espera 2s
         }
       }
@@ -236,7 +240,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const status = paymentData.status
       const statusDetail = paymentData.status_detail
 
-      console.log(`[Webhook] Processando Pagamento: ID=${paymentId}, Status=${status}, Detail=${statusDetail}, Pedido=${orderId}`)
+      console.log(`[Webhook] Dados Recebidos: Pedido=${orderId}, Status=${status}, Detalhe=${statusDetail}`)
 
       if (status === 'approved') {
         if (!orderId) {
