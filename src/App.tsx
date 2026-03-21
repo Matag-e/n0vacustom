@@ -35,19 +35,22 @@ import { useLocation } from 'react-router-dom';
 
 function NavigationWrapper() {
   const location = useLocation();
-  if (location.pathname === '/update-password') return null;
+  const hideNavigation = ['/update-password', '/login', '/forgot-password'].includes(location.pathname);
+  if (hideNavigation) return null;
   return <Navigation />;
 }
 
 function FooterWrapper() {
   const location = useLocation();
-  if (location.pathname === '/update-password') return null;
+  const hideFooter = ['/update-password', '/login', '/forgot-password'].includes(location.pathname);
+  if (hideFooter) return null;
   return <Footer />;
 }
 
 function WhatsAppWrapper() {
   const location = useLocation();
-  if (location.pathname === '/update-password') return null;
+  const hideWhatsApp = ['/update-password', '/login', '/forgot-password'].includes(location.pathname);
+  if (hideWhatsApp) return null;
   return <WhatsAppButton />;
 }
 
