@@ -38,7 +38,8 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
         // Fetch products with their stock info and reviews for "mais-vendidos"
         let query = supabase
           .from('products')
-          .select('*, product_stock(*), reviews(*)');
+          .select('*, product_stock(*), reviews(*)')
+          .eq('is_active', true);
         
         if (category && !['clubes', 'selecoes', 'retro', 'artes-custom', 'personalizados', 'lancamentos', 'mais-vendidos'].includes(category)) {
            query = query.ilike('category', `%${category}%`);

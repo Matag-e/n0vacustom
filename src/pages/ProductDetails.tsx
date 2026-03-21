@@ -90,6 +90,7 @@ export default function ProductDetails() {
             )
           `)
           .eq('id', id)
+          .eq('is_active', true)
           .single();
 
         if (error) throw error;

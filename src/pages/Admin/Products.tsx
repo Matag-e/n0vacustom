@@ -64,6 +64,7 @@ export default function AdminProducts() {
             quantity
           )
         `)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -118,23 +119,22 @@ export default function AdminProducts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+    if (!confirm('Tem certeza que deseja inativar este produto? (Ele não será mais exibido na loja, mas os pedidos anteriores serão preservados)')) return;
 
     try {
-      // Deletar estoque primeiro devido a FK
-      await supabase.from('product_stock').delete().eq('product_id', id);
-      
+      // Usamos a abordagem de "Soft Delete" (Inativação) para não quebrar o histórico de pedidos
       const { error } = await supabase
         .from('products')
-        .delete()
+        .update({ is_active: false })
         .eq('id', id);
 
       if (error) throw error;
+      
       setProducts(products.filter(p => p.id !== id));
-      toast.success('Produto excluído com sucesso!');
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Erro ao excluir produto.');
+      toast.success('Produto inativado com sucesso!');
+    } catch (error: any) {
+      console.error('Error inactivating product:', error);
+      toast.error('Erro ao inativar produto: ' + (error.message || 'Verifique as permissões no Supabase.'));
     }
   };
 
