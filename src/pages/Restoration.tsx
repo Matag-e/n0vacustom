@@ -55,9 +55,9 @@ export default function Restoration() {
 
   const showcase = [
     {
-      title: "Restauração de Silk",
-      before: "",
-      after: "",
+      title: "Restauração",
+      before: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/sign/publics/barcaantes.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81YzgyMTA0Ni02MzdiLTRhY2EtYmE5Zi05MDhhOWZkZGM1ZTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwdWJsaWNzL2JhcmNhYW50ZXMuanBlZyIsImlhdCI6MTc3NDA1OTg3OSwiZXhwIjoxODA1NTk1ODc5fQ.uiXQj7QOW6OVh1NoiaxTHnhXS1uQzOYbD_qGxyXQoQE",
+      after: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/sign/publics/barcadepois.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81YzgyMTA0Ni02MzdiLTRhY2EtYmE5Zi05MDhhOWZkZGM1ZTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwdWJsaWNzL2JhcmNhZGVwb2lzLmpwZWciLCJpYXQiOjE3NzQwNTk5MjAsImV4cCI6MTgwNTU5NTkyMH0.ldL0GbDyWlDz70cs-O7cdpfP4GQ2ZNgCQYdd6exppN0",
       description: "Remoção de silk antigo craquelado e aplicação de novo material idêntico ao original."
     },
     {
@@ -88,7 +88,7 @@ export default function Restoration() {
             </div>
             <h1 className="text-5xl lg:text-7xl font-black mb-6 leading-[1.1] tracking-tighter">
               DEVOLVA A GLÓRIA <br />
-              <span className="text-primary">À SUA MANTO.</span>
+              <span className="text-primary">À SEU MANTO.</span>
             </h1>
             <p className="text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl">
               Somos especialistas em restaurar camisas de futebol clássicas e modernas. 

@@ -68,7 +68,7 @@ export default function CustomizationService() {
             </h1>
             <p className="text-xl text-zinc-400 mb-10 leading-relaxed max-w-2xl">
               Já tem o manto mas ele está "liso"? Nós aplicamos nomes, números e patches oficiais 
-              ou personalizados com qualidade de jogador profissional.
+              ou customizações especificas.
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="#custom-form" className="bg-primary text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">

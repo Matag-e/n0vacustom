@@ -7,7 +7,7 @@ const categories = [
     id: 1,
     title: "LANÇAMENTOS",
     subtitle: "Nova Coleção",
-    image: "",
+    image: "/lancamentos.jpeg",
     link: "/lancamentos",
     size: "large" // occupy 2 columns on desktop
   },
@@ -31,7 +31,7 @@ const categories = [
     id: 4,
     title: "CLUBES",
     subtitle: "Nacionais e Internacionais",
-    image: "",
+    image: "/clubes.jpeg",
     link: "/clubes",
     size: "large"
   }
