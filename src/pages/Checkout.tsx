@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
 import { QRCodeSVG } from 'qrcode.react';
-import { generatePixPayload } from '@/lib/pix';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
 
@@ -32,8 +31,6 @@ export default function Checkout() {
   const [discount, setDiscount] = useState<{ type: 'percentage' | 'fixed', value: number, code: string } | null>(null);
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showPixModal, setShowPixModal] = useState(false);
-  const [pixPayload, setPixPayload] = useState("");
   const [isPaid, setIsPaid] = useState(false);
 
   // Polling para verificar se o PIX foi pago
@@ -185,8 +182,6 @@ export default function Checkout() {
       fetchProfile();
     }
   }, [user]);
-
-  const PIX_KEY = "11991814636"; // Chave PIX da loja (Celular)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -635,11 +630,8 @@ export default function Checkout() {
                   <button
                     type="button"
                     onClick={() => {
-                      const amountWithDiscount = Number((totalPrice * 0.95).toFixed(2));
-                      const payload = generatePixPayload(amountWithDiscount, PIX_KEY);
-                      setPixPayload(payload);
                       setFormData(prev => ({ ...prev, paymentMethod: 'pix' }));
-                      setShowPixModal(true);
+                      toast.info('Pague via PIX com 5% de desconto! O QR Code será gerado ao finalizar o pedido.');
                     }}
                     className={cn(
                       "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all gap-3 relative overflow-hidden",
@@ -836,7 +828,7 @@ export default function Checkout() {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  'Finalizar e Pagar'
+                  formData.paymentMethod === 'pix' ? 'Gerar QR Code Pix' : 'Finalizar e Pagar'
                 )}
               </button>
 
@@ -849,92 +841,6 @@ export default function Checkout() {
 
         </div>
       </div>
-
-      {/* PIX Modal (Static) */}
-      {showPixModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="bg-green-500 p-6 text-center relative">
-              <button 
-                onClick={() => setShowPixModal(false)}
-                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <ShieldCheck className="w-8 h-8 text-green-500" />
-              </div>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Pagamento Via PIX</h3>
-              <p className="text-white/80 text-xs mt-1">Sua compra com 5% de desconto!</p>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-8 space-y-6 text-center">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valor com Desconto</span>
-                <p className="text-3xl font-black text-gray-900">
-                  R$ {(totalPrice * 0.95).toFixed(2).replace('.', ',')}
-                </p>
-              </div>
-
-              {/* QR Code */}
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 inline-block">
-                <QRCodeSVG 
-                  value={pixPayload} 
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                  className="mx-auto mix-blend-multiply"
-                />
-              </div>
-
-              {/* Chave PIX */}
-              <div className="space-y-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Copia e Cola (BR Code)</p>
-                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3 overflow-hidden">
-                  <span className="flex-1 font-mono text-[10px] text-gray-400 break-all text-left truncate">
-                    {pixPayload}
-                  </span>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(pixPayload);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className={cn(
-                      "p-3 rounded-lg transition-all shrink-0",
-                      copied ? "bg-green-500 text-white" : "bg-black text-white hover:bg-gray-800"
-                    )}
-                  >
-                    {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="bg-blue-50 p-4 rounded-xl text-left space-y-2">
-                <div className="flex gap-2 text-blue-700 font-bold text-xs uppercase tracking-wider">
-                  <div className="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px]">!</div>
-                  Como proceder?
-                </div>
-                <p className="text-[10px] text-blue-600 leading-relaxed">
-                  1. Copie a chave acima ou escaneie o QR Code.<br/>
-                  2. Realize o pagamento no app do seu banco.<br/>
-                  3. <strong>Clique no botão abaixo</strong> para finalizar seu pedido no site.
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setShowPixModal(false)}
-                className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-gray-900 transition-all shadow-lg"
-              >
-                Já realizei o pagamento
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
