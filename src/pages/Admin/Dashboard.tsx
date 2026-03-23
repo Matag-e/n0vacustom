@@ -176,12 +176,17 @@ export default function AdminDashboard() {
     }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .delete()
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
 
       if (error) throw error;
+
+      if (!data || data.length === 0) {
+        throw new Error('Não foi possível excluir o pedido. Verifique se as políticas de RLS foram aplicadas no Supabase.');
+      }
 
       setOrders(orders.filter(o => o.id !== orderId));
       toast.success('Pedido excluído com sucesso!');
@@ -342,12 +347,17 @@ Cidade: ${order.city} - ${order.state}`;
     }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .delete()
-        .eq('status', 'cancelled');
+        .eq('status', 'cancelled')
+        .select();
 
       if (error) throw error;
+
+      if (!data || data.length === 0) {
+        throw new Error('Nenhum pedido foi excluído. Verifique se as políticas de RLS foram aplicadas no Supabase.');
+      }
 
       setOrders(orders.filter(o => o.status !== 'cancelled'));
       toast.success('Pedidos cancelados excluídos!');
