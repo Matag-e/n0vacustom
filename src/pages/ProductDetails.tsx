@@ -239,26 +239,28 @@ export default function ProductDetails() {
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
 
+  const currentUrl = window.location.href;
+
   return (
     <div className="bg-white min-h-screen pb-20 pt-20 relative">
       <Helmet>
         <title>{`${product.name} | NovaCustom`}</title>
-        <meta name="description" content={product.description || `Compre ${product.name} na NovaCustom. Camisas de futebol tailandesas 1:1.`} />
+        <meta name="description" content={product.description || `Confira ${product.name} na NovaCustom. Qualidade premium e personalização exclusiva.`} />
         
-        {/* Open Graph / Facebook */}
+        {/* OpenGraph / Facebook */}
         <meta property="og:type" content="product" />
-        <meta property="og:url" content={window.location.href} />
+        <meta property="og:url" content={currentUrl} />
         <meta property="og:title" content={`${product.name} | NovaCustom`} />
-        <meta property="og:description" content={product.description || `Compre ${product.name} na NovaCustom. Camisas de futebol tailandesas 1:1.`} />
+        <meta property="og:description" content={product.description || `Confira ${product.name} na NovaCustom.`} />
         <meta property="og:image" content={product.image_url} />
         <meta property="product:price:amount" content={product.price.toString()} />
         <meta property="product:price:currency" content="BRL" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content={window.location.href} />
+        <meta property="twitter:url" content={currentUrl} />
         <meta property="twitter:title" content={`${product.name} | NovaCustom`} />
-        <meta property="twitter:description" content={product.description || `Compre ${product.name} na NovaCustom. Camisas de futebol tailandesas 1:1.`} />
+        <meta property="twitter:description" content={product.description || `Confira ${product.name} na NovaCustom.`} />
         <meta property="twitter:image" content={product.image_url} />
       </Helmet>
 

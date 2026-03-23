@@ -281,18 +281,18 @@ router.post('/webhook', async (req: Request, res: Response) => {
         } else {
           console.log(`[Webhook] Pedido ${orderId} marcado como PAGO com sucesso.`)
 
-          // --- Incrementar Contador de Vendas dos Produtos ---
+          // --- Atualizar Vendas e Estoque ---
           try {
-            const { error: salesError } = await supabase.rpc('increment_product_sales', { 
+            const { error: paymentSuccessError } = await supabase.rpc('handle_payment_success', { 
               order_uuid: orderId 
             })
-            if (salesError) {
-              console.error('[Webhook] Erro ao incrementar vendas:', salesError)
+            if (paymentSuccessError) {
+              console.error('[Webhook] Erro ao processar estoque/vendas:', paymentSuccessError)
             } else {
-              console.log('[Webhook] Contador de vendas atualizado para o pedido:', orderId)
+              console.log('[Webhook] Estoque e vendas atualizados para o pedido:', orderId)
             }
-          } catch (salesErr) {
-            console.error('[Webhook] Falha crítica ao incrementar vendas:', salesErr)
+          } catch (paymentSuccessErr) {
+            console.error('[Webhook] Falha crítica ao processar estoque/vendas:', paymentSuccessErr)
           }
           // --------------------------------------------------
 

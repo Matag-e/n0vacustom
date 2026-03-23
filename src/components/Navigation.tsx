@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, X, User as UserIcon, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, User as UserIcon, LogOut, ChevronDown, ShieldCheck, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -12,12 +12,24 @@ export function Navigation() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { user, signInWithGoogle, signOut } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, role, signInWithGoogle, signOut } = useAuth();
   const { totalItems } = useCart();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const isAdmin = user?.email === 'novacustom2k26@gmail.com';
+  const isAdmin = role === 'admin';
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const toggleCart = () => setIsCartOpen(!isCartOpen);
@@ -143,6 +155,28 @@ export function Navigation() {
 
             {/* Icons (Right) */}
             <div className="flex items-center space-x-4 md:space-x-6">
+              <div className="hidden lg:block">
+                <form onSubmit={handleSearch} className="relative group">
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-40 xl:w-60 bg-gray-100 dark:bg-zinc-900 border-transparent border focus:border-black dark:focus:border-white rounded-full py-1.5 pl-4 pr-10 text-xs transition-all outline-none"
+                  />
+                  <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+                    <Search className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
+
+              <button 
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="lg:hidden transition-colors hover:text-primary focus:outline-none text-gray-700 dark:text-gray-200"
+              >
+                <Search className="h-6 w-6" />
+              </button>
+
               <button 
                 onClick={toggleCart}
                 className="relative transition-colors hover:text-primary focus:outline-none text-gray-700 dark:text-gray-200"
@@ -185,6 +219,30 @@ export function Navigation() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Search Overlay */}
+        <div 
+          className={cn(
+            "lg:hidden absolute top-20 left-0 w-full bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 transition-all duration-300 transform origin-top",
+            isSearchOpen ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"
+          )}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                placeholder="O que você está procurando?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus={isSearchOpen}
+                className="w-full bg-gray-100 dark:bg-zinc-900 border-transparent border focus:border-black dark:focus:border-white rounded-xl py-3 pl-4 pr-12 text-sm outline-none transition-all"
+              />
+              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2">
+                <Search className="h-5 w-5 text-gray-400" />
+              </button>
+            </form>
           </div>
         </div>
 

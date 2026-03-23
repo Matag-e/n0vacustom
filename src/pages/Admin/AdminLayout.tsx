@@ -1,53 +1,23 @@
 import { useEffect } from 'react';
-import { useNavigate, Outlet, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { ShieldAlert, Loader2, LayoutDashboard, Package, ShoppingBag, Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  const { user, role, loading } = useAuth();
   const location = useLocation();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-black" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
       </div>
     );
   }
 
-  // Se não tem usuário, não renderiza nada enquanto redireciona
-  if (!user) return null;
-
-  const isAuthorized = user.email === 'novacustom2k26@gmail.com';
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-lg text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShieldAlert className="w-8 h-8 text-red-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acesso Negado</h1>
-          <p className="text-gray-500 mb-6">
-            Você não tem permissão para acessar esta área administrativa.
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-900 transition-colors"
-          >
-            Voltar para Loja
-          </button>
-        </div>
-      </div>
-    );
+  if (!user || role !== 'admin') {
+    return <Navigate to="/login" replace />;
   }
 
   return (

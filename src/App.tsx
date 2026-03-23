@@ -23,6 +23,7 @@ import Returns from '@/pages/Returns';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfUse from '@/pages/TermsOfUse';
 import CustomizationService from '@/pages/CustomizationService';
+import SearchPage from '@/pages/SearchPage';
 import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
@@ -119,6 +120,7 @@ function App() {
                     <Route path="/selecoes" element={<CategoryPage title="Seleções" category="selecoes" />} />
                     <Route path="/retro" element={<CategoryPage title="Retrô" category="retro" />} />
                     <Route path="/personalizados" element={<CategoryPage title="Personalizados" category="personalizados" />} />
+                    <Route path="/search" element={<SearchPage />} />
                     <Route path="/lancamentos" element={<CategoryPage title="Lançamentos" category="lancamentos" />} />
                     <Route path="/mais-vendidos" element={<CategoryPage title="Mais Vendidos" category="mais-vendidos" />} />
                     
