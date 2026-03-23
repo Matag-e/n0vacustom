@@ -9,7 +9,8 @@ export default function CustomizationService() {
     name: '',
     phone: '',
     jerseyInfo: '',
-    customDetails: '',
+    customName: '',
+    customNumber: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -23,7 +24,7 @@ export default function CustomizationService() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const message = `Olá! Gostaria de personalizar uma camisa que já tenho.%0A%0A*Dados:*%0ANome: ${formData.name}%0ACamisa: ${formData.jerseyInfo}%0APersonalização: ${formData.customDetails}`;
+    const message = `Olá, me chamo ${formData.name}! Gostaria de personalizar uma camisa que já tenho.%0A%0A*Dados:*%0ACamisa: ${formData.jerseyInfo}%0APersonalização:%0ANOME: ${formData.customName.toUpperCase()}%0ANÚMERO: ${formData.customNumber}`;
     window.open(`https://wa.me/5511963268510?text=${message}`, '_blank');
   };
 
@@ -203,17 +204,29 @@ export default function CustomizationService() {
                       placeholder="Ex: Flamengo 2019" 
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">O que deseja aplicar?</label>
-                    <textarea 
-                      required
-                      name="customDetails"
-                      onChange={handleChange}
-                      value={formData.customDetails}
-                      rows={3}
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-4 text-sm text-zinc-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none" 
-                      placeholder="Ex: Nome GABIGOL e número 9 + Patch Libertadores" 
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nome p/ aplicar</label>
+                      <input 
+                        required
+                        name="customName"
+                        onChange={handleChange}
+                        value={formData.customName}
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-4 text-sm text-zinc-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                        placeholder="Ex: GABIGOL" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número p/ aplicar</label>
+                      <input 
+                        required
+                        name="customNumber"
+                        onChange={handleChange}
+                        value={formData.customNumber}
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-4 text-sm text-zinc-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                        placeholder="Ex: 9" 
+                      />
+                    </div>
                   </div>
                   <button 
                     type="submit"
