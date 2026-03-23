@@ -100,7 +100,9 @@ app.use(
 /**
  * error handler middleware
  */
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('[API Error]:', error.message || error);
+  
   if (error instanceof ZodError) {
     return res.status(400).json({
       success: false,
@@ -111,7 +113,8 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
 
   res.status(500).json({
     success: false,
-    error: 'Server internal error',
+    error: error.message || 'Server internal error',
+    details: process.env.NODE_ENV !== 'production' ? error.stack : undefined
   })
 })
 
