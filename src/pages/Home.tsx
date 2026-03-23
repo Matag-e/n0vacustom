@@ -9,6 +9,7 @@ import { MinimalCategories } from '@/components/MinimalCategories';
 import { FloatingQuote } from '@/components/FloatingQuote';
 import { BenefitsBar } from '@/components/BenefitsBar';
 import { Helmet } from 'react-helmet-async';
+import { seededShuffle } from '@/lib/utils';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -20,15 +21,24 @@ export default function Home() {
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+          .eq('is_active', true);
 
         if (error) {
           throw error;
         }
 
         if (data) {
-          setProducts(data);
+          // Lógica de Semente (Seed) por Sessão
+          let sessionSeed = sessionStorage.getItem('home_products_seed');
+          if (!sessionSeed) {
+            // Se não houver seed na sessão, gera uma nova (número entre 1 e 10000)
+            sessionSeed = Math.floor(Math.random() * 10000).toString();
+            sessionStorage.setItem('home_products_seed', sessionSeed);
+          }
+
+          // Embaralha determinísticamente usando a seed da sessão
+          const shuffledProducts = seededShuffle(data, parseInt(sessionSeed));
+          setProducts(shuffledProducts);
         }
       } catch (error) {
         console.error('Error fetching products:', error);

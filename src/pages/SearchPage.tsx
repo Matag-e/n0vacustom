@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { Filter, ChevronDown, Search as SearchIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, seededShuffle } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 
 export default function SearchPage() {
@@ -13,7 +13,7 @@ export default function SearchPage() {
   
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
+  const [sortBy, setSortBy] = useState<'random' | 'newest' | 'price-asc' | 'price-desc'>('random');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState(queryParam);
   
@@ -76,7 +76,14 @@ export default function SearchPage() {
           }
 
           // 5. Sorting
-          if (sortBy === 'newest') {
+          if (sortBy === 'random') {
+            let sessionSeed = sessionStorage.getItem('search_products_seed');
+            if (!sessionSeed) {
+              sessionSeed = Math.floor(Math.random() * 10000).toString();
+              sessionStorage.setItem('search_products_seed', sessionSeed);
+            }
+            filteredData = seededShuffle(filteredData, parseInt(sessionSeed));
+          } else if (sortBy === 'newest') {
             filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           } else if (sortBy === 'price-asc') {
             filteredData.sort((a, b) => a.price - b.price);
@@ -152,6 +159,7 @@ export default function SearchPage() {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="appearance-none bg-transparent font-bold text-sm uppercase tracking-wider pr-8 cursor-pointer outline-none text-black dark:text-white"
               >
+                <option value="random">Aleatório</option>
                 <option value="newest">Mais Recentes</option>
                 <option value="price-asc">Menor Preço</option>
                 <option value="price-desc">Maior Preço</option>

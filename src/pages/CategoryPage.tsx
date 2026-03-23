@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { Filter, ChevronDown, Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, seededShuffle } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 
 interface CategoryPageProps {
@@ -14,7 +14,7 @@ interface CategoryPageProps {
 export default function CategoryPage({ title, category }: CategoryPageProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
+  const [sortBy, setSortBy] = useState<'random' | 'newest' | 'price-asc' | 'price-desc'>('random');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -129,7 +129,14 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
 
           // 7. Sorting (Override if not already sorted by category logic)
           if (category !== 'mais-vendidos') {
-            if (sortBy === 'newest') {
+            if (sortBy === 'random') {
+              let sessionSeed = sessionStorage.getItem('category_products_seed');
+              if (!sessionSeed) {
+                sessionSeed = Math.floor(Math.random() * 10000).toString();
+                sessionStorage.setItem('category_products_seed', sessionSeed);
+              }
+              filteredData = seededShuffle(filteredData, parseInt(sessionSeed));
+            } else if (sortBy === 'newest') {
               filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
             } else if (sortBy === 'price-asc') {
               filteredData.sort((a, b) => a.price - b.price);
@@ -207,6 +214,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="appearance-none bg-transparent font-bold text-sm uppercase tracking-wider pr-8 cursor-pointer outline-none text-black dark:text-white"
               >
+                <option value="random">Aleatório</option>
                 <option value="newest">Mais Recentes</option>
                 <option value="price-asc">Menor Preço</option>
                 <option value="price-desc">Maior Preço</option>
