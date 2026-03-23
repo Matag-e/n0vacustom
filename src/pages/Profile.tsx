@@ -113,7 +113,8 @@ export default function Profile() {
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao gerar preferência');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro no servidor (Status ${response.status})`);
       }
 
       const { init_point } = await response.json();

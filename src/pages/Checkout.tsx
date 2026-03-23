@@ -344,8 +344,8 @@ export default function Checkout() {
           });
 
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-            throw new Error(errorData.error || errorData.details?.message || 'Erro ao gerar pagamento PIX');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || errorData.details?.message || `Erro ao gerar PIX (Status ${response.status})`);
           }
 
           const data = await response.json();
@@ -396,16 +396,16 @@ export default function Checkout() {
             const errorData = await response.json();
             console.error('[Checkout] Erro na API do Mercado Pago:', errorData);
             
-            const mpError = errorData.details?.message || 
+            const mpError = errorData.error || 
+                            errorData.details?.message || 
                             (errorData.details?.cause && errorData.details.cause[0]?.description) ||
-                            errorData.error || 
                             'Erro ao criar preferência de pagamento';
             
             throw new Error(mpError);
           } else {
             const textError = await response.text();
             console.error('[Checkout] Erro na API (Não-JSON):', textError);
-            throw new Error(`Erro no servidor: O pagamento não pôde ser processado.`);
+            throw new Error(`Erro no servidor (Status ${response.status}). Verifique se o backend está rodando.`);
           }
         }
 
