@@ -1,7 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 
 export function WhatsAppButton() {
-  const phoneNumber = '5511991814636';
+  const phoneNumber = '5511963268510';
   const message = 'Olá! Gostaria de tirar uma dúvida sobre a NovaCustom.';
 
   return (

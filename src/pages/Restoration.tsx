@@ -27,7 +27,7 @@ export default function Restoration() {
     // In a real app, this would send an email or save to DB
     // For now, let's redirect to WhatsApp with the data
     const message = `Olá! Gostaria de um orçamento de restauração.%0A%0A*Dados:*%0ANome: ${formData.name}%0ACamisa: ${formData.jerseyModel}%0ADetalhes: ${formData.description}`;
-    window.open(`https://wa.me/5511999999999?text=${message}`, '_blank');
+    window.open(`https://wa.me/5511963268510?text=${message}`, '_blank');
   };
 
   const steps = [

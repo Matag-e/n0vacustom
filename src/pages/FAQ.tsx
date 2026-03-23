@@ -188,7 +188,7 @@ export default function FAQ() {
             Nossa equipe de suporte está pronta para te ajudar via WhatsApp.
           </p>
           <a 
-            href="https://wa.me/5511991814636" 
+            href="https://wa.me/5511963268510" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 bg-primary text-white px-8 py-4 rounded-full font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl hover:shadow-primary/20"

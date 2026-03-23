@@ -24,7 +24,7 @@ export default function CustomizationService() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const message = `Olá! Gostaria de personalizar uma camisa que já tenho.%0A%0A*Dados:*%0ANome: ${formData.name}%0ACamisa: ${formData.jerseyInfo}%0APersonalização: ${formData.customDetails}`;
-    window.open(`https://wa.me/5511999999999?text=${message}`, '_blank');
+    window.open(`https://wa.me/5511963268510?text=${message}`, '_blank');
   };
 
   const portfolio = [

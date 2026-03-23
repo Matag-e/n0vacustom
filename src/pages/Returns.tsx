@@ -68,7 +68,7 @@ export default function Returns() {
             Em caso de dúvida entre dois tamanhos, recomendamos sempre escolher o maior.
           </p>
           <a 
-            href="https://wa.me/5511991814636" 
+            href="https://wa.me/5511963268510" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-black text-white px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm hover:bg-gray-800 transition-all"

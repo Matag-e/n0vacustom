@@ -25,16 +25,16 @@ export default function Contact() {
     e.preventDefault();
     // In a real app, this would send an email or save to DB
     const message = `Olá! Meu nome é ${formData.name}.%0AAssunto: ${formData.subject}%0AMensagem: ${formData.message}`;
-    window.open(`https://wa.me/5511991814636?text=${message}`, '_blank');
+    window.open(`https://wa.me/5511963268510?text=${message}`, '_blank');
   };
 
   const contactInfo = [
     {
       icon: <Phone className="w-6 h-6" />,
       title: "WhatsApp",
-      details: "(11) 99181-4636",
+      details: "(11) 96326-8510",
       subDetails: "Segunda a Sexta, 9h às 18h",
-      link: "https://wa.me/5511991814636"
+      link: "https://wa.me/5511963268510"
     },
     {
       icon: <Mail className="w-6 h-6" />,

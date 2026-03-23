@@ -29,6 +29,8 @@ export default function AdminProducts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingBack, setIsUploadingBack] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,6 +118,103 @@ export default function AdminProducts() {
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image_url' | 'image_back_url') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isBack = field === 'image_back_url';
+    if (isBack) setIsUploadingBack(true);
+    else setIsUploading(true);
+
+    try {
+      // 1. Otimização/Compressão da imagem no navegador
+      const optimizedFile = await optimizeImage(file);
+      
+      const fileExt = optimizedFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, optimizedFile);
+
+      if (uploadError) {
+        if (uploadError.message.includes('bucket not found')) {
+          throw new Error('O bucket "products" não foi encontrado no Supabase. Por favor, crie um bucket público chamado "products" no painel do Supabase.');
+        }
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, [field]: publicUrl }));
+      toast.success(`Imagem ${optimizedFile.size > 1024 * 1024 ? (optimizedFile.size / (1024 * 1024)).toFixed(2) + 'MB' : (optimizedFile.size / 1024).toFixed(0) + 'KB'} enviada!`);
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Erro ao enviar imagem.');
+    } finally {
+      if (isBack) setIsUploadingBack(false);
+      else setIsUploading(false);
+    }
+  };
+
+  // Função para comprimir imagem usando Canvas API
+  const optimizeImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Redimensionar se for muito grande (max 1200px)
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Converter para JPEG com qualidade 0.7 (70%)
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(optimizedFile);
+              } else {
+                resolve(file); // Fallback para o original se falhar
+              }
+            },
+            'image/jpeg',
+            0.7
+          );
+        };
+      };
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -402,24 +501,78 @@ export default function AdminProducts() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">URL da Imagem (Frente)</label>
-                    <input
-                      required
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all font-mono"
-                      placeholder="https://..."
-                      value={formData.image_url}
-                      onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                    />
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Imagem Frente</label>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          required
+                          className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all font-mono"
+                          placeholder="URL da imagem..."
+                          value={formData.image_url}
+                          onChange={e => setFormData({ ...formData, image_url: e.target.value })}
+                        />
+                        <label className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 text-zinc-700 p-3 rounded-xl transition-all flex items-center justify-center min-w-[48px]">
+                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={e => handleFileUpload(e, 'image_url')}
+                            disabled={isUploading}
+                          />
+                        </label>
+                      </div>
+                      {formData.image_url && (
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                          <img src={formData.image_url} alt="Preview" className="w-full h-full object-contain" />
+                          <button 
+                            type="button"
+                            onClick={() => setFormData({ ...formData, image_url: '' })}
+                            className="absolute top-1 right-1 p-1 bg-white/80 rounded-full hover:bg-white text-red-500 shadow-sm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">URL da Imagem (Costas)</label>
-                    <input
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all font-mono"
-                      placeholder="https://... (opcional)"
-                      value={formData.image_back_url}
-                      onChange={e => setFormData({ ...formData, image_back_url: e.target.value })}
-                    />
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Imagem Costas (Opcional)</label>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all font-mono"
+                          placeholder="URL da imagem..."
+                          value={formData.image_back_url}
+                          onChange={e => setFormData({ ...formData, image_back_url: e.target.value })}
+                        />
+                        <label className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 text-zinc-700 p-3 rounded-xl transition-all flex items-center justify-center min-w-[48px]">
+                          {isUploadingBack ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={e => handleFileUpload(e, 'image_back_url')}
+                            disabled={isUploadingBack}
+                          />
+                        </label>
+                      </div>
+                      {formData.image_back_url && (
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                          <img src={formData.image_back_url} alt="Preview Back" className="w-full h-full object-contain" />
+                          <button 
+                            type="button"
+                            onClick={() => setFormData({ ...formData, image_back_url: '' })}
+                            className="absolute top-1 right-1 p-1 bg-white/80 rounded-full hover:bg-white text-red-500 shadow-sm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Descrição</label>
                     <textarea
