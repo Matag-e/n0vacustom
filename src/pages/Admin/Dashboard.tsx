@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Package, Truck, CheckCircle2, Clock, XCircle, Search, 
-  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download, Plus
+  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download, Plus, Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -170,6 +170,27 @@ export default function AdminDashboard() {
     }
   }
 
+  async function deleteOrder(orderId: string) {
+    if (!confirm('Tem certeza que deseja excluir este pedido permanentemente? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(orders.filter(o => o.id !== orderId));
+      toast.success('Pedido excluído com sucesso!');
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      toast.error('Erro ao excluir pedido: ' + (error.message || 'Verifique as permissões.'));
+    }
+  }
+
   const copyAddress = (order: Order) => {
     const text = `${order.first_name} ${order.last_name}
 CPF: ${order.cpf}
@@ -309,6 +330,33 @@ Cidade: ${order.city} - ${order.state}`;
     .filter(o => ['paid', 'shipped', 'completed'].includes(o.status))
     .reduce((acc, curr) => acc + curr.total_amount, 0);
 
+  async function clearCancelledOrders() {
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+    if (cancelledOrders.length === 0) {
+      toast.error('Nenhum pedido cancelado para excluir.');
+      return;
+    }
+
+    if (!confirm(`Deseja excluir permanentemente todos os ${cancelledOrders.length} pedidos cancelados?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('status', 'cancelled');
+
+      if (error) throw error;
+
+      setOrders(orders.filter(o => o.status !== 'cancelled'));
+      toast.success('Pedidos cancelados excluídos!');
+    } catch (error: any) {
+      console.error('Error clearing cancelled orders:', error);
+      toast.error('Erro ao limpar pedidos: ' + (error.message || 'Verifique as permissões.'));
+    }
+  }
+
   return (
     <div className="space-y-8">
       <Helmet>
@@ -334,6 +382,13 @@ Cidade: ${order.city} - ${order.state}`;
           >
             <Download className="w-4 h-4" />
             Exportar CSV
+          </button>
+          <button 
+            onClick={clearCancelledOrders}
+            className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-100 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-red-100 transition-all shadow-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+            Limpar Cancelados
           </button>
         </div>
       </div>
@@ -502,6 +557,13 @@ Cidade: ${order.city} - ${order.state}`;
                             title="Ver Detalhes"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteOrder(order.id)}
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title="Excluir Pedido"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
