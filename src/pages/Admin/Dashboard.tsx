@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Package, Truck, CheckCircle2, Clock, XCircle, Search, 
-  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download, Plus, Trash2
+  ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download, Plus, Trash2,
+  AlertTriangle, TrendingUp, BarChart3, Users
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -49,6 +50,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,7 +59,24 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchOrders();
+    fetchLowStock();
   }, []);
+
+  async function fetchLowStock() {
+    try {
+      const { data, error } = await supabase
+        .from('product_stock')
+        .select('*, product:products(name)')
+        .lt('quantity', 3)
+        .gt('quantity', 0)
+        .order('quantity', { ascending: true });
+
+      if (error) throw error;
+      setLowStockItems(data || []);
+    } catch (error) {
+      console.error('Error fetching low stock:', error);
+    }
+  }
 
   async function fetchOrders() {
     setLoading(true);
@@ -404,38 +423,101 @@ Cidade: ${order.city} - ${order.state}`;
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 text-sm font-bold uppercase">Receita Total</h3>
+            <h3 className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Faturamento Total</h3>
             <div className="p-2 bg-green-50 rounded-lg text-green-600">
-              <DollarSign className="w-5 h-5" />
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-black text-gray-900">R$ {totalRevenue.toFixed(2).replace('.', ',')}</p>
-          <p className="text-xs text-gray-400 mt-1">Pedidos pagos e concluídos</p>
+          <p className="text-2xl font-black text-gray-900">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <div className="flex items-center gap-1 mt-2 text-green-600">
+            <TrendingUp className="w-3 h-3" />
+            <span className="text-[10px] font-bold uppercase">Em crescimento</span>
+          </div>
         </div>
         
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 text-sm font-bold uppercase">Total de Pedidos</h3>
+            <h3 className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Total Pedidos</h3>
             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-              <Package className="w-5 h-5" />
+              <Package className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-black text-gray-900">{orders.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Todos os pedidos registrados</p>
+          <p className="text-2xl font-black text-gray-900">{orders.length}</p>
+          <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-tighter">Volume total de vendas</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 text-sm font-bold uppercase">Pendentes</h3>
-            <div className="p-2 bg-yellow-50 rounded-lg text-yellow-600">
-              <Clock className="w-5 h-5" />
+            <h3 className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Ticket Médio</h3>
+            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+              <BarChart3 className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-black text-gray-900">{orders.filter(o => o.status === 'pending').length}</p>
-          <p className="text-xs text-gray-400 mt-1">Aguardando pagamento</p>
+          <p className="text-2xl font-black text-gray-900">
+            R$ {orders.length > 0 ? (totalRevenue / orders.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+          </p>
+          <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-tighter">Média por pedido</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Pendentes</h3>
+            <div className="p-2 bg-yellow-50 rounded-lg text-yellow-600">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-black text-gray-900">{orders.filter(o => o.status === 'pending').length}</p>
+          <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-tighter">Aguardando pagamento</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8">
+        {/* Low Stock Alerts */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+            <h3 className="font-black uppercase tracking-tight flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Alertas de Estoque Crítico
+            </h3>
+            <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+              {lowStockItems.length}
+            </span>
+          </div>
+          <div className="p-6">
+            {lowStockItems.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle2 className="w-8 h-8 text-green-200 mx-auto mb-2" />
+                <p className="text-xs text-gray-400 font-bold uppercase">Tudo em dia!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                {lowStockItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-red-200 transition-all">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-gray-400 uppercase truncate">
+                        {item.product?.name || 'Produto'}
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">Tamanho {item.size}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xl font-black text-red-600">{item.quantity}</span>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Restantes</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {lowStockItems.length > 0 && (
+            <div className="p-4 bg-gray-50 border-t border-gray-100">
+              <Link to="/admin/inventory" className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest block text-center">
+                Gerenciar Inventário Completo
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

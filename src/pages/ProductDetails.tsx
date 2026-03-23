@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/components/ProductCard';
 import { CustomizationGallery } from '@/components/CustomizationGallery';
-import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -23,6 +23,7 @@ export default function ProductDetails() {
   const [isAdding, setIsAdding] = useState(false);
   const [activeImage, setActiveImage] = useState<'front' | 'back'>('front');
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [showFittingRoom, setShowFittingRoom] = useState(false);
   const [stockBySize, setStockBySize] = useState<Record<string, number>>({});
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -115,6 +116,120 @@ export default function ProductDetails() {
 
     fetchProduct();
   }, [id]);
+
+  const FittingRoomModal = () => {
+    const [height, setHeight] = useState('');
+    const [weight, setWeight] = useState('');
+    const [recommendation, setRecommendation] = useState<string | null>(null);
+
+    const handleRecommend = (e: React.FormEvent) => {
+      e.preventDefault();
+      const h = parseInt(height);
+      const w = parseInt(weight);
+
+      if (isNaN(h) || isNaN(w)) return;
+
+      let size = 'G'; // Default
+
+      if (h < 170 && w < 65) size = 'P';
+      else if (h <= 175 && w <= 75) size = 'M';
+      else if (h <= 180 && w <= 85) size = 'G';
+      else if (h <= 185 && w <= 95) size = 'GG';
+      else if (h <= 190 && w <= 105) size = 'XG';
+      else size = '2XG';
+
+      setRecommendation(size);
+    };
+
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+        <div 
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+          onClick={() => setShowFittingRoom(false)}
+        />
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-primary">
+            <h3 className="text-lg font-bold text-white uppercase tracking-widest flex items-center gap-2">
+              <Sparkles className="w-5 h-5" /> Provador Virtual
+            </h3>
+            <button 
+              onClick={() => setShowFittingRoom(false)}
+              className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="p-8 space-y-6">
+            {!recommendation ? (
+              <form onSubmit={handleRecommend} className="space-y-6">
+                <p className="text-sm text-gray-500 text-center">
+                  Informe sua altura e peso para recomendarmos o tamanho ideal para você.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Altura (cm)</label>
+                    <input 
+                      required
+                      type="number" 
+                      placeholder="Ex: 175"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Peso (kg)</label>
+                    <input 
+                      required
+                      type="number" 
+                      placeholder="Ex: 75"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                    />
+                  </div>
+                </div>
+                <button 
+                  type="submit"
+                  className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-gray-900 transition-all shadow-lg"
+                >
+                  Descobrir meu tamanho
+                </button>
+              </form>
+            ) : (
+              <div className="text-center space-y-6 animate-in fade-in zoom-in duration-300">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500 uppercase font-bold tracking-widest">Tamanho Recomendado</p>
+                  <div className="text-7xl font-black text-primary tracking-tighter">{recommendation}</div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl text-xs text-gray-500 leading-relaxed">
+                  Baseado em suas medidas de {height}cm e {weight}kg, o tamanho <strong>{recommendation}</strong> deve proporcionar o melhor caimento.
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setRecommendation(null)}
+                    className="flex-1 border border-gray-200 py-3 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-50 transition-all"
+                  >
+                    Refazer
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setSelectedSize(recommendation);
+                      setShowFittingRoom(false);
+                    }}
+                    className="flex-1 bg-black text-white py-3 rounded-xl text-sm font-bold uppercase tracking-widest hover:bg-gray-900 transition-all shadow-md"
+                  >
+                    Selecionar {recommendation}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const SizeGuideModal = () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
@@ -355,6 +470,22 @@ export default function ProductDetails() {
                   <Ruler className="w-3 h-3" /> Guia de medidas
                 </button>
               </div>
+
+              <button 
+                onClick={() => setShowFittingRoom(true)}
+                className="w-full mb-6 bg-zinc-50 border border-zinc-100 p-4 rounded-xl flex items-center justify-between group hover:border-primary transition-all"
+              >
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900 uppercase tracking-widest">Provador Virtual</p>
+                    <p className="text-[10px] text-gray-400">Descubra seu tamanho ideal em segundos</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" />
+              </button>
               
               <button
                 onClick={toggleWishlist}
@@ -492,6 +623,7 @@ export default function ProductDetails() {
         </div>
       </div>
       {showSizeGuide && <SizeGuideModal />}
+      {showFittingRoom && <FittingRoomModal />}
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <ProductReviews productId={id || ''} />

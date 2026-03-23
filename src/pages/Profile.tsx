@@ -14,6 +14,7 @@ interface Order {
   total_amount: number;
   status: string;
   payment_method?: string;
+  tracking_code?: string;
 }
 
 import { Wishlist } from '@/components/Wishlist';
@@ -331,6 +332,18 @@ export default function Profile() {
                                {order.payment_method === 'pix' ? <Banknote className="w-3 h-3" /> : <CreditCard className="w-3 h-3" />}
                                {order.payment_method === 'pix' ? 'PIX' : 'Cartão'}
                              </span>
+                             {order.tracking_code && (
+                               <a 
+                                 href={`https://www.linkcorreios.com.br/${order.tracking_code}`}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                                 onClick={(e) => e.stopPropagation()}
+                               >
+                                 <Truck className="w-3 h-3" />
+                                 Rastrear: {order.tracking_code}
+                               </a>
+                             )}
                           </div>
                         </div>
                       </div>
