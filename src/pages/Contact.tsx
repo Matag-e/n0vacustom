@@ -33,7 +33,7 @@ export default function Contact() {
       icon: <Phone className="w-6 h-6" />,
       title: "WhatsApp",
       details: "(11) 96326-8510",
-      subDetails: "Segunda a Sexta, 9h às 18h",
+      subDetails: "",
       link: "https://wa.me/5511963268510"
     },
     {
