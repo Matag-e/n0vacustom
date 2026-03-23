@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 export default function AdminLayout() {
   const { user, role, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
