@@ -123,86 +123,77 @@ export default function ProductDetails() {
         onClick={() => setShowSizeGuide(false)}
       />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900 uppercase tracking-wide">Guia de Medidas</h3>
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-black">
+          <h3 className="text-lg font-bold text-white uppercase tracking-widest">Guia de Medidas</h3>
           <button 
             onClick={() => setShowSizeGuide(false)}
-            className="text-gray-400 hover:text-gray-900 transition-colors"
+            className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         
-        <div className="p-6 space-y-8">
-          {/* Visual Aid */}
-          <div className="flex justify-center">
-            <div className="relative w-48 h-48 opacity-80">
-              {/* Simple CSS Jersey Drawing */}
-              <svg viewBox="0 0 100 100" className="w-full h-full stroke-gray-900 stroke-2 fill-none">
-                <path d="M20,30 L30,20 L70,20 L80,30 L80,45 L70,45 L70,90 L30,90 L30,45 L20,45 Z" />
-                {/* Width Arrow */}
-                <path d="M35,65 L65,65" className="stroke-primary" markerEnd="url(#arrow)" markerStart="url(#arrow)" />
-                <text x="50" y="62" textAnchor="middle" className="text-[6px] fill-primary font-bold">LARGURA (A)</text>
-                {/* Height Arrow */}
-                <path d="M85,25 L85,90" className="stroke-primary" />
-                <text x="88" y="60" className="text-[6px] fill-primary font-bold" style={{writingMode: 'vertical-rl'}}>COMPRIMENTO (B)</text>
+        <div className="p-8 space-y-8">
+          {/* Visual Aid - Cleaner & More Professional */}
+          <div className="flex justify-center bg-gray-50 rounded-2xl py-8 border border-gray-100">
+            <div className="relative w-40 h-44">
+              {/* Modern Jersey Silhouette */}
+              <svg viewBox="0 0 100 110" className="w-full h-full stroke-black stroke-[1.5] fill-white drop-shadow-sm">
+                <path d="M20,25 L35,15 L65,15 L80,25 L80,45 L72,45 L72,100 L28,100 L28,45 L20,45 Z" />
+                {/* Width Line (A) */}
+                <g className="stroke-primary stroke-[1] fill-primary">
+                  <line x1="32" y1="70" x2="68" y2="70" />
+                  <circle cx="32" cy="70" r="1.5" />
+                  <circle cx="68" cy="70" r="1.5" />
+                  <text x="50" y="66" textAnchor="middle" className="text-[5px] font-black italic fill-black stroke-none uppercase">LARGURA (A)</text>
+                </g>
+                {/* Height Line (B) */}
+                <g className="stroke-primary stroke-[1] fill-primary">
+                  <line x1="88" y1="18" x2="88" y2="100" />
+                  <circle cx="88" cy="18" r="1.5" />
+                  <circle cx="88" cy="100" r="1.5" />
+                  <text x="93" y="60" textAnchor="middle" className="text-[5px] font-black italic fill-black stroke-none uppercase" style={{ writingMode: 'vertical-rl' }}>COMPRIMENTO (B)</text>
+                </g>
               </svg>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-hidden rounded-lg border border-gray-100">
+          {/* Enhanced Table Design */}
+          <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
             <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-gray-900 font-bold uppercase text-xs">
+              <thead className="bg-gray-100 text-black font-black uppercase text-[10px] tracking-widest">
                 <tr>
-                  <th className="px-4 py-3">Tamanho</th>
-                  <th className="px-4 py-3">Largura (A)</th>
-                  <th className="px-4 py-3">Comprimento (B)</th>
+                  <th className="px-6 py-4 border-b border-gray-200">Tamanho</th>
+                  <th className="px-6 py-4 border-b border-gray-200 text-center">Largura (A)</th>
+                  <th className="px-6 py-4 border-b border-gray-200 text-center">Comprimento (B)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">P</td>
-                  <td className="px-4 py-3 text-gray-500">52 cm</td>
-                  <td className="px-4 py-3 text-gray-500">69 cm</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">M</td>
-                  <td className="px-4 py-3 text-gray-500">54 cm</td>
-                  <td className="px-4 py-3 text-gray-500">71 cm</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">G</td>
-                  <td className="px-4 py-3 text-gray-500">56 cm</td>
-                  <td className="px-4 py-3 text-gray-500">73 cm</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">GG</td>
-                  <td className="px-4 py-3 text-gray-500">58 cm</td>
-                  <td className="px-4 py-3 text-gray-500">75 cm</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">XG</td>
-                  <td className="px-4 py-3 text-gray-500">60 cm</td>
-                  <td className="px-4 py-3 text-gray-500">77 cm</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">2XG</td>
-                  <td className="px-4 py-3 text-gray-500">62 cm</td>
-                  <td className="px-4 py-3 text-gray-500">79 cm</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">3XL</td>
-                  <td className="px-4 py-3 text-gray-500">64 cm</td>
-                  <td className="px-4 py-3 text-gray-500">81 cm</td>
-                </tr>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {[
+                  { s: 'P', w: '52', h: '69' },
+                  { s: 'M', w: '54', h: '71' },
+                  { s: 'G', w: '56', h: '73' },
+                  { s: 'GG', w: '58', h: '75' },
+                  { s: 'XG', w: '60', h: '77' },
+                  { s: '2XG', w: '62', h: '79' },
+                  { s: '3XL', w: '64', h: '81' }
+                ].map((item) => (
+                  <tr key={item.s} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-3.5 font-black text-black">{item.s}</td>
+                    <td className="px-6 py-3.5 text-center font-medium text-gray-600 bg-gray-50/30">{item.w} cm</td>
+                    <td className="px-6 py-3.5 text-center font-medium text-gray-600">{item.h} cm</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
           
-          <p className="text-xs text-gray-400 text-center">
-            * As medidas podem variar em até 2cm.
-          </p>
+          <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100">
+            <p className="text-[10px] text-zinc-500 text-center leading-relaxed font-medium">
+              * As medidas são aproximadas e podem variar em até 2cm para mais ou para menos. 
+              Dica: Compare com uma camisa que você já possui e gosta do caimento.
+            </p>
+          </div>
         </div>
       </div>
     </div>
