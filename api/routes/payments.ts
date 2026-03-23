@@ -50,6 +50,9 @@ const supabase = createClient(
 // Inicializamos o cliente dentro da rota ou usamos uma função para garantir que pegue o valor atual do process.env
 const getMPClient = () => {
   const token = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim()
+  if (!token) {
+    throw new Error('MERCADOPAGO_ACCESS_TOKEN não configurado no arquivo .env do servidor.');
+  }
   return new MercadoPagoConfig({
     accessToken: token,
   })
