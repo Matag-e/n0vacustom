@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
-  Plus, Search, Edit2, Trash2, X, Upload, Save, Loader2, Package, Image as ImageIcon
+  Plus, Search, Edit2, Trash2, X, Upload, Save, Loader2, Package, Image as ImageIcon,
+  CheckCircle2, Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -18,6 +19,7 @@ interface Product {
   country?: string;
   league?: string;
   year?: string;
+  model_type?: string;
   sales_count?: number;
   stock: number;
 }
@@ -27,10 +29,13 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingBack, setIsUploadingBack] = useState(false);
+  const [bulkItems, setBulkItems] = useState<any[]>([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,6 +47,7 @@ export default function AdminProducts() {
     country: '',
     league: '',
     year: '',
+    model_type: '',
   });
 
   const [stockData, setStockData] = useState<Record<string, boolean>>({
@@ -91,6 +97,7 @@ export default function AdminProducts() {
         country: product.country || '',
         league: product.league || '',
         year: product.year || '',
+        model_type: product.model_type || '',
       });
 
       // Popular estoque se existir
@@ -112,6 +119,7 @@ export default function AdminProducts() {
         country: '',
         league: '',
         year: '',
+        model_type: '',
       });
       setStockData({
         'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false
@@ -217,6 +225,180 @@ export default function AdminProducts() {
     });
   };
 
+  const handleBulkFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsBulkModalOpen(true);
+    setBulkProcessing(true);
+
+    // Agrupar arquivos por nome base (removendo -frente e -costas)
+    const groups: Record<string, { frente?: File, costas?: File }> = {};
+    
+    files.forEach(file => {
+      const fileName = file.name.replace(/\.[^/.]+$/, ""); // remove extensão
+      
+      // Identificar se é frente ou costas de forma mais robusta
+      const isBack = /-(costas)$/i.test(fileName);
+      const isFront = /-(frente)$/i.test(fileName);
+      
+      let baseName = fileName;
+      if (isBack) baseName = fileName.replace(/-costas$/i, "");
+      else if (isFront) baseName = fileName.replace(/-frente$/i, "");
+
+      if (!groups[baseName]) groups[baseName] = {};
+      if (isBack) groups[baseName].costas = file;
+      else groups[baseName].frente = file;
+    });
+
+    const newItems = Object.entries(groups).map(([baseName, files]) => {
+      // Parser inteligente: clube-tipo-ano
+      const parts = baseName.split('-');
+      
+      const typeMap: Record<string, string> = {
+        'home': 'CASA',
+        'away': 'FORA',
+        'third': 'TERCEIRA',
+        'forth': 'QUARTA',
+        'fourth': 'QUARTA',
+        'woman': 'FEMININA'
+      };
+      
+      const types = ['home', 'away', 'third', 'forth', 'fourth'];
+      
+      // Encontrar a posição do tipo principal (home/away/etc)
+      const typeIndex = parts.findIndex(p => types.includes(p.toLowerCase()));
+      // Verificar se contém 'woman' em qualquer parte
+      const isWoman = parts.some(p => p.toLowerCase() === 'woman');
+      
+      let suggestedName = "";
+
+      if (typeIndex !== -1) {
+        const club = parts.slice(0, typeIndex).join(' ').toUpperCase();
+        const rawType = parts[typeIndex].toLowerCase();
+        const translatedType = typeMap[rawType] || rawType.toUpperCase();
+        const gender = isWoman ? ' FEMININA' : '';
+        let year = '2026';
+
+        // O ano costuma ser a próxima parte após o tipo, ou após 'woman'
+        const nextPart = parts[typeIndex + 1];
+        const afterNextPart = parts[typeIndex + 2];
+
+        if (nextPart && /^\d{2,4}$/.test(nextPart)) {
+          year = nextPart;
+        } else if (afterNextPart && /^\d{2,4}$/.test(afterNextPart)) {
+          year = afterNextPart;
+        }
+
+        if (year.length === 2) year = '20' + year;
+
+        suggestedName = `${club} - ${translatedType}${gender} ${year}`;
+      } else {
+        // Fallback se não seguir o padrão, mas ainda traduzindo termos avulsos
+        suggestedName = baseName.toUpperCase()
+          .replace(/-HOME/gi, ' - CASA')
+          .replace(/-AWAY/gi, ' - FORA')
+          .replace(/-THIRD/gi, ' - TERCEIRA')
+          .replace(/-FORTH/gi, ' - QUARTA')
+          .replace(/-WOMAN/gi, ' FEMININA')
+          .replace(/[-_]/g, " ");
+      }
+
+      return {
+        file: files.frente || files.costas, // arquivo principal para preview
+        backFile: files.frente ? files.costas : null, // se o principal for frente, costas vai aqui
+        name: suggestedName,
+        price: '179.90',
+        category: 'Nacionais',
+        model_type: '',
+        status: 'pending' as 'pending' | 'uploading' | 'completed' | 'error',
+        preview: URL.createObjectURL(files.frente || files.costas!)
+      };
+    });
+
+    setBulkItems(prev => [...prev, ...newItems]);
+    setBulkProcessing(false);
+  };
+
+  const processBulkUpload = async () => {
+    setBulkProcessing(true);
+    let successCount = 0;
+
+    for (let i = 0; i < bulkItems.length; i++) {
+      const item = bulkItems[i];
+      if (item.status === 'completed') continue;
+
+      try {
+        setBulkItems(prev => prev.map((it, idx) => idx === i ? { ...it, status: 'uploading' } : it));
+
+        // 1. Otimizar e Upload Frente
+        const optimizedFile = await optimizeImage(item.file);
+        const fileExt = optimizedFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('products').upload(filePath, optimizedFile);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(filePath);
+
+        // 2. Otimizar e Upload Costas (se existir)
+        let publicBackUrl = null;
+        if (item.backFile) {
+          const optimizedBackFile = await optimizeImage(item.backFile);
+          const backFileName = `${Math.random().toString(36).substring(2)}-back-${Date.now()}.${fileExt}`;
+          const backFilePath = `products/${backFileName}`;
+
+          const { error: backUploadError } = await supabase.storage.from('products').upload(backFilePath, optimizedBackFile);
+          if (!backUploadError) {
+            const { data: { publicUrl: backUrl } } = supabase.storage.from('products').getPublicUrl(backFilePath);
+            publicBackUrl = backUrl;
+          }
+        }
+
+        // 3. Criar Produto
+        const { data: product, error: productError } = await supabase
+          .from('products')
+          .insert([{
+            name: item.name,
+            price: parseFloat(item.price),
+            category: item.category,
+            model_type: item.model_type,
+            image_url: publicUrl,
+            image_back_url: publicBackUrl,
+            is_active: true,
+            stock: 0
+          }])
+          .select()
+          .single();
+
+        if (productError) throw productError;
+
+        // 4. Criar Estoque
+        const stockItems = sizes.map(size => ({
+          product_id: product.id,
+          size,
+          quantity: 999
+        }));
+
+        await supabase.from('product_stock').upsert(stockItems);
+        await supabase.from('products').update({ stock: 999 * sizes.length }).eq('id', product.id);
+
+        setBulkItems(prev => prev.map((it, idx) => idx === i ? { ...it, status: 'completed' } : it));
+        successCount++;
+      } catch (error) {
+        console.error('Bulk upload error:', error);
+        setBulkItems(prev => prev.map((it, idx) => idx === i ? { ...it, status: 'error' } : it));
+      }
+    }
+
+    setBulkProcessing(false);
+    if (successCount > 0) {
+      toast.success(`${successCount} produtos criados com sucesso!`);
+      fetchProducts();
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja inativar este produto? (Ele não será mais exibido na loja, mas os pedidos anteriores serão preservados)')) return;
 
@@ -252,6 +434,7 @@ export default function AdminProducts() {
         country: formData.country || null,
         league: formData.league || null,
         year: formData.year || null,
+        model_type: formData.model_type || null,
       };
 
       let productId = editingProduct?.id;
@@ -320,13 +503,26 @@ export default function AdminProducts() {
           <p className="text-gray-500 text-sm mt-1">Gerencie o catálogo de produtos da sua loja.</p>
         </div>
         
-        <button 
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Produto
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <label className="flex items-center gap-2 bg-white text-black border border-gray-200 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all shadow-sm cursor-pointer">
+            <Layers className="w-4 h-4" />
+            Upload em Lote
+            <input 
+              type="file" 
+              multiple 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleBulkFileSelect}
+            />
+          </label>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg"
+          >
+            <Plus className="w-4 h-4" />
+            Novo Produto
+          </button>
+        </div>
       </div>
 
       {/* Search & Stats */}
@@ -417,6 +613,126 @@ export default function AdminProducts() {
         )}
       </div>
 
+      {/* Bulk Upload Modal */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !bulkProcessing && setIsBulkModalOpen(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Upload em Lote</h2>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Configurar novos produtos em massa</p>
+              </div>
+              <button onClick={() => !bulkProcessing && setIsBulkModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+              {bulkItems.map((item, index) => (
+                <div key={index} className={cn(
+                  "flex flex-col md:flex-row gap-4 p-4 rounded-2xl border transition-all",
+                  item.status === 'completed' ? "bg-green-50 border-green-100" : "bg-gray-50 border-gray-100"
+                )}>
+                  <div className="w-20 h-24 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0">
+                    <img src={item.preview} className="w-full h-full object-contain" alt="Preview" />
+                  </div>
+                  
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nome do Produto</label>
+                      <input 
+                        disabled={item.status !== 'pending'}
+                        value={item.name}
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, name: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Preço</label>
+                      <input 
+                        disabled={item.status !== 'pending'}
+                        type="number"
+                        value={item.price}
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, price: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Categoria</label>
+                      <input 
+                        disabled={item.status !== 'pending'}
+                        value={item.category}
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, category: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Modelo</label>
+                      <select 
+                        disabled={item.status !== 'pending'}
+                        value={item.model_type}
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, model_type: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      >
+                        <option value="">Nenhum</option>
+                        <option value="torcedor">Torcedor</option>
+                        <option value="jogador">Jogador</option>
+                        <option value="retro">Retrô</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center min-w-[40px]">
+                    {item.status === 'pending' && (
+                      <button 
+                        onClick={() => setBulkItems(prev => prev.filter((_, idx) => idx !== index))}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                    {item.status === 'uploading' && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+                    {item.status === 'completed' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                    {item.status === 'error' && <X className="w-5 h-5 text-red-500" />}
+                  </div>
+                </div>
+              ))}
+
+              {bulkItems.length === 0 && (
+                <div className="text-center py-20 border-2 border-dashed border-gray-100 rounded-3xl">
+                  <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                  <p className="text-gray-400 font-bold uppercase text-sm">Nenhuma imagem selecionada</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                {bulkItems.filter(i => i.status === 'completed').length} de {bulkItems.length} concluídos
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  disabled={bulkProcessing}
+                  onClick={() => setIsBulkModalOpen(false)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-500 hover:bg-gray-100 transition-all"
+                >
+                  Fechar
+                </button>
+                <button 
+                  disabled={bulkProcessing || bulkItems.filter(i => i.status === 'pending').length === 0}
+                  onClick={processBulkUpload}
+                  className="flex items-center gap-2 bg-black text-white px-8 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg disabled:opacity-50"
+                >
+                  {bulkProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Salvar Todos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -458,15 +774,30 @@ export default function AdminProducts() {
                       onChange={e => setFormData({ ...formData, price: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Categoria</label>
-                    <input
-                      required
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                      placeholder="Ex: Nacionais, Internacionais, Retro"
-                      value={formData.category}
-                      onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Categoria</label>
+                      <input
+                        required
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
+                        placeholder="Ex: Nacionais"
+                        value={formData.category}
+                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Modelo</label>
+                      <select
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all appearance-none"
+                        value={formData.model_type}
+                        onChange={e => setFormData({ ...formData, model_type: e.target.value })}
+                      >
+                        <option value="">Não especificado</option>
+                        <option value="torcedor">Torcedor</option>
+                        <option value="jogador">Jogador</option>
+                        <option value="retro">Retrô</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>

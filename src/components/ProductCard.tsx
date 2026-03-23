@@ -15,6 +15,7 @@ export interface Product {
   country?: string | null;
   league?: string | null;
   year?: string | null;
+  model_type?: string | null;
   stock?: number;
   sales_count?: number;
   product_stock?: any[];
@@ -88,10 +89,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </button>
 
           {/* Category Badge */}
-          <div className="absolute top-3 left-3 z-10">
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
             <span className="bg-white/90 dark:bg-black/80 backdrop-blur-sm px-2 py-1 text-[10px] font-bold text-black dark:text-white uppercase tracking-widest">
               {product.category || 'NOVA'}
             </span>
+            {product.model_type && (
+              <span className="bg-primary/90 backdrop-blur-sm px-2 py-1 text-[10px] font-bold text-white uppercase tracking-widest w-fit">
+                {product.model_type}
+              </span>
+            )}
           </div>
 
           {/* Action Overlay */}

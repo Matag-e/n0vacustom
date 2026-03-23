@@ -437,6 +437,13 @@ export default function ProductDetails() {
             <h1 className="text-3xl lg:text-5xl font-black text-gray-900 leading-[1.1] mb-4 tracking-tighter">
               {product.name}
             </h1>
+            {product.model_type && (
+              <div className="mb-4">
+                <span className="bg-zinc-900 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-sm">
+                  Modelo {product.model_type}
+                </span>
+              </div>
+            )}
             <div className="flex items-baseline gap-4 mb-6">
               <span className="text-3xl font-medium text-gray-900">
                 R$ {(product.price + (wantsCustomization ? 30 : 0)).toFixed(2).replace('.', ',')}
