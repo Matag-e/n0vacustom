@@ -198,6 +198,7 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const body = req.body
+    console.log(`[Webhook] Notificação recebida: type=${body.type}, action=${body.action}, topic=${body.topic}`)
     console.log('Webhook MP raw body:', JSON.stringify(body))
 
     let paymentId = ''
@@ -239,8 +240,9 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const orderId = paymentData.external_reference
       const status = paymentData.status
       const statusDetail = paymentData.status_detail
+      const transactionAmount = paymentData.transaction_amount
 
-      console.log(`[Webhook] Dados Recebidos: Pedido=${orderId}, Status=${status}, Detalhe=${statusDetail}`)
+      console.log(`[Webhook] Dados Recebidos: Pedido=${orderId}, Status=${status}, Valor=R$${transactionAmount}, Detalhe=${statusDetail}`)
 
       if (status === 'approved') {
         if (!orderId) {
@@ -251,7 +253,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         // Buscar status atual para não sobrescrever 'shipped' ou 'completed'
         const { data: currentOrder, error: fetchError } = await supabase
           .from('orders')
-          .select('status, payment_method, email, first_name, email_payment_confirmed_sent')
+          .select('status, total_amount, payment_method, email, first_name, email_payment_confirmed_sent')
           .eq('id', orderId)
           .maybeSingle()
 
@@ -263,6 +265,14 @@ router.post('/webhook', async (req: Request, res: Response) => {
         if (!currentOrder) {
           console.error(`[Webhook] Erro: Pedido ${orderId} não encontrado no banco de dados`)
           return res.status(200).send('OK')
+        }
+
+        // --- Verificação de Segurança Adicional: Valor do Pagamento ---
+        // Permitimos uma pequena margem de erro de 0.10 centavos para arredondamentos
+        const amountDiff = Math.abs(Number(currentOrder.total_amount) - Number(transactionAmount));
+        if (amountDiff > 0.50) { // Margem de 50 centavos para segurança
+          console.error(`[Webhook] ALERTA DE SEGURANÇA: Valor pago (R$${transactionAmount}) não condiz com o valor do pedido (R$${currentOrder.total_amount}).`);
+          return res.status(200).send('OK');
         }
 
         if (currentOrder.status === 'shipped' || currentOrder.status === 'completed' || currentOrder.status === 'paid') {

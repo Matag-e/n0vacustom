@@ -36,6 +36,7 @@ export default function AdminProducts() {
   const [isUploadingBack, setIsUploadingBack] = useState(false);
   const [bulkItems, setBulkItems] = useState<any[]>([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -272,9 +273,10 @@ export default function AdminProducts() {
       const isWoman = parts.some(p => p.toLowerCase() === 'woman');
       
       let suggestedName = "";
+      let club = "";
 
       if (typeIndex !== -1) {
-        const club = parts.slice(0, typeIndex).join(' ').toUpperCase();
+        club = parts.slice(0, typeIndex).join(' ').toUpperCase();
         const rawType = parts[typeIndex].toLowerCase();
         const translatedType = typeMap[rawType] || rawType.toUpperCase();
         const gender = isWoman ? ' FEMININA' : '';
@@ -310,6 +312,9 @@ export default function AdminProducts() {
         name: suggestedName,
         price: '179.90',
         category: 'Nacionais',
+        country: '',
+        league: '',
+        year: suggestedName.split(' ').pop() || '2026',
         model_type: '',
         status: 'pending' as 'pending' | 'uploading' | 'completed' | 'error',
         preview: URL.createObjectURL(files.frente || files.costas!)
@@ -364,6 +369,9 @@ export default function AdminProducts() {
             price: parseFloat(item.price),
             category: item.category,
             model_type: item.model_type,
+            country: item.country || null,
+            league: item.league || null,
+            year: item.year || null,
             image_url: publicUrl,
             image_back_url: publicBackUrl,
             is_active: true,
@@ -416,6 +424,71 @@ export default function AdminProducts() {
     } catch (error: any) {
       console.error('Error inactivating product:', error);
       toast.error('Erro ao inativar produto: ' + (error.message || 'Verifique as permissões no Supabase.'));
+    }
+  };
+
+  const handleCleanupImages = async () => {
+    if (!confirm('Deseja escanear e apagar imagens órfãs (não vinculadas a nenhum produto) do storage? Esta ação economiza espaço no Supabase.')) return;
+
+    setIsCleaning(true);
+    try {
+      // 1. Listar todos os arquivos na pasta products do bucket
+      const { data: storageFiles, error: storageError } = await supabase.storage
+        .from('products')
+        .list('products', { limit: 1000 });
+
+      if (storageError) throw storageError;
+      if (!storageFiles || storageFiles.length === 0) {
+        toast.info('Nenhuma imagem encontrada no storage.');
+        return;
+      }
+
+      // 2. Buscar todos os produtos (ativos e inativos) para pegar as URLs de imagem
+      const { data: allProducts, error: productsError } = await supabase
+        .from('products')
+        .select('image_url, image_back_url');
+
+      if (productsError) throw productsError;
+
+      // 3. Extrair os nomes dos arquivos das URLs do banco
+      const usedFiles = new Set<string>();
+      allProducts.forEach(p => {
+        if (p.image_url) {
+          const fileName = p.image_url.split('/').pop();
+          if (fileName) usedFiles.add(fileName);
+        }
+        if (p.image_back_url) {
+          const fileName = p.image_back_url.split('/').pop();
+          if (fileName) usedFiles.add(fileName);
+        }
+      });
+
+      // 4. Identificar arquivos órfãos
+      const orphanFiles = storageFiles
+        .filter(file => file.name !== '.emptyFolderPlaceholder') // ignorar placeholder se houver
+        .filter(file => !usedFiles.has(file.name))
+        .map(file => `products/${file.name}`);
+
+      if (orphanFiles.length === 0) {
+        toast.success('Nenhuma imagem órfã encontrada. Tudo limpo!');
+        return;
+      }
+
+      if (!confirm(`Foram encontradas ${orphanFiles.length} imagens órfãs. Deseja apagá-las permanentemente?`)) return;
+
+      // 5. Apagar arquivos órfãos
+      const { error: deleteError } = await supabase.storage
+        .from('products')
+        .remove(orphanFiles);
+
+      if (deleteError) throw deleteError;
+
+      toast.success(`${orphanFiles.length} imagens órfãs removidas com sucesso!`);
+    } catch (error: any) {
+      console.error('Error cleaning up images:', error);
+      toast.error('Erro ao limpar imagens: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setIsCleaning(false);
     }
   };
 
@@ -504,6 +577,18 @@ export default function AdminProducts() {
         </div>
         
         <div className="flex flex-wrap gap-3">
+          <button 
+            onClick={handleCleanupImages}
+            disabled={isCleaning}
+            className="flex items-center gap-2 bg-white text-red-600 border border-red-100 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-red-50 transition-all shadow-sm disabled:opacity-50"
+          >
+            {isCleaning ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            Limpar Storage
+          </button>
           <label className="flex items-center gap-2 bg-white text-black border border-gray-200 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all shadow-sm cursor-pointer">
             <Layers className="w-4 h-4" />
             Upload em Lote
@@ -623,9 +708,43 @@ export default function AdminProducts() {
                 <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Upload em Lote</h2>
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Configurar novos produtos em massa</p>
               </div>
-              <button onClick={() => !bulkProcessing && setIsBulkModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-4">
+                <div className="hidden md:flex gap-2">
+                  <div className="flex flex-col items-end">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">País p/ todos</label>
+                    <input 
+                      type="text"
+                      placeholder="Ex: Brasil"
+                      className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-32"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = (e.target as HTMLInputElement).value;
+                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, country: val } : item));
+                          toast.success('País aplicado a todos!');
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Liga p/ todos</label>
+                    <input 
+                      type="text"
+                      placeholder="Ex: La Liga"
+                      className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-32"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = (e.target as HTMLInputElement).value;
+                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, league: val } : item));
+                          toast.success('Liga aplicada a todos!');
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <button onClick={() => !bulkProcessing && setIsBulkModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
@@ -638,8 +757,8 @@ export default function AdminProducts() {
                     <img src={item.preview} className="w-full h-full object-contain" alt="Preview" />
                   </div>
                   
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-1">
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <div className="space-y-1 col-span-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nome do Produto</label>
                       <input 
                         disabled={item.status !== 'pending'}
@@ -664,6 +783,36 @@ export default function AdminProducts() {
                         disabled={item.status !== 'pending'}
                         value={item.category}
                         onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, category: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">País</label>
+                      <input 
+                        disabled={item.status !== 'pending'}
+                        value={item.country}
+                        placeholder="Brasil"
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, country: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Liga</label>
+                      <input 
+                        disabled={item.status !== 'pending'}
+                        value={item.league}
+                        placeholder="Brasileirão"
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, league: e.target.value } : it))}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ano</label>
+                      <input 
+                        disabled={item.status !== 'pending'}
+                        value={item.year}
+                        placeholder="2026"
+                        onChange={(e) => setBulkItems(prev => prev.map((it, idx) => idx === index ? { ...it, year: e.target.value } : it))}
                         className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
                       />
                     </div>

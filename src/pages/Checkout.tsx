@@ -28,8 +28,51 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [couponCode, setCouponCode] = useState('');
-  const [discount, setDiscount] = useState<{ type: 'percentage' | 'fixed', value: number, code: string } | null>(null);
+  const [discount, setDiscount] = useState<{ 
+    type: 'percentage' | 'fixed' | 'buy_x_get_y', 
+    value: number, 
+    code: string,
+    min_purchase_amount?: number,
+    min_quantity?: number
+  } | null>(null);
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
+
+  // Auto-apply promotions
+  useEffect(() => {
+    async function checkAutoPromos() {
+      try {
+        const { data, error } = await supabase
+          .rpc('get_active_auto_promos')
+          .limit(1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const promo = data[0];
+          const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+          
+          if (totalItems >= promo.value) {
+            setDiscount({
+              type: promo.type as any,
+              value: promo.value,
+              code: 'PROMOÇÃO AUTOMÁTICA',
+              min_purchase_amount: promo.min_purchase_amount,
+              min_quantity: promo.min_quantity
+            });
+          } else {
+            // Se o carrinho diminuiu e não atende mais a promo automática
+            if (discount?.code === 'PROMOÇÃO AUTOMÁTICA') {
+              setDiscount(null);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking auto promos:', err);
+      }
+    }
+
+    checkAutoPromos();
+  }, [items, discount?.code]);
   const [copied, setCopied] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
 
@@ -92,13 +135,12 @@ export default function Checkout() {
     
     try {
       const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', couponCode.toUpperCase())
-        .eq('active', true)
-        .single();
+        .rpc('validate_coupon', { p_code: couponCode.toUpperCase() })
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) throw error;
+      
+      if (!data) {
         toast.error('Cupom inválido ou expirado');
         return;
       }
@@ -115,10 +157,23 @@ export default function Checkout() {
         return;
       }
 
+      if (data.min_purchase_amount && totalPrice < data.min_purchase_amount) {
+        toast.error(`Compra mínima para este cupom: R$ ${data.min_purchase_amount}`);
+        return;
+      }
+
+      const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+      if (data.min_quantity && totalItems < data.min_quantity) {
+        toast.error(`Mínimo de ${data.min_quantity} itens para este cupom`);
+        return;
+      }
+
       setDiscount({
         type: data.type,
         value: data.value,
-        code: data.code
+        code: data.code,
+        min_purchase_amount: data.min_purchase_amount,
+        min_quantity: data.min_quantity
       });
       toast.success(`Cupom ${data.code} aplicado!`);
     } catch (err) {
@@ -133,8 +188,21 @@ export default function Checkout() {
     if (discount) {
       if (discount.type === 'percentage') {
         discountAmount = subtotal * (discount.value / 100);
-      } else {
+      } else if (discount.type === 'fixed') {
         discountAmount = discount.value;
+      } else if (discount.type === 'buy_x_get_y') {
+        // Promoção Leve X Pague Y (X = value, Y = value - 1)
+        // Ex: Leve 4 Pague 3. Descontamos o valor do item mais barato a cada X itens.
+        const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+        const freeItemsCount = Math.floor(totalItems / discount.value);
+        
+        if (freeItemsCount > 0) {
+          // Pegamos os preços de todos os itens individualmente para encontrar os mais baratos
+          const allPrices = items.flatMap(item => Array(item.quantity).fill(item.product.price + (item.isCustomized ? 30 : 0)))
+            .sort((a, b) => a - b);
+          
+          discountAmount = allPrices.slice(0, freeItemsCount).reduce((acc, price) => acc + price, 0);
+        }
       }
     }
 

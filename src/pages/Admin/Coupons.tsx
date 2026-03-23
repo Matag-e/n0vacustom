@@ -1,38 +1,24 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
-  Plus, Search, Edit2, Trash2, X, Save, Loader2, Ticket, Calendar, Percent, DollarSign, CheckCircle2, AlertTriangle
+  Plus, Trash2, Save, Loader2, Ticket, Tag, CheckCircle2, XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
 
-interface Coupon {
-  id: string;
-  code: string;
-  type: 'percentage' | 'fixed';
-  value: number;
-  active: boolean;
-  usage_limit: number | null;
-  usage_count: number;
-  expires_at: string | null;
-  created_at: string;
-}
-
 export default function AdminCoupons() {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [newCoupon, setNewCoupon] = useState({
     code: '',
-    type: 'percentage' as 'percentage' | 'fixed',
+    type: 'percentage',
     value: '',
+    min_purchase_amount: '0',
+    min_quantity: '0',
     usage_limit: '',
     expires_at: '',
-    active: true,
+    active: true
   });
 
   useEffect(() => {
@@ -40,7 +26,7 @@ export default function AdminCoupons() {
   }, []);
 
   async function fetchCoupons() {
-    setLoading(true);
+    setLoadingCoupons(true);
     try {
       const { data, error } = await supabase
         .from('coupons')
@@ -53,77 +39,65 @@ export default function AdminCoupons() {
       console.error('Error fetching coupons:', error);
       toast.error('Erro ao carregar cupons.');
     } finally {
-      setLoading(false);
+      setLoadingCoupons(false);
     }
   }
 
-  const handleOpenModal = (coupon: Coupon | null = null) => {
-    if (coupon) {
-      setEditingCoupon(coupon);
-      setFormData({
-        code: coupon.code,
-        type: coupon.type,
-        value: coupon.value.toString(),
-        usage_limit: coupon.usage_limit?.toString() || '',
-        expires_at: coupon.expires_at ? new Date(coupon.expires_at).toISOString().split('T')[0] : '',
-        active: coupon.active,
-      });
-    } else {
-      setEditingCoupon(null);
-      setFormData({
+  async function createCoupon(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      // Se for buy_x_get_y, o código é opcional para ser automático
+      const isAutomatic = newCoupon.type === 'buy_x_get_y' && !newCoupon.code;
+      
+      const { error } = await supabase
+        .from('coupons')
+        .insert([{
+          code: newCoupon.code ? newCoupon.code.toUpperCase() : null,
+          type: newCoupon.type,
+          value: parseFloat(newCoupon.value),
+          min_purchase_amount: parseFloat(newCoupon.min_purchase_amount || '0'),
+          min_quantity: parseInt(newCoupon.min_quantity || '0'),
+          usage_limit: newCoupon.usage_limit ? parseInt(newCoupon.usage_limit) : null,
+          expires_at: newCoupon.expires_at || null,
+          active: newCoupon.active
+        }]);
+
+      if (error) throw error;
+      
+      toast.success('Cupom criado com sucesso!');
+      setNewCoupon({
         code: '',
         type: 'percentage',
         value: '',
+        min_purchase_amount: '0',
+        min_quantity: '0',
         usage_limit: '',
         expires_at: '',
-        active: true,
+        active: true
       });
-    }
-    setIsModalOpen(true);
-  };
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      const payload = {
-        code: formData.code.toUpperCase(),
-        type: formData.type,
-        value: parseFloat(formData.value),
-        usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : null,
-        expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
-        active: formData.active,
-      };
-
-      if (editingCoupon) {
-        const { error } = await supabase
-          .from('coupons')
-          .update(payload)
-          .eq('id', editingCoupon.id);
-        if (error) throw error;
-        toast.success('Cupom atualizado!');
-      } else {
-        const { error } = await supabase
-          .from('coupons')
-          .insert([payload]);
-        if (error) throw error;
-        toast.success('Cupom criado!');
-      }
-
-      setIsModalOpen(false);
       fetchCoupons();
     } catch (error: any) {
-      console.error('Error saving coupon:', error);
-      toast.error(error.message || 'Erro ao salvar cupom.');
-    } finally {
-      setIsSaving(false);
+      toast.error('Erro ao criar cupom: ' + error.message);
+    }
+  }
+
+  async function toggleCoupon(id: string, active: boolean) {
+    try {
+      const { error } = await supabase
+        .from('coupons')
+        .update({ active })
+        .eq('id', id);
+
+      if (error) throw error;
+      setCoupons(coupons.map(c => c.id === id ? { ...c, active } : c));
+      toast.success(active ? 'Cupom ativado!' : 'Cupom desativado!');
+    } catch (error: any) {
+      toast.error('Erro ao atualizar cupom');
     }
   }
 
   async function deleteCoupon(id: string) {
-    if (!confirm('Tem certeza que deseja excluir este cupom?')) return;
-    
+    if (!confirm('Excluir este cupom permanentemente?')) return;
     try {
       const { error } = await supabase
         .from('coupons')
@@ -133,230 +107,208 @@ export default function AdminCoupons() {
       if (error) throw error;
       setCoupons(coupons.filter(c => c.id !== id));
       toast.success('Cupom excluído!');
-    } catch (error) {
-      console.error('Error deleting coupon:', error);
-      toast.error('Erro ao excluir cupom.');
+    } catch (error: any) {
+      toast.error('Erro ao excluir cupom');
     }
   }
 
   return (
     <div className="space-y-8">
       <Helmet>
-        <title>Cupons Admin | NovaCustom</title>
+        <title>Cupons & Promoções Admin | NovaCustom</title>
       </Helmet>
-      <div className="flex justify-between items-center">
+      
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestão de Cupons</h1>
-          <p className="text-gray-500 text-sm mt-1">Crie e gerencie códigos de desconto para sua loja.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+            <Ticket className="w-8 h-8 text-black" />
+            Gestão de Cupons & Promoções
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">Crie códigos de desconto e promoções automáticas (ex: Leve 4 Pague 3).</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-black text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Cupom
-        </button>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-300" />
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Código</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Valor</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Usos</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Expiração</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {coupons.map((coupon) => (
-                  <tr key={coupon.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-zinc-100 rounded-lg">
-                          <Ticket className="w-4 h-4 text-zinc-600" />
-                        </div>
-                        <span className="font-bold text-gray-900">{coupon.code}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-medium text-gray-500 uppercase">
-                        {coupon.type === 'percentage' ? 'Porcentagem' : 'Valor Fixo'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {coupon.type === 'percentage' ? `${coupon.value}%` : `R$ ${coupon.value.toFixed(2)}`}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-900">{coupon.usage_count}</span>
-                        <span className="text-[10px] text-gray-400 uppercase font-medium">
-                          Limite: {coupon.usage_limit || '∞'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">
-                          {coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : 'Nunca'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {coupon.active ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-700 uppercase tracking-wide">
-                          <CheckCircle2 className="w-3 h-3" /> Ativo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-700 uppercase tracking-wide">
-                          <AlertTriangle className="w-3 h-3" /> Inativo
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => handleOpenModal(coupon)}
-                          className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-lg transition-all"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => deleteCoupon(coupon.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Form to Create Coupon */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-6 flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Novo Cupom
+            </h3>
+            <form onSubmit={createCoupon} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">
+                  Código (Opcional p/ Automático)
+                </label>
+                <input 
+                  required={newCoupon.type !== 'buy_x_get_y'}
+                  type="text" 
+                  value={newCoupon.code}
+                  onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
+                  placeholder={newCoupon.type === 'buy_x_get_y' ? "Vazio = Automático" : "EX: MANTONOVO10"}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Tipo de Promoção</label>
+                <select 
+                  value={newCoupon.type}
+                  onChange={e => setNewCoupon({...newCoupon, type: e.target.value as any})}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all appearance-none"
+                >
+                  <option value="percentage">Porcentagem (%)</option>
+                  <option value="fixed">Valor Fixo (R$)</option>
+                  <option value="buy_x_get_y">Leve X Pague Y (Automático)</option>
+                </select>
+              </div>
 
-      {/* Modal de Cupom */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight">
-                {editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}
-              </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black">
-                <X className="w-6 h-6" />
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">
+                  {newCoupon.type === 'buy_x_get_y' ? 'Qtd. Mínima p/ Desconto' : 'Valor do Desconto'}
+                </label>
+                <input 
+                  required
+                  type="number" 
+                  value={newCoupon.value}
+                  onChange={e => setNewCoupon({...newCoupon, value: e.target.value})}
+                  placeholder={newCoupon.type === 'buy_x_get_y' ? 'Ex: 4 (Leve 4)' : 'Ex: 10'}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Qtd. Mínima de Itens</label>
+                <input 
+                  required
+                  type="number" 
+                  value={newCoupon.min_quantity}
+                  onChange={e => setNewCoupon({...newCoupon, min_quantity: e.target.value})}
+                  placeholder="Ex: 1 (padrão)"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Limite de Usos</label>
+                <input 
+                  type="number" 
+                  value={newCoupon.usage_limit}
+                  onChange={e => setNewCoupon({...newCoupon, usage_limit: e.target.value})}
+                  placeholder="∞ (ilimitado)"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full bg-black text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-zinc-800 transition-all shadow-lg mt-4 flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Criar Promoção
               </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Código do Cupom</label>
-                  <input
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all uppercase font-bold"
-                    placeholder="EX: BEMVINDO10"
-                    value={formData.code}
-                    onChange={e => setFormData({ ...formData, code: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Tipo</label>
-                  <select
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                    value={formData.type}
-                    onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-                  >
-                    <option value="percentage">Porcentagem (%)</option>
-                    <option value="fixed">Valor Fixo (R$)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Valor</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      {formData.type === 'percentage' ? <Percent className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
-                    </div>
-                    <input
-                      required
-                      type="number"
-                      step="0.01"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                      placeholder="0.00"
-                      value={formData.value}
-                      onChange={e => setFormData({ ...formData, value: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Limite de Usos</label>
-                  <input
-                    type="number"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                    placeholder="Ilimitado"
-                    value={formData.usage_limit}
-                    onChange={e => setFormData({ ...formData, usage_limit: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Data de Expiração</label>
-                  <input
-                    type="date"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                    value={formData.expires_at}
-                    onChange={e => setFormData({ ...formData, expires_at: e.target.value })}
-                  />
-                </div>
-
-                <div className="col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
-                  <input
-                    type="checkbox"
-                    id="active"
-                    checked={formData.active}
-                    onChange={e => setFormData({ ...formData, active: e.target.checked })}
-                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
-                  />
-                  <label htmlFor="active" className="text-sm font-bold text-gray-700 uppercase tracking-wide select-none">Cupom Ativo</label>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-6 py-4 border border-gray-200 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-gray-50 transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex-1 bg-black text-white px-6 py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-zinc-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {editingCoupon ? 'Atualizar' : 'Salvar'}
-                </button>
-              </div>
             </form>
           </div>
         </div>
-      )}
+
+        {/* List of Coupons */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Promoções Ativas no Site
+              </h3>
+              <span className="bg-zinc-100 text-zinc-600 text-[10px] font-black px-2 py-1 rounded-md">
+                {coupons.length} TOTAL
+              </span>
+            </div>
+            
+            <div className="p-6">
+              {loadingCoupons ? (
+                <div className="py-20 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-300" />
+                </div>
+              ) : coupons.length === 0 ? (
+                <div className="py-20 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <Ticket className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                  <p className="text-xs text-gray-400 font-bold uppercase">Nenhuma promoção ativa no momento</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {coupons.map((coupon) => (
+                    <div key={coupon.id} className={cn(
+                      "p-5 rounded-2xl border transition-all relative group",
+                      coupon.active ? "bg-white border-gray-200 shadow-sm" : "bg-gray-50 border-gray-100 opacity-60"
+                    )}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <span className="font-mono font-black text-xl tracking-tighter text-black">
+                            {coupon.code || "🔥 PROMO AUTOMÁTICA"}
+                          </span>
+                          <div className={cn(
+                            "text-[8px] font-black uppercase px-1.5 py-0.5 rounded mt-1 inline-block",
+                            coupon.active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-500"
+                          )}>
+                            {coupon.active ? 'Ativo' : 'Pausado'}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={() => toggleCoupon(coupon.id, !coupon.active)}
+                            title={coupon.active ? "Pausar Cupom" : "Ativar Cupom"}
+                            className={cn(
+                              "p-2 rounded-xl transition-all",
+                              coupon.active ? "text-green-600 bg-green-50 hover:bg-green-100" : "text-gray-400 bg-gray-100 hover:bg-gray-200"
+                            )}
+                          >
+                            <CheckCircle2 className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => deleteCoupon(coupon.id)}
+                            title="Excluir Permanentemente"
+                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-y-3 pt-4 border-t border-gray-50">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-gray-400 block">Tipo</span>
+                          <span className="text-xs font-bold text-gray-700 uppercase">
+                            {coupon.type === 'percentage' ? 'Porcentagem' : coupon.type === 'fixed' ? 'Fixo' : 'Leve X Pague Y'}
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-gray-400 block">Valor</span>
+                          <span className="text-xs font-black text-black uppercase">
+                            {coupon.type === 'percentage' ? `${coupon.value}% OFF` : coupon.type === 'fixed' ? `R$ ${coupon.value} OFF` : `Leve ${coupon.value} Pague ${coupon.value - 1}`}
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-gray-400 block">Usos</span>
+                          <span className="text-xs font-bold text-gray-700">
+                            {coupon.usage_count} <span className="text-gray-300 font-normal">/ {coupon.usage_limit || '∞'}</span>
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-gray-400 block">Qtd. Mínima</span>
+                          <span className="text-xs font-bold text-gray-700">
+                            {coupon.min_quantity || '1'} {coupon.min_quantity === 1 ? 'item' : 'itens'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
