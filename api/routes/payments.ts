@@ -17,7 +17,7 @@ const CreatePreferenceSchema = z.object({
       price: z.number(),
     }),
     quantity: z.number().min(1),
-  })).min(1),
+  })).optional(),
   orderId: z.string().or(z.number()),
   totalAmount: z.number().positive(),
   paymentMethod: z.enum(['pix', 'mercadopago']),
