@@ -22,6 +22,7 @@ interface Product {
   model_type?: string;
   sales_count?: number;
   stock: number;
+  is_active: boolean;
 }
 
 export default function AdminProducts() {
@@ -37,6 +38,36 @@ export default function AdminProducts() {
   const [bulkItems, setBulkItems] = useState<any[]>([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [testProduct, setTestProduct] = useState<Product | null>(null);
+  const [isTogglingTest, setIsTogglingTest] = useState(false);
+
+  const toggleTestProduct = async () => {
+    if (!testProduct) {
+      toast.error('Produto de teste não encontrado.');
+      return;
+    }
+
+    setIsTogglingTest(true);
+    const newStatus = !testProduct.is_active;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: newStatus })
+        .eq('id', testProduct.id);
+
+      if (error) throw error;
+
+      setTestProduct({ ...testProduct, is_active: newStatus });
+      setProducts(prev => prev.map(p => p.id === testProduct.id ? { ...p, is_active: newStatus } : p));
+      toast.success(newStatus ? 'Produto de teste ATIVADO!' : 'Produto de teste DESATIVADO!');
+    } catch (error: any) {
+      console.error('Error toggling test product:', error);
+      toast.error('Erro ao alternar status do produto de teste: ' + (error.message || 'Erro desconhecido.'));
+    } finally {
+      setIsTogglingTest(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,6 +80,7 @@ export default function AdminProducts() {
     league: '',
     year: '',
     model_type: '',
+    is_active: true,
   });
 
   const [stockData, setStockData] = useState<Record<string, boolean>>({
@@ -73,11 +105,14 @@ export default function AdminProducts() {
             quantity
           )
         `)
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProducts(data || []);
+      
+      // Encontrar o produto de teste (ID: dae55cc7-6786-4172-ba88-d4a721490fd5)
+      const test = data?.find(p => p.id === 'dae55cc7-6786-4172-ba88-d4a721490fd5');
+      if (test) setTestProduct(test);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -99,6 +134,7 @@ export default function AdminProducts() {
         league: product.league || '',
         year: product.year || '',
         model_type: product.model_type || '',
+        is_active: product.is_active ?? true,
       });
 
       // Popular estoque se existir
@@ -121,6 +157,7 @@ export default function AdminProducts() {
         league: '',
         year: '',
         model_type: '',
+        is_active: true,
       });
       setStockData({
         'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false
@@ -508,6 +545,7 @@ export default function AdminProducts() {
         league: formData.league || null,
         year: formData.year || null,
         model_type: formData.model_type || null,
+        is_active: formData.is_active,
       };
 
       let productId = editingProduct?.id;
@@ -577,6 +615,25 @@ export default function AdminProducts() {
         </div>
         
         <div className="flex flex-wrap gap-3">
+          {testProduct && (
+            <button 
+              onClick={toggleTestProduct}
+              disabled={isTogglingTest}
+              className={cn(
+                "flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm border",
+                testProduct.is_active 
+                  ? "bg-green-50 text-green-700 border-green-100 hover:bg-green-100" 
+                  : "bg-red-50 text-red-700 border-red-100 hover:bg-red-100"
+              )}
+            >
+              {isTogglingTest ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className={cn("w-4 h-4", !testProduct.is_active && "text-red-400")} />
+              )}
+              {testProduct.is_active ? "Produto de Teste ON" : "Produto de Teste OFF"}
+            </button>
+          )}
           <button 
             onClick={handleCleanupImages}
             disabled={isCleaning}
@@ -648,17 +705,30 @@ export default function AdminProducts() {
           </div>
         ) : (
           filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all group">
+            <div key={product.id} className={cn(
+              "bg-white rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all group",
+              product.is_active ? "border-gray-100" : "border-red-200 opacity-75"
+            )}>
               <div className="aspect-[4/5] relative bg-gray-50 overflow-hidden">
                 {product.image_url ? (
                   <img 
                     src={product.image_url} 
                     alt={product.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    className={cn(
+                      "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
+                      !product.is_active && "grayscale opacity-50"
+                    )}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300">
                     <ImageIcon className="w-12 h-12" />
+                  </div>
+                )}
+                {!product.is_active && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-red-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                      Inativo
+                    </div>
                   </div>
                 )}
                 <div className="absolute top-2 right-2 flex flex-col gap-1">
@@ -976,6 +1046,23 @@ export default function AdminProducts() {
                         onChange={e => setFormData({ ...formData, year: e.target.value })}
                       />
                     </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative">
+                        <input 
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={formData.is_active}
+                          onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                        />
+                        <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                      </div>
+                      <span className="text-sm font-bold text-gray-700 group-hover:text-black transition-colors">
+                        Produto Ativo (Visível na Loja)
+                      </span>
+                    </label>
                   </div>
                 </div>
 

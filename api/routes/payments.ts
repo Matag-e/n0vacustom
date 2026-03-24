@@ -27,6 +27,7 @@ const ProcessPaymentSchema = z.object({
   totalAmount: z.number().positive(),
   paymentMethod: z.literal('pix'),
   orderId: z.string().or(z.number()),
+  deviceId: z.string().optional(),
   payer: z.object({
     email: z.string().email(),
     firstName: z.string().min(1),
@@ -381,7 +382,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 router.post('/process-payment', async (req: Request, res: Response) => {
   try {
     const validatedData = ProcessPaymentSchema.parse(req.body)
-    const { totalAmount, paymentMethod, payer, orderId } = validatedData
+    const { totalAmount, paymentMethod, payer, orderId, deviceId } = validatedData
 
     // Garantir que o valor seja um número válido e arredondado
     const cleanAmount = Number(Number(totalAmount).toFixed(2));
@@ -390,7 +391,8 @@ router.post('/process-payment', async (req: Request, res: Response) => {
       orderId,
       paymentMethod,
       totalAmount: cleanAmount,
-      payerEmail: payer?.email
+      payerEmail: payer?.email,
+      hasDeviceId: !!deviceId
     });
 
     if (isNaN(cleanAmount) || cleanAmount <= 0) {
@@ -440,7 +442,12 @@ router.post('/process-payment', async (req: Request, res: Response) => {
       console.log('[MP] Enviando payload para API do Mercado Pago...');
 
       const result = await payment.create({
-        body: paymentData
+        body: paymentData,
+        requestOptions: {
+          extraHeaders: {
+            'X-Meli-Session-Id': deviceId || '',
+          }
+        }
       })
 
       console.log('[MP] Pagamento criado com sucesso! ID:', result.id);

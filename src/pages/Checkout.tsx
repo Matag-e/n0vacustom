@@ -36,6 +36,27 @@ export default function Checkout() {
     min_quantity?: number
   } | null>(null);
   const [pixResult, setPixResult] = useState<PixResult | null>(null);
+  const [deviceId, setDeviceId] = useState<string>('');
+
+  // Initialize Mercado Pago Device ID
+  useEffect(() => {
+    const initializeMP = async () => {
+      try {
+        if ((window as any).MercadoPago) {
+          const mp = new (window as any).MercadoPago('TEST-fc7592ea-d8bb-4fe0-a42d-ca7e78d278de');
+          const sid = mp.getFingerprint();
+          if (sid) {
+            setDeviceId(sid);
+            console.log('[MP] Device ID gerado:', sid);
+          }
+        }
+      } catch (err) {
+        console.error('[MP] Erro ao inicializar SDK para Device ID:', err);
+      }
+    };
+
+    initializeMP();
+  }, []);
 
   // Auto-apply promotions
   useEffect(() => {
@@ -402,6 +423,7 @@ export default function Checkout() {
               totalAmount: totalAmount,
               paymentMethod: 'pix',
               orderId: orderId,
+              deviceId: deviceId,
               payer: {
                 email: formData.email,
                 firstName: formData.firstName,
