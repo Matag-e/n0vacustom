@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://n0vacustom.com/sitemap.xml
+Sitemap: https://novacustom.com.br/sitemap.xml
