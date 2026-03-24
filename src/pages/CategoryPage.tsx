@@ -12,6 +12,7 @@ interface CategoryPageProps {
 }
 
 export default function CategoryPage({ title, category }: CategoryPageProps) {
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'random' | 'newest' | 'price-asc' | 'price-desc'>('random');
@@ -26,10 +27,10 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
   const [selectedLeagues, setSelectedLeagues] = useState<string[]>([]);
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
 
-  // Derived filter options from products
-  const countries = Array.from(new Set(products.map(p => p.country).filter(Boolean))) as string[];
-  const leagues = Array.from(new Set(products.map(p => p.league).filter(Boolean))) as string[];
-  const years = Array.from(new Set(products.map(p => p.year).filter(Boolean))) as string[];
+  // Derived filter options from all products available in this category
+  const countries = Array.from(new Set(allProducts.map(p => p.country).filter(Boolean))) as string[];
+  const leagues = Array.from(new Set(allProducts.map(p => p.league).filter(Boolean))) as string[];
+  const years = Array.from(new Set(allProducts.map(p => p.year).filter(Boolean))) as string[];
 
   useEffect(() => {
     async function fetchProducts() {
@@ -50,7 +51,40 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
         if (error) throw error;
 
         if (data) {
-          let filteredData = [...data];
+          // 0. Base Category Logic (Before applying sidebar filters)
+          // We filter here to get the "allProducts" for this specific category view
+          let baseData = [...data];
+          
+          if (category === 'clubes') {
+            baseData = baseData.filter(p => {
+              const cat = (p.category || '').toLowerCase().trim();
+              const tags = cat.split(',').map(t => t.trim());
+              return tags.includes('clubes') || tags.includes('nacionais');
+            });
+          } else if (category === 'selecoes') {
+            baseData = baseData.filter(p => {
+              const cat = (p.category || '').toLowerCase().trim();
+              const tags = cat.split(',').map(t => t.trim());
+              return tags.includes('selecoes') || tags.includes('seleção') || tags.includes('selecao');
+            });
+          } else if (category === 'retro') {
+            baseData = baseData.filter(p => {
+              const cat = (p.category || '').toLowerCase().trim();
+              const tags = cat.split(',').map(t => t.trim());
+              return tags.includes('retro');
+            });
+          } else if (category === 'artes-custom' || category === 'personalizados') {
+            baseData = baseData.filter(p => {
+              const cat = (p.category || '').toLowerCase().trim();
+              const tags = cat.split(',').map(t => t.trim());
+              return tags.some(t => t.includes('custom') || t.includes('personalizado'));
+            });
+          }
+          
+          // Store all available products for this category to build filter options
+          setAllProducts(baseData);
+
+          let filteredData = [...baseData];
 
           // 1. Search Filter (by Name or Description)
           if (searchTerm) {
@@ -90,33 +124,8 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
             filteredData = filteredData.filter(p => p.year && selectedYears.includes(p.year));
           }
           
-          // 6. Category Logic (Strictly by tags/category)
-          if (category === 'clubes') {
-             filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase().trim();
-               // Aceita se for EXATAMENTE 'clubes' ou 'nacionais' ou se estiver na lista de tags separadas por vírgula
-               const tags = cat.split(',').map(t => t.trim());
-               return tags.includes('clubes') || tags.includes('nacionais');
-             });
-          } else if (category === 'selecoes') {
-             filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase().trim();
-               const tags = cat.split(',').map(t => t.trim());
-               return tags.includes('selecoes') || tags.includes('seleção') || tags.includes('selecao');
-             });
-          } else if (category === 'retro') {
-             filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase().trim();
-               const tags = cat.split(',').map(t => t.trim());
-               return tags.includes('retro');
-             });
-          } else if (category === 'artes-custom' || category === 'personalizados') {
-             filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase().trim();
-               const tags = cat.split(',').map(t => t.trim());
-               return tags.some(t => t.includes('custom') || t.includes('personalizado'));
-             });
-          } else if (category === 'lancamentos') {
+          // 6. Special Categories Logic
+          if (category === 'lancamentos') {
              const threeDaysAgo = new Date();
              threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
              filteredData = filteredData.filter(p => new Date(p.created_at) >= threeDaysAgo);

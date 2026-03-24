@@ -39,6 +39,7 @@ export default function AdminProducts() {
   const [bulkItems, setBulkItems] = useState<any[]>([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [bulkHeader, setBulkHeader] = useState({ category: '', country: '', league: '' });
   const [testProduct, setTestProduct] = useState<Product | null>(null);
   const [isTogglingTest, setIsTogglingTest] = useState(false);
 
@@ -784,8 +785,15 @@ export default function AdminProducts() {
                   </button>
                 </div>
                 {product.category && (
-                  <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
-                    {product.category}
+                  <div className="absolute bottom-2 left-2 flex flex-col gap-1">
+                    <div className="bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider w-fit">
+                      {product.category}
+                    </div>
+                    {product.league && (
+                      <div className="bg-primary/80 backdrop-blur-sm text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest w-fit">
+                        {product.league}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -817,36 +825,90 @@ export default function AdminProducts() {
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Configurar novos produtos em massa</p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="hidden md:flex gap-2">
+                <div className="hidden md:flex gap-3">
+                  <div className="flex flex-col items-end">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Categoria p/ todos</label>
+                    <div className="flex gap-1">
+                      <input 
+                        type="text"
+                        placeholder="Ex: Clubes"
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-28"
+                        value={bulkHeader.category}
+                        onChange={(e) => setBulkHeader({ ...bulkHeader, category: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, category: bulkHeader.category } : item));
+                            toast.success('Categoria aplicada!');
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, category: bulkHeader.category } : item));
+                          toast.success('Categoria aplicada!');
+                        }}
+                        className="p-1.5 bg-zinc-900 text-white rounded-lg hover:bg-black transition-colors"
+                        title="Aplicar a todos"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex flex-col items-end">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">País p/ todos</label>
-                    <input 
-                      type="text"
-                      placeholder="Ex: Brasil"
-                      className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-32"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const val = (e.target as HTMLInputElement).value;
-                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, country: val } : item));
-                          toast.success('País aplicado a todos!');
-                        }
-                      }}
-                    />
+                    <div className="flex gap-1">
+                      <input 
+                        type="text"
+                        placeholder="Ex: Brasil"
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-28"
+                        value={bulkHeader.country}
+                        onChange={(e) => setBulkHeader({ ...bulkHeader, country: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, country: bulkHeader.country } : item));
+                            toast.success('País aplicado!');
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, country: bulkHeader.country } : item));
+                          toast.success('País aplicado!');
+                        }}
+                        className="p-1.5 bg-zinc-900 text-white rounded-lg hover:bg-black transition-colors"
+                        title="Aplicar a todos"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-col items-end">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Liga p/ todos</label>
-                    <input 
-                      type="text"
-                      placeholder="Ex: La Liga"
-                      className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-32"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const val = (e.target as HTMLInputElement).value;
-                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, league: val } : item));
-                          toast.success('Liga aplicada a todos!');
-                        }
-                      }}
-                    />
+                    <div className="flex gap-1">
+                      <input 
+                        type="text"
+                        placeholder="Ex: La Liga"
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-black w-28"
+                        value={bulkHeader.league}
+                        onChange={(e) => setBulkHeader({ ...bulkHeader, league: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, league: bulkHeader.league } : item));
+                            toast.success('Liga aplicada!');
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                          setBulkItems(prev => prev.map(item => item.status === 'pending' ? { ...item, league: bulkHeader.league } : item));
+                          toast.success('Liga aplicada!');
+                        }}
+                        className="p-1.5 bg-zinc-900 text-white rounded-lg hover:bg-black transition-colors"
+                        title="Aplicar a todos"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <button onClick={() => !bulkProcessing && setIsBulkModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">

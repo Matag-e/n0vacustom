@@ -99,6 +99,11 @@ export function ProductCard({ product }: ProductCardProps) {
                 {product.model_type}
               </span>
             )}
+            {product.league && (
+              <span className="bg-zinc-800/90 backdrop-blur-sm px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
+                {product.league}
+              </span>
+            )}
             {product.shipping_type === 'national' && (
               <span className="bg-green-500 px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
                 Pronta Entrega
