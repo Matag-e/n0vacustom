@@ -13,7 +13,7 @@ const benefits = [
   },
   {
     icon: CreditCard,
-    title: "Parcele Sem Juros",
+    title: "Parcele ",
     description: "Em até 12x"
   }
 ];
