@@ -64,7 +64,7 @@ export default function Restoration() {
       title: "Restauração nome e número",
       before: "/antes.jpeg",
       after: "/depois.jpeg",
-      description: "Aplicação de novo material idêntico ao original."
+      description: "Restauração do nome e número do jogador na camisa."
     }
   ];
 
