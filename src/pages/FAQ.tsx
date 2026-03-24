@@ -74,6 +74,32 @@ export default function FAQ() {
     return matchesSearch && matchesCategory;
   });
 
+  const renderAnswer = (text: string) => {
+    return text.split('\n').map((line, i) => {
+      // Handle bold text **text**
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      const renderedLine = parts.map((part, j) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={j} className="text-black font-black">{part.slice(2, -2)}</strong>;
+        }
+        // Handle italic text *text*
+        const subParts = part.split(/(\*.*?\*)/g);
+        return subParts.map((subPart, k) => {
+          if (subPart.startsWith('*') && subPart.endsWith('*')) {
+            return <em key={k} className="text-gray-400 italic font-medium">{subPart.slice(1, -1)}</em>;
+          }
+          return subPart;
+        });
+      });
+
+      return (
+        <div key={i} className={cn(line.trim() === '' ? 'h-4' : 'mb-1')}>
+          {renderedLine}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="min-h-screen bg-white pt-32 pb-20">
       <Helmet>
@@ -157,8 +183,8 @@ export default function FAQ() {
                     isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                   )}>
                     <div className="overflow-hidden">
-                      <div className="p-6 pt-0 text-gray-600 leading-relaxed border-t border-gray-100 mt-0 whitespace-pre-line">
-                        {faq.answer}
+                      <div className="p-6 pt-0 text-gray-600 leading-relaxed border-t border-gray-100 mt-0">
+                        {renderAnswer(faq.answer)}
                       </div>
                     </div>
                   </div>
