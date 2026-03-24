@@ -84,10 +84,28 @@ export default function AdminProducts() {
   });
 
   const [stockData, setStockData] = useState<Record<string, boolean>>({
-    'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false
+    'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false, '4XL': false
   });
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const baseSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const [availableSizes, setAvailableSizes] = useState<string[]>(baseSizes);
+
+  useEffect(() => {
+    const modelType = (formData.model_type || '').toLowerCase();
+    const category = (formData.category || '').toLowerCase();
+    
+    const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
+    const isJogador = modelType === 'jogador';
+    
+    if (!isRetro && !isJogador) {
+      setAvailableSizes([...baseSizes, '4XL']);
+    } else {
+      setAvailableSizes(baseSizes);
+      setStockData(prev => ({ ...prev, '4XL': false }));
+    }
+  }, [formData.model_type, formData.category]);
+
+  const sizes = availableSizes;
 
   useEffect(() => {
     fetchProducts();

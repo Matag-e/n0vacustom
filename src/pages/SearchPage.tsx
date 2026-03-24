@@ -103,7 +103,7 @@ export default function SearchPage() {
     fetchProducts();
   }, [searchTerm, sortBy, priceRange, selectedSizes, inStockOnly]);
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
 
   const toggleSize = (size: string) => {
     setSelectedSizes(prev => 

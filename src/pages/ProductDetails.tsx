@@ -29,7 +29,59 @@ export default function ProductDetails() {
   const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const SIZE_CHARTS = {
+    torcedor: [
+      { s: 'P', w: '53–55', h: '69–71', minH: 162, maxH: 170, minW: 50, maxW: 62 },
+      { s: 'M', w: '55–57', h: '71–73', minH: 170, maxH: 176, minW: 62, maxW: 78 },
+      { s: 'G', w: '57–58', h: '73–75', minH: 176, maxH: 182, minW: 78, maxW: 83 },
+      { s: 'GG', w: '58–60', h: '75–78', minH: 182, maxH: 190, minW: 83, maxW: 90 },
+      { s: 'XG', w: '60–62', h: '78–81', minH: 190, maxH: 195, minW: 90, maxW: 97 },
+      { s: '2XG', w: '62–64', h: '81–83', minH: 192, maxH: 197, minW: 97, maxW: 104 },
+      { s: '3XL', w: '64–65', h: '83–85', minH: 197, maxH: 200, minW: 104, maxW: 110 },
+      { s: '4XL', w: '64–65', h: '83–85', minH: 197, maxH: 200, minW: 104, maxW: 110 }
+    ],
+    jogador: [
+      { s: 'P', w: '49–51', h: '67–69', minH: 162, maxH: 170, minW: 50, maxW: 62 },
+      { s: 'M', w: '51–53', h: '69–71', minH: 170, maxH: 175, minW: 62, maxW: 75 },
+      { s: 'G', w: '53–55', h: '71–73', minH: 175, maxH: 180, minW: 75, maxW: 80 },
+      { s: 'GG', w: '55–57', h: '73–76', minH: 180, maxH: 185, minW: 80, maxW: 85 },
+      { s: 'XG', w: '57–60', h: '76–78', minH: 185, maxH: 190, minW: 85, maxW: 90 },
+      { s: '2XG', w: '60–63', h: '78–79', minH: 190, maxH: 195, minW: 90, maxW: 95 }
+    ],
+    feminina: [
+      { s: 'P', w: '40–41', h: '61–63', minH: 150, maxH: 160, minW: 40, maxW: 55 },
+      { s: 'M', w: '41–44', h: '63–66', minH: 160, maxH: 165, minW: 55, maxW: 65 },
+      { s: 'G', w: '44–47', h: '66–69', minH: 165, maxH: 170, minW: 65, maxW: 75 },
+      { s: 'GG', w: '47–50', h: '69–71', minH: 170, maxH: 175, minW: 75, maxW: 85 }
+    ]
+  };
+
+  const baseSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const [availableSizes, setAvailableSizes] = useState<string[]>(baseSizes);
+
+  const getModelType = () => {
+    const model = (product?.model_type || '').toLowerCase();
+    const cat = (product?.category || '').toLowerCase();
+    const title = (product?.name || '').toLowerCase();
+    
+    if (model === 'feminina' || cat.includes('feminina') || cat.includes('feminino') || title.includes('feminina') || title.includes('feminino')) return 'feminina';
+    if (model === 'jogador' || model === 'retro' || cat.includes('retrô') || cat.includes('retro')) return 'jogador';
+    return 'torcedor';
+  };
+
+  useEffect(() => {
+    if (product) {
+      const model = getModelType();
+      
+      if (model === 'torcedor') {
+        setAvailableSizes([...baseSizes, '4XL']);
+      } else if (model === 'jogador') {
+        setAvailableSizes(baseSizes);
+      } else {
+        setAvailableSizes(['P', 'M', 'G', 'GG']);
+      }
+    }
+  }, [product]);
 
   useEffect(() => {
     if (user && product) {
@@ -129,14 +181,28 @@ export default function ProductDetails() {
 
       if (isNaN(h) || isNaN(w)) return;
 
-      let size = 'G'; // Default
+      const currentModel = getModelType();
+      const chart = SIZE_CHARTS[currentModel as keyof typeof SIZE_CHARTS] || SIZE_CHARTS.torcedor;
 
-      if (h < 170 && w < 65) size = 'P';
-      else if (h <= 175 && w <= 75) size = 'M';
-      else if (h <= 180 && w <= 85) size = 'G';
-      else if (h <= 185 && w <= 95) size = 'GG';
-      else if (h <= 190 && w <= 105) size = 'XG';
-      else size = '2XG';
+      // Find the best matching size based on the table data
+      let size = 'G'; // Fallback
+      
+      const match = chart.find(item => 
+        h >= (item as any).minH && h <= (item as any).maxH && 
+        w >= (item as any).minW && w <= (item as any).maxW
+      );
+
+      if (match) {
+        size = match.s;
+      } else {
+        // Simple proximity fallback if no exact range matches
+        if (w < 60) size = 'P';
+        else if (w < 75) size = 'M';
+        else if (w < 85) size = 'G';
+        else if (w < 95) size = 'GG';
+        else if (w < 105) size = 'XG';
+        else size = '2XG';
+      }
 
       setRecommendation(size);
     };
@@ -231,88 +297,87 @@ export default function ProductDetails() {
     );
   };
 
-  const SizeGuideModal = () => (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
-      <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-        onClick={() => setShowSizeGuide(false)}
-      />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-black">
-          <h3 className="text-lg font-bold text-white uppercase tracking-widest">Guia de Medidas</h3>
-          <button 
-            onClick={() => setShowSizeGuide(false)}
-            className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="p-8 space-y-8">
-          {/* Visual Aid - Cleaner & More Professional */}
-          <div className="flex justify-center bg-gray-50 rounded-2xl py-8 border border-gray-100">
-            <div className="relative w-40 h-44">
-              {/* Modern Jersey Silhouette */}
-              <svg viewBox="0 0 100 110" className="w-full h-full stroke-black stroke-[1.5] fill-white drop-shadow-sm">
-                <path d="M20,25 L35,15 L65,15 L80,25 L80,45 L72,45 L72,100 L28,100 L28,45 L20,45 Z" />
-                {/* Width Line (A) */}
-                <g className="stroke-primary stroke-[1] fill-primary">
-                  <line x1="32" y1="70" x2="68" y2="70" />
-                  <circle cx="32" cy="70" r="1.5" />
-                  <circle cx="68" cy="70" r="1.5" />
-                  <text x="50" y="66" textAnchor="middle" className="text-[5px] font-black italic fill-black stroke-none uppercase">LARGURA (A)</text>
-                </g>
-                {/* Height Line (B) */}
-                <g className="stroke-primary stroke-[1] fill-primary">
-                  <line x1="88" y1="18" x2="88" y2="100" />
-                  <circle cx="88" cy="18" r="1.5" />
-                  <circle cx="88" cy="100" r="1.5" />
-                  <text x="93" y="60" textAnchor="middle" className="text-[5px] font-black italic fill-black stroke-none uppercase" style={{ writingMode: 'vertical-rl' }}>COMPRIMENTO (B)</text>
-                </g>
-              </svg>
-            </div>
-          </div>
+  const SizeGuideModal = () => {
+    const currentModel = getModelType();
+    const chart = SIZE_CHARTS[currentModel as keyof typeof SIZE_CHARTS] || SIZE_CHARTS.torcedor;
 
-          {/* Enhanced Table Design */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-100 text-black font-black uppercase text-[10px] tracking-widest">
-                <tr>
-                  <th className="px-6 py-4 border-b border-gray-200">Tamanho</th>
-                  <th className="px-6 py-4 border-b border-gray-200 text-center">Largura (A)</th>
-                  <th className="px-6 py-4 border-b border-gray-200 text-center">Comprimento (B)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {[
-                  { s: 'P', w: '52', h: '69' },
-                  { s: 'M', w: '54', h: '71' },
-                  { s: 'G', w: '56', h: '73' },
-                  { s: 'GG', w: '58', h: '75' },
-                  { s: 'XG', w: '60', h: '77' },
-                  { s: '2XG', w: '62', h: '79' },
-                  { s: '3XL', w: '64', h: '81' }
-                ].map((item) => (
-                  <tr key={item.s} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-3.5 font-black text-black">{item.s}</td>
-                    <td className="px-6 py-3.5 text-center font-medium text-gray-600 bg-gray-50/30">{item.w} cm</td>
-                    <td className="px-6 py-3.5 text-center font-medium text-gray-600">{item.h} cm</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+        <div 
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+          onClick={() => setShowSizeGuide(false)}
+        />
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-black">
+            <div>
+              <h3 className="text-lg font-bold text-white uppercase tracking-widest">Guia de Medidas</h3>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                Modelo: {currentModel === 'jogador' ? 'Jogador / Retrô' : currentModel === 'feminina' ? 'Feminina' : 'Torcedor'}
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowSizeGuide(false)}
+              className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
           
-          <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100">
-            <p className="text-[10px] text-zinc-500 text-center leading-relaxed font-medium">
-              * As medidas são aproximadas e podem variar em até 2cm para mais ou para menos. 
-              Dica: Compare com uma camisa que você já possui e gosta do caimento.
-            </p>
+          <div className="p-8 space-y-8">
+            {/* Visual Aid */}
+            <div className="flex justify-center bg-gray-50 rounded-2xl py-8 border border-gray-100">
+              <div className="relative w-40 h-44">
+                <svg viewBox="0 0 100 110" className="w-full h-full stroke-black stroke-[1.5] fill-white drop-shadow-sm">
+                  <path d="M20,25 L35,15 L65,15 L80,25 L80,45 L72,45 L72,100 L28,100 L28,45 L20,45 Z" />
+                  <g className="stroke-primary stroke-[1] fill-primary">
+                    <line x1="32" y1="70" x2="68" y2="70" />
+                    <circle cx="32" cy="70" r="1.5" />
+                    <circle cx="68" cy="70" r="1.5" />
+                    <text x="50" y="66" textAnchor="middle" className="text-[5px] font-black italic fill-black stroke-none uppercase">LARGURA (A)</text>
+                  </g>
+                  <g className="stroke-primary stroke-[1] fill-primary">
+                    <line x1="88" y1="18" x2="88" y2="100" />
+                    <circle cx="88" cy="18" r="1.5" />
+                    <circle cx="88" cy="100" r="1.5" />
+                    <text x="93" y="60" textAnchor="middle" className="text-[5px] font-black italic fill-black stroke-none uppercase" style={{ writingMode: 'vertical-rl' }}>COMPRIMENTO (B)</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            {/* Dynamic Table */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-100 text-black font-black uppercase text-[10px] tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4 border-b border-gray-200">Tamanho</th>
+                    <th className="px-6 py-4 border-b border-gray-200 text-center">Largura (A)</th>
+                    <th className="px-6 py-4 border-b border-gray-200 text-center">Comprimento (B)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {chart.map((item) => (
+                    <tr key={item.s} className="hover:bg-gray-50/80 transition-colors">
+                      <td className="px-6 py-3.5 font-black text-black">{item.s}</td>
+                      <td className="px-6 py-3.5 text-center font-medium text-gray-600 bg-gray-50/30">{item.w} cm</td>
+                      <td className="px-6 py-3.5 text-center font-medium text-gray-600">{item.h} cm</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100">
+              <p className="text-[10px] text-zinc-500 text-center leading-relaxed font-medium">
+                * As medidas são aproximadas e podem variar em até 2cm. 
+                {currentModel === 'jogador' && " O modelo Jogador/Retrô possui um corte mais justo (Fit)."}
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -506,7 +571,7 @@ export default function ProductDetails() {
               </button>
 
               <div className="grid grid-cols-5 gap-2">
-                {sizes.map((size) => {
+                {availableSizes.map((size) => {
                   const quantity = stockBySize[size] || 0;
                   const isOutOfStock = quantity === 0;
                   

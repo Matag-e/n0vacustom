@@ -50,7 +50,14 @@ export default function AdminInventory() {
         .order('name');
 
       if (error) throw error;
-      setProducts(data || []);
+
+      // Calculate total stock from sizes for each product to ensure UI consistency
+      const productsWithStock = (data || []).map((p: any) => ({
+        ...p,
+        stock: p.product_stock?.reduce((acc: number, curr: any) => acc + (curr.quantity || 0), 0) || 0
+      }));
+
+      setProducts(productsWithStock);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Erro ao carregar produtos.');
@@ -108,7 +115,7 @@ export default function AdminInventory() {
     product.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
 
   return (
     <div className="space-y-8">
@@ -208,6 +215,23 @@ export default function AdminInventory() {
                     
                     {/* Sizes Columns */}
                     {sizes.map(size => {
+                      const modelType = (product as any).model_type?.toLowerCase() || '';
+                      const category = (product as any).category?.toLowerCase() || '';
+                      const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
+                      const isJogador = modelType === 'jogador';
+                      
+                      const is4XLNotAllowed = size === '4XL' && (isRetro || isJogador);
+
+                      if (is4XLNotAllowed) {
+                        return (
+                          <td key={size} className="px-4 py-4 text-center">
+                            <div className="w-full py-2 text-gray-200 text-[10px] font-black uppercase tracking-widest">
+                              N/A
+                            </div>
+                          </td>
+                        );
+                      }
+                      
                       const stockItem = product.product_stock?.find(s => s.size === size);
                       const isAvailable = (stockItem?.quantity || 0) > 0;
                       const isSaving = savingStock?.productId === product.id && savingStock?.size === size;

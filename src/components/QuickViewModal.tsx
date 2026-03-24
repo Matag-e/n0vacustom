@@ -19,7 +19,26 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const baseSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const [availableSizes, setAvailableSizes] = useState<string[]>(baseSizes);
+
+  useEffect(() => {
+    if (product) {
+      const modelType = (product.model_type || '').toLowerCase();
+      const category = (product.category || '').toLowerCase();
+      
+      const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
+      const isJogador = modelType === 'jogador';
+      
+      if (!isRetro && !isJogador) {
+        setAvailableSizes([...baseSizes, '4XL']);
+      } else {
+        setAvailableSizes(baseSizes);
+      }
+    }
+  }, [product]);
+
+  const sizes = availableSizes;
 
   useEffect(() => {
     if (isOpen && product.id) {

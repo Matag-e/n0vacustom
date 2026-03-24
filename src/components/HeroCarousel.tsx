@@ -122,31 +122,7 @@ export function HeroCarousel() {
             )}
             
             {/* Elegant Gradients restored */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
-
-            {/* Content Layer */}
-            <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-24 pb-20 md:pb-32">
-              <div className={cn(
-                "max-w-2xl transition-all duration-700 delay-300 transform",
-                currentSlide === index ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              )}>
-                <span className="inline-block text-primary font-bold tracking-[0.3em] uppercase text-[10px] md:text-xs mb-3 md:mb-4 bg-primary/10 backdrop-blur-md px-3 py-1 rounded-full border border-primary/20">
-                  {slide.subtitle}
-                </span>
-                <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4 md:mb-6">
-                  {slide.title.split(' ').map((word, i) => (
-                    <span key={i} className="block">{word}</span>
-                  ))}
-                </h2>
-                <p className="text-gray-300 text-xs md:text-lg max-w-md leading-relaxed mb-6 md:mb-8 font-medium">
-                  {slide.description}
-                </p>
-                <div className="inline-flex items-center gap-3 bg-white text-black px-6 md:px-8 py-3 md:py-4 rounded-full font-black uppercase tracking-widest text-[10px] md:text-xs hover:bg-primary hover:text-white transition-all group/btn shadow-xl">
-                  {slide.buttonText}
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-                </div>
-              </div>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
           </Link>
         </div>
       ))}
