@@ -10,7 +10,7 @@ const slides = [
     subtitle: 'Nacionais',
     description: 'A paixão pelo futebol brasileiro em cada detalhe. Vista as cores do seu time com orgulho.',
     image: '/CARRO 1.jpeg',
-    mobileImage: '/teste1 mob.jpeg', // Substitua pelo caminho da imagem mobile
+    mobileImage: '/teste1 mob.jpeg',
     link: '/clubes',
     buttonText: 'Explorar Clubes',
     color: 'from-zinc-900 to-zinc-800'
@@ -21,7 +21,7 @@ const slides = [
     subtitle: 'Restauração',
     description: 'Sua camisa antiga merece brilhar novamente. Especialistas em restauração de mantos históricos.',
     image: '/CARRO 2.jpeg',
-    mobileImage: '/CARRO 2.jpeg', // Substitua pelo caminho da imagem mobile
+    mobileImage: '/CARRO 2.jpeg', // Recomendado: substituir por imagem vertical 4:5
     link: '/restauracao',
     buttonText: 'Ver Restauração',
     color: 'from-zinc-900 to-zinc-800'
@@ -32,7 +32,7 @@ const slides = [
     subtitle: 'Personalização',
     description: 'Nomes, números e patches oficiais. Deixe seu manto com a sua cara e exclusividade total.',
     image: '/CARRO 3.jpeg',
-    mobileImage: '/CARRO 3.jpeg', // Substitua pelo caminho da imagem mobile
+    mobileImage: '/CARRO 3.jpeg', // Recomendado: substituir por imagem vertical 4:5
     link: '/personalizacao',
     buttonText: 'Personalizar Agora',
     color: 'from-zinc-900 to-zinc-800'
@@ -87,7 +87,7 @@ export function HeroCarousel() {
             currentSlide === index ? "opacity-100 z-10" : "opacity-0 z-0"
           )}
         >
-          <Link to={slide.link} className="block w-full h-full">
+          <Link to={slide.link} className="block w-full h-full relative">
             {/* Desktop Image */}
             {slide.image && (
               <img 
@@ -122,7 +122,31 @@ export function HeroCarousel() {
             )}
             
             {/* Elegant Gradients restored */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
+
+            {/* Content Layer */}
+            <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-24 pb-20 md:pb-32">
+              <div className={cn(
+                "max-w-2xl transition-all duration-700 delay-300 transform",
+                currentSlide === index ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              )}>
+                <span className="inline-block text-primary font-bold tracking-[0.3em] uppercase text-[10px] md:text-xs mb-3 md:mb-4 bg-primary/10 backdrop-blur-md px-3 py-1 rounded-full border border-primary/20">
+                  {slide.subtitle}
+                </span>
+                <h2 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-4 md:mb-6">
+                  {slide.title.split(' ').map((word, i) => (
+                    <span key={i} className="block">{word}</span>
+                  ))}
+                </h2>
+                <p className="text-gray-300 text-xs md:text-lg max-w-md leading-relaxed mb-6 md:mb-8 font-medium">
+                  {slide.description}
+                </p>
+                <div className="inline-flex items-center gap-3 bg-white text-black px-6 md:px-8 py-3 md:py-4 rounded-full font-black uppercase tracking-widest text-[10px] md:text-xs hover:bg-primary hover:text-white transition-all group/btn shadow-xl">
+                  {slide.buttonText}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                </div>
+              </div>
+            </div>
           </Link>
         </div>
       ))}

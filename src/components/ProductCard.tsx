@@ -88,14 +88,19 @@ export function ProductCard({ product }: ProductCardProps) {
             <Maximize2 className="w-4 h-4" />
           </button>
 
-          {/* Category Badge */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            <span className="bg-white/90 dark:bg-black/80 backdrop-blur-sm px-2 py-1 text-[10px] font-bold text-black dark:text-white uppercase tracking-widest">
+          {/* Category & Info Badges */}
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
+            <span className="bg-white/95 dark:bg-black/90 backdrop-blur-sm px-2.5 py-1 text-[9px] font-black text-black dark:text-white uppercase tracking-widest shadow-sm">
               {product.category || 'NOVA'}
             </span>
             {product.model_type && (
-              <span className="bg-primary/90 backdrop-blur-sm px-2 py-1 text-[10px] font-bold text-white uppercase tracking-widest w-fit">
+              <span className="bg-primary px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
                 {product.model_type}
+              </span>
+            )}
+            {Number(product.sales_count) > 50 && (
+              <span className="bg-amber-400 px-2.5 py-1 text-[9px] font-black text-black uppercase tracking-widest w-fit shadow-sm">
+                Best Seller
               </span>
             )}
           </div>

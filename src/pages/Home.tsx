@@ -91,15 +91,19 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-            {products.map((product) => (
+            {products.slice(0, 8).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
         
-        <div className="mt-12 text-center md:hidden">
-          <Link to="/clubes" className="inline-flex items-center gap-2 text-gray-900 dark:text-white font-medium uppercase tracking-wider text-sm border-b border-gray-900 dark:border-white pb-1">
-            Ver coleção completa <ArrowRight className="w-4 h-4" />
+        <div className="mt-16 text-center">
+          <Link 
+            to="/clubes" 
+            className="inline-flex items-center gap-3 bg-black dark:bg-white text-white dark:text-black px-10 py-4 rounded-full font-black uppercase tracking-[0.2em] text-xs hover:scale-105 transition-all shadow-xl hover:shadow-black/20"
+          >
+            Ver Coleção Completa
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
