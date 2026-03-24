@@ -206,11 +206,9 @@ router.post('/webhook', async (req: Request, res: Response) => {
     let action = body.action || ''
 
     // Mercado Pago envia notificações de várias formas
-    if (body.type === 'payment') {
+    if (body.type === 'payment' || body.topic === 'payment') {
       paymentId = body.data?.id || body.id
-    } else if (body.topic === 'payment') {
-      paymentId = body.id
-    } else if (body.resource) {
+    } else if (body.resource && (body.topic === 'payment' || body.type === 'payment' || !body.topic)) {
       paymentId = body.resource.split('/').pop() || ''
     }
 
@@ -221,21 +219,32 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
       // Buscar detalhes reais do pagamento com Retry (MP às vezes demora a indexar)
       let paymentData: any = null
-      let retries = 3
+      let retries = 5 // Aumentado para 5 tentativas
       while (retries > 0) {
         try {
-          console.log(`[Webhook] Buscando dados do pagamento ${paymentId} (Tentativa ${4 - retries}/3)...`)
+          console.log(`[Webhook] Buscando dados do pagamento ${paymentId} (Tentativa ${6 - retries}/5)...`)
           paymentData = await payment.get({ id: paymentId })
           break
         } catch (err: any) {
-          console.error(`[Webhook] Erro ao buscar pagamento ${paymentId}:`, err.message || err)
+          // Se o erro for 404, logamos e tentamos novamente
+          if (err.status === 404) {
+            console.warn(`[Webhook] Pagamento ${paymentId} ainda não encontrado na API do MP (404).`)
+          } else {
+            console.error(`[Webhook] Erro ao buscar pagamento ${paymentId}:`, err.message || err)
+          }
+          
           retries--
           if (retries === 0) {
             console.error(`[Webhook] Esgotadas as tentativas para o pagamento ${paymentId}`)
-            throw err
+            return res.status(200).send('OK') // Respondemos 200 para o MP parar de tentar, mas logamos a falha
           }
-          await new Promise(resolve => setTimeout(resolve, 2000)) // Espera 2s
+          await new Promise(resolve => setTimeout(resolve, 3000)) // Espera 3s entre tentativas
         }
+      }
+
+      if (!paymentData) {
+        console.error(`[Webhook] Falha ao obter dados do pagamento ${paymentId} após retries.`)
+        return res.status(200).send('OK')
       }
 
       const orderId = paymentData.external_reference

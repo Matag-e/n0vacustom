@@ -1,4 +1,9 @@
-export const orderConfirmationTemplate = (orderId: string, customerName: string, totalAmount: number) => `
+export const orderConfirmationTemplate = (order: any) => {
+  const orderId = order.id || 'N/A';
+  const customerName = order.first_name || 'Cliente';
+  const totalAmount = Number(order.total_amount) || 0;
+
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -23,7 +28,7 @@ export const orderConfirmationTemplate = (orderId: string, customerName: string,
       <p>Recebemos o seu pedido com sucesso! Estamos muito felizes que você escolheu a NovaCustom para vestir o seu manto.</p>
       
       <div class="order-info">
-        <p><strong>Pedido:</strong> #${orderId}</p>
+        <p><strong>Pedido:</strong> #${orderId.slice(0, 8)}</p>
         <p><strong>Valor Total:</strong> R$ ${totalAmount.toFixed(2).replace('.', ',')}</p>
         <p><strong>Status:</strong> Aguardando Pagamento</p>
       </div>
@@ -42,6 +47,7 @@ export const orderConfirmationTemplate = (orderId: string, customerName: string,
 </body>
 </html>
 `;
+};
 
 export const orderPaidTemplate = (orderId: string, customerName: string) => `
 <!DOCTYPE html>

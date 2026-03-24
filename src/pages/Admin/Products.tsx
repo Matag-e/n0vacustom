@@ -955,101 +955,225 @@ export default function AdminProducts() {
       {/* Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-zinc-50">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-zinc-50/50 backdrop-blur-md sticky top-0 z-10">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 tracking-tight uppercase">
+                <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase flex items-center gap-3">
+                  <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center">
+                    {editingProduct ? <Edit2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  </div>
                   {editingProduct ? 'Editar Produto' : 'Novo Produto'}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Preencha os dados técnicos do manto.</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 ml-13">
+                  {editingProduct ? `Editando: ${editingProduct.name}` : 'Cadastre um novo manto na loja'}
+                </p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                <X className="w-6 h-6" />
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="p-3 hover:bg-gray-200 text-gray-400 hover:text-gray-900 rounded-full transition-all group"
+              >
+                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Nome do Produto</label>
-                    <input
-                      required
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                      placeholder="Ex: Flamengo Home 2024"
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Preço (R$)</label>
-                    <input
-                      required
-                      type="number"
-                      step="0.01"
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                      placeholder="0.00"
-                      value={formData.price}
-                      onChange={e => setFormData({ ...formData, price: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Categoria</label>
-                      <input
-                        required
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
-                        placeholder="Ex: Nacionais"
-                        value={formData.category}
-                        onChange={e => setFormData({ ...formData, category: e.target.value })}
-                      />
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8">
+              {/* Main Content Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Left Column: Basic Info */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div className="bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100 space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <ImageIcon className="w-3 h-3" /> Informações Básicas
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Nome do Produto</label>
+                        <input
+                          required
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                          placeholder="Ex: Flamengo Home 2024"
+                          value={formData.name}
+                          onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Preço (R$)</label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">R$</span>
+                            <input
+                              required
+                              type="number"
+                              step="0.01"
+                              className="w-full bg-white border border-zinc-200 rounded-xl pl-10 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                              placeholder="0,00"
+                              value={formData.price}
+                              onChange={e => setFormData({ ...formData, price: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Categoria</label>
+                          <input
+                            required
+                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                            placeholder="Ex: Nacionais"
+                            value={formData.category}
+                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Modelo</label>
-                      <select
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all appearance-none"
-                        value={formData.model_type}
-                        onChange={e => setFormData({ ...formData, model_type: e.target.value })}
-                      >
-                        <option value="">Não especificado</option>
-                        <option value="torcedor">Torcedor</option>
-                        <option value="jogador">Jogador</option>
-                        <option value="retro">Retrô</option>
-                      </select>
-                    </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">País</label>
-                      <input
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-black outline-none transition-all"
-                        placeholder="Brasil"
-                        value={formData.country}
-                        onChange={e => setFormData({ ...formData, country: e.target.value })}
-                      />
+
+                  <div className="bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100 space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <Layers className="w-3 h-3" /> Atributos Técnicos
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Modelo</label>
+                        <select
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all appearance-none shadow-sm"
+                          value={formData.model_type}
+                          onChange={e => setFormData({ ...formData, model_type: e.target.value })}
+                        >
+                          <option value="">Não especificado</option>
+                          <option value="torcedor">Torcedor</option>
+                          <option value="jogador">Jogador</option>
+                          <option value="retro">Retrô</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">País</label>
+                        <input
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                          placeholder="Brasil"
+                          value={formData.country}
+                          onChange={e => setFormData({ ...formData, country: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Ano</label>
+                        <input
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                          placeholder="2024"
+                          value={formData.year}
+                          onChange={e => setFormData({ ...formData, year: e.target.value })}
+                        />
+                      </div>
                     </div>
+                    
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Liga</label>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Liga</label>
                       <input
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-black outline-none transition-all"
-                        placeholder="La Liga"
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                        placeholder="Ex: La Liga, Premier League..."
                         value={formData.league}
                         onChange={e => setFormData({ ...formData, league: e.target.value })}
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Ano</label>
-                      <input
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-black outline-none transition-all"
-                        placeholder="2024"
-                        value={formData.year}
-                        onChange={e => setFormData({ ...formData, year: e.target.value })}
-                      />
+                  </div>
+
+                  <div className="bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Descrição do Produto</label>
+                    <textarea
+                      rows={4}
+                      className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all resize-none shadow-sm"
+                      placeholder="Detalhes sobre o tecido, patches, qualidade tailandesa 1:1..."
+                      value={formData.description}
+                      onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Right Column: Images & Status */}
+                <div className="lg:col-span-5 space-y-6">
+                  <div className="bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100 space-y-6">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <ImageIcon className="w-3 h-3" /> Mídia do Produto
+                    </h4>
+
+                    {/* Image Front */}
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block ml-1">Capa (Frente)</label>
+                      <div className="relative group aspect-[4/5] bg-white border-2 border-dashed border-zinc-200 rounded-2xl overflow-hidden flex flex-col items-center justify-center transition-all hover:border-black/20">
+                        {formData.image_url ? (
+                          <>
+                            <img src={formData.image_url} alt="Front" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <label className="cursor-pointer bg-white text-black p-3 rounded-xl font-bold text-xs shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+                                <Upload className="w-4 h-4" /> Alterar
+                                <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, 'image_url')} />
+                              </label>
+                              <button type="button" onClick={() => setFormData({ ...formData, image_url: '' })} className="bg-red-500 text-white p-3 rounded-xl shadow-lg hover:scale-105 transition-transform">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-6">
+                            <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              {isUploading ? <Loader2 className="w-6 h-6 animate-spin text-gray-400" /> : <Upload className="w-6 h-6 text-gray-400" />}
+                            </div>
+                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest text-center">Clique para enviar a frente</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, 'image_url')} disabled={isUploading} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Image Back */}
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block ml-1">Detalhes (Costas)</label>
+                      <div className="relative group aspect-[4/5] bg-white border-2 border-dashed border-zinc-200 rounded-2xl overflow-hidden flex flex-col items-center justify-center transition-all hover:border-black/20">
+                        {formData.image_back_url ? (
+                          <>
+                            <img src={formData.image_back_url} alt="Back" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <label className="cursor-pointer bg-white text-black p-3 rounded-xl font-bold text-xs shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+                                <Upload className="w-4 h-4" /> Alterar
+                                <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, 'image_back_url')} />
+                              </label>
+                              <button type="button" onClick={() => setFormData({ ...formData, image_back_url: '' })} className="bg-red-500 text-white p-3 rounded-xl shadow-lg hover:scale-105 transition-transform">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-6">
+                            <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              {isUploadingBack ? <Loader2 className="w-6 h-6 animate-spin text-gray-400" /> : <Upload className="w-6 h-6 text-gray-400" />}
+                            </div>
+                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest text-center">Clique para enviar as costas</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, 'image_back_url')} disabled={isUploadingBack} />
+                          </label>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="pt-2">
-                    <label className="flex items-center gap-3 cursor-pointer group">
+
+                  <div className="bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100">
+                    <label className="flex items-center justify-between cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                          formData.is_active ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+                        )}>
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-black text-gray-900 uppercase tracking-widest block">Status da Loja</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                            {formData.is_active ? 'Visível para clientes' : 'Oculto na loja'}
+                          </span>
+                        </div>
+                      </div>
                       <div className="relative">
                         <input 
                           type="checkbox"
@@ -1057,148 +1181,97 @@ export default function AdminProducts() {
                           checked={formData.is_active}
                           onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
                         />
-                        <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                        <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
                       </div>
-                      <span className="text-sm font-bold text-gray-700 group-hover:text-black transition-colors">
-                        Produto Ativo (Visível na Loja)
-                      </span>
                     </label>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Imagem Frente</label>
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <input
-                          required
-                          className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all font-mono"
-                          placeholder="URL da imagem..."
-                          value={formData.image_url}
-                          onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                        />
-                        <label className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 text-zinc-700 p-3 rounded-xl transition-all flex items-center justify-center min-w-[48px]">
-                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={e => handleFileUpload(e, 'image_url')}
-                            disabled={isUploading}
-                          />
-                        </label>
-                      </div>
-                      {formData.image_url && (
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
-                          <img src={formData.image_url} alt="Preview" className="w-full h-full object-contain" />
-                          <button 
-                            type="button"
-                            onClick={() => setFormData({ ...formData, image_url: '' })}
-                            className="absolute top-1 right-1 p-1 bg-white/80 rounded-full hover:bg-white text-red-500 shadow-sm"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Imagem Costas (Opcional)</label>
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <input
-                          className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all font-mono"
-                          placeholder="URL da imagem..."
-                          value={formData.image_back_url}
-                          onChange={e => setFormData({ ...formData, image_back_url: e.target.value })}
-                        />
-                        <label className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 text-zinc-700 p-3 rounded-xl transition-all flex items-center justify-center min-w-[48px]">
-                          {isUploadingBack ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={e => handleFileUpload(e, 'image_back_url')}
-                            disabled={isUploadingBack}
-                          />
-                        </label>
-                      </div>
-                      {formData.image_back_url && (
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
-                          <img src={formData.image_back_url} alt="Preview Back" className="w-full h-full object-contain" />
-                          <button 
-                            type="button"
-                            onClick={() => setFormData({ ...formData, image_back_url: '' })}
-                            className="absolute top-1 right-1 p-1 bg-white/80 rounded-full hover:bg-white text-red-500 shadow-sm"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Descrição</label>
-                    <textarea
-                      rows={3}
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all resize-none"
-                      placeholder="Detalhes sobre o tecido, patch, etc."
-                      value={formData.description}
-                      onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    />
                   </div>
                 </div>
               </div>
 
-              {/* Stock Management inside Modal */}
-              <div className="mt-8 pt-8 border-t border-gray-100">
-                <h4 className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                  <Package className="w-4 h-4" />
-                  Disponibilidade por Tamanho
-                </h4>
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+              {/* Stock Management */}
+              <div className="bg-black text-white p-8 rounded-[2rem] shadow-xl space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                      <Package className="w-5 h-5 text-zinc-400" />
+                      Gestão de Inventário
+                    </h4>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Marque os tamanhos que estão em estoque (999 un)</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const allOn = Object.keys(stockData).reduce((acc, k) => ({ ...acc, [k]: true }), {});
+                        setStockData(allOn);
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                    >
+                      Todos ON
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const allOff = Object.keys(stockData).reduce((acc, k) => ({ ...acc, [k]: false }), {});
+                        setStockData(allOff);
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                    >
+                      Todos OFF
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 sm:grid-cols-7 gap-4">
                   {sizes.map(size => (
                     <button
                       key={size}
                       type="button"
                       onClick={() => setStockData({ ...stockData, [size]: !stockData[size] })}
                       className={cn(
-                        "flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-1",
+                        "group relative flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all duration-300 gap-2 overflow-hidden",
                         stockData[size]
-                          ? "border-black bg-black text-white"
-                          : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200"
+                          ? "border-white bg-white text-black scale-105 shadow-lg"
+                          : "border-zinc-800 bg-zinc-900/50 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
                       )}
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest">{size}</span>
-                      <span className="text-[8px] font-bold uppercase opacity-60">
-                        {stockData[size] ? 'Disponível' : 'Esgotado'}
+                      {stockData[size] && (
+                        <div className="absolute top-1 right-1">
+                          <CheckCircle2 className="w-3 h-3 text-black" />
+                        </div>
+                      )}
+                      <span className="text-sm font-black uppercase tracking-tighter">{size}</span>
+                      <span className={cn(
+                        "text-[8px] font-black uppercase tracking-widest",
+                        stockData[size] ? "opacity-100" : "opacity-40"
+                      )}>
+                        {stockData[size] ? 'ATIVO' : 'OFF'}
                       </span>
                     </button>
                   ))}
                 </div>
               </div>
-
-              <div className="mt-8 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-4 rounded-xl font-bold uppercase tracking-widest text-sm text-gray-500 hover:bg-gray-50 transition-all border border-gray-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  disabled={isSaving}
-                  type="submit"
-                  className="flex-1 bg-black text-white py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-zinc-800 transition-all shadow-lg flex items-center justify-center gap-2"
-                >
-                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  {editingProduct ? 'Salvar Alterações' : 'Criar Produto'}
-                </button>
-              </div>
             </form>
+
+            {/* Footer */}
+            <div className="p-6 md:p-8 border-t border-gray-100 bg-zinc-50 flex flex-col md:flex-row gap-4 sticky bottom-0 z-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs text-gray-400 hover:bg-white hover:text-gray-900 transition-all border border-transparent hover:border-gray-200"
+              >
+                Descartar Alterações
+              </button>
+              <button
+                disabled={isSaving}
+                onClick={handleSubmit}
+                type="submit"
+                className="flex-[2] bg-black text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-zinc-800 transition-all shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] flex items-center justify-center gap-3 group disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                {editingProduct ? 'Atualizar Manto' : 'Publicar Produto'}
+              </button>
+            </div>
           </div>
         </div>
       )}
