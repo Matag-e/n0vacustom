@@ -90,33 +90,31 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
             filteredData = filteredData.filter(p => p.year && selectedYears.includes(p.year));
           }
           
-          // 6. Category Logic (Keep existing logic but refine)
+          // 6. Category Logic (Strictly by tags/category)
           if (category === 'clubes') {
              filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase();
-               const name = p.name.toLowerCase();
-               const isSelecao = cat.includes('seleção') || cat.includes('selecao') || name.includes('seleção') || name.includes('selecao') || name.includes('portugal') || name.includes('brasil') || name.includes('argentina') || name.includes('frança') || name.includes('alemanha') || name.includes('espanha') || name.includes('inglaterra') || name.includes('itália');
-               const isRetro = cat.includes('retro') || name.includes('retro');
-               const isCustom = cat.includes('custom') || cat.includes('personalizado');
-               return !isSelecao && !isRetro && !isCustom;
+               const cat = (p.category || '').toLowerCase().trim();
+               // Aceita se for EXATAMENTE 'clubes' ou 'nacionais' ou se estiver na lista de tags separadas por vírgula
+               const tags = cat.split(',').map(t => t.trim());
+               return tags.includes('clubes') || tags.includes('nacionais');
              });
           } else if (category === 'selecoes') {
              filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase();
-               const name = p.name.toLowerCase();
-               return cat.includes('seleção') || cat.includes('selecao') || name.includes('seleção') || name.includes('selecao') || cat === 'selecoes' || name.includes('portugal') || name.includes('brasil') || name.includes('argentina') || name.includes('frança') || name.includes('alemanha') || name.includes('espanha') || name.includes('inglaterra') || name.includes('itália');
+               const cat = (p.category || '').toLowerCase().trim();
+               const tags = cat.split(',').map(t => t.trim());
+               return tags.includes('selecoes') || tags.includes('seleção') || tags.includes('selecao');
              });
           } else if (category === 'retro') {
              filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase();
-               const name = p.name.toLowerCase();
-               return cat.includes('retro') || name.includes('retro');
+               const cat = (p.category || '').toLowerCase().trim();
+               const tags = cat.split(',').map(t => t.trim());
+               return tags.includes('retro');
              });
           } else if (category === 'artes-custom' || category === 'personalizados') {
              filteredData = filteredData.filter(p => {
-               const cat = (p.category || '').toLowerCase();
-               const name = p.name.toLowerCase();
-               return cat.includes('custom') || cat.includes('personalizado') || name.includes('custom') || name.includes('personalizado');
+               const cat = (p.category || '').toLowerCase().trim();
+               const tags = cat.split(',').map(t => t.trim());
+               return tags.some(t => t.includes('custom') || t.includes('personalizado'));
              });
           } else if (category === 'lancamentos') {
              const threeDaysAgo = new Date();
