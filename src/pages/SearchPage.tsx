@@ -11,6 +11,7 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
   
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'random' | 'newest' | 'price-asc' | 'price-desc'>('random');
@@ -26,8 +27,9 @@ export default function SearchPage() {
     setSearchTerm(queryParam);
   }, [queryParam]);
 
+  // Fetch all products once
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchAllProducts() {
       setLoading(true);
       try {
         let query = supabase
@@ -40,58 +42,7 @@ export default function SearchPage() {
         if (error) throw error;
 
         if (data) {
-          let filteredData = [...data];
-
-          // 1. Search Filter (by Name or Description)
-          if (searchTerm) {
-            const term = searchTerm.toLowerCase();
-            filteredData = filteredData.filter(p => 
-              p.name.toLowerCase().includes(term) || 
-              (p.description || '').toLowerCase().includes(term) ||
-              (p.category || '').toLowerCase().includes(term) ||
-              (p.league || '').toLowerCase().includes(term) ||
-              (p.country || '').toLowerCase().includes(term)
-            );
-          }
-
-          // 2. Price Filter
-          filteredData = filteredData.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
-          
-          // 3. Availability Filter
-          if (inStockOnly) {
-            filteredData = filteredData.filter(p => {
-               const stock = p.product_stock || [];
-               return stock.some((s: any) => s.quantity > 0);
-            });
-          }
-          
-          // 4. Size Filter
-          if (selectedSizes.length > 0) {
-            filteredData = filteredData.filter(p => {
-              const stock = p.product_stock || [];
-              return selectedSizes.some(size => 
-                stock.some((s: any) => s.size === size && s.quantity > 0)
-              );
-            });
-          }
-
-          // 5. Sorting
-          if (sortBy === 'random') {
-            let sessionSeed = sessionStorage.getItem('search_products_seed');
-            if (!sessionSeed) {
-              sessionSeed = Math.floor(Math.random() * 10000).toString();
-              sessionStorage.setItem('search_products_seed', sessionSeed);
-            }
-            filteredData = seededShuffle(filteredData, parseInt(sessionSeed));
-          } else if (sortBy === 'newest') {
-            filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          } else if (sortBy === 'price-asc') {
-            filteredData.sort((a, b) => a.price - b.price);
-          } else if (sortBy === 'price-desc') {
-            filteredData.sort((a, b) => b.price - a.price);
-          }
-
-          setProducts(filteredData);
+          setAllProducts(data);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -100,8 +51,66 @@ export default function SearchPage() {
       }
     }
 
-    fetchProducts();
-  }, [searchTerm, sortBy, priceRange, selectedSizes, inStockOnly]);
+    fetchAllProducts();
+  }, []);
+
+  // Filter and sort products (local operation)
+  useEffect(() => {
+    if (allProducts.length === 0 && !loading) return;
+
+    let filteredData = [...allProducts];
+
+    // 1. Search Filter (by Name or Description)
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filteredData = filteredData.filter(p => 
+        p.name.toLowerCase().includes(term) || 
+        (p.description || '').toLowerCase().includes(term) ||
+        (p.category || '').toLowerCase().includes(term) ||
+        (p.league || '').toLowerCase().includes(term) ||
+        (p.country || '').toLowerCase().includes(term)
+      );
+    }
+
+    // 2. Price Filter
+    filteredData = filteredData.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    
+    // 3. Availability Filter
+    if (inStockOnly) {
+      filteredData = filteredData.filter(p => {
+         const stock = p.product_stock || [];
+         return stock.some((s: any) => s.quantity > 0);
+      });
+    }
+    
+    // 4. Size Filter
+    if (selectedSizes.length > 0) {
+      filteredData = filteredData.filter(p => {
+        const stock = p.product_stock || [];
+        return selectedSizes.some(size => 
+          stock.some((s: any) => s.size === size && s.quantity > 0)
+        );
+      });
+    }
+
+    // 5. Sorting
+    if (sortBy === 'random') {
+      let sessionSeed = sessionStorage.getItem('search_products_seed');
+      if (!sessionSeed) {
+        sessionSeed = Math.floor(Math.random() * 10000).toString();
+        sessionStorage.setItem('search_products_seed', sessionSeed);
+      }
+      filteredData = seededShuffle(filteredData, parseInt(sessionSeed));
+    } else if (sortBy === 'newest') {
+      filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortBy === 'price-asc') {
+      filteredData.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-desc') {
+      filteredData.sort((a, b) => b.price - a.price);
+    }
+
+    setProducts(filteredData);
+  }, [allProducts, searchTerm, sortBy, priceRange, selectedSizes, inStockOnly, loading]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
 
@@ -173,60 +182,86 @@ export default function SearchPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-12">
           <aside className={cn(
-            "lg:w-64 space-y-8 lg:block",
+            "lg:w-64 space-y-2 lg:block shrink-0",
             showFilters ? "block" : "hidden"
           )}>
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Preço Máximo</h3>
-              <div className="space-y-4">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="1000" 
-                  value={priceRange[1]}
-                  onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-                  className="w-full accent-black dark:accent-white h-1 bg-gray-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-xs font-medium text-gray-500">
-                  <span>R$ 0</span>
-                  <span>R$ {priceRange[1]}</span>
+            <div className="bg-gray-50/50 dark:bg-zinc-900/30 rounded-2xl p-5 border border-gray-100 dark:border-zinc-800/50 backdrop-blur-sm sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">Filtros</h2>
+                <button 
+                  onClick={() => {
+                    setPriceRange([0, 1000]);
+                    setSelectedSizes([]);
+                    setInStockOnly(false);
+                  }}
+                  className="text-[9px] font-bold uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
+                >
+                  Limpar tudo
+                </button>
+              </div>
+
+              {/* Price Filter */}
+              <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Preço Máximo</h3>
+                <div className="space-y-3">
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="1000" 
+                    value={priceRange[1]}
+                    onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                    className="w-full accent-primary h-1 bg-gray-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider text-gray-500">
+                    <span>R$ 0</span>
+                    <span className="text-black dark:text-white">Até R$ {priceRange[1]}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Tamanho</h3>
-              <div className="grid grid-cols-3 gap-2">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => toggleSize(size)}
-                    className={cn(
-                      "py-2 text-xs font-bold border transition-all uppercase",
-                      selectedSizes.includes(size)
-                        ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                        : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
+              {/* Size Filter */}
+              <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Tamanho</h3>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => toggleSize(size)}
+                      className={cn(
+                        "h-8 text-[9px] font-black border transition-all uppercase rounded-md",
+                        selectedSizes.includes(size)
+                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-sm"
+                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400 dark:hover:border-zinc-600"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Disponibilidade</h3>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  checked={inStockOnly}
-                  onChange={(e) => setInStockOnly(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 dark:border-zinc-800 text-black dark:text-white focus:ring-black dark:focus:ring-white"
-                />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white transition-colors">
-                  Apenas em estoque
-                </span>
-              </label>
+              {/* Availability Filter */}
+              <div className="mb-0">
+                <label className="flex items-center justify-between cursor-pointer group">
+                  <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.1em]">Em estoque</span>
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      checked={inStockOnly}
+                      onChange={(e) => setInStockOnly(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className={cn(
+                      "w-8 h-4 rounded-full transition-colors duration-200 ease-in-out",
+                      inStockOnly ? "bg-primary" : "bg-gray-200 dark:bg-zinc-800"
+                    )} />
+                    <div className={cn(
+                      "absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-200 ease-in-out shadow-sm",
+                      inStockOnly ? "translate-x-4" : "translate-x-0"
+                    )} />
+                  </div>
+                </label>
+              </div>
             </div>
           </aside>
 

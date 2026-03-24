@@ -32,11 +32,11 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
   const leagues = Array.from(new Set(allProducts.map(p => p.league).filter(Boolean))) as string[];
   const years = Array.from(new Set(allProducts.map(p => p.year).filter(Boolean))) as string[];
 
+  // Fetch products (only when category changes)
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchAllCategoryProducts() {
       setLoading(true);
       try {
-        // Fetch products with their stock info and reviews for "mais-vendidos"
         let query = supabase
           .from('products')
           .select('*, product_stock(*), reviews(*)')
@@ -51,8 +51,6 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
         if (error) throw error;
 
         if (data) {
-          // 0. Base Category Logic (Before applying sidebar filters)
-          // We filter here to get the "allProducts" for this specific category view
           let baseData = [...data];
           
           if (category === 'clubes') {
@@ -81,78 +79,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
             });
           }
           
-          // Store all available products for this category to build filter options
           setAllProducts(baseData);
-
-          let filteredData = [...baseData];
-
-          // 1. Search Filter (by Name or Description)
-          if (searchTerm) {
-            const term = searchTerm.toLowerCase();
-            filteredData = filteredData.filter(p => 
-              p.name.toLowerCase().includes(term) || 
-              (p.description || '').toLowerCase().includes(term)
-            );
-          }
-
-          // 2. Price Filter
-          filteredData = filteredData.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
-          
-          // 3. Availability Filter
-          if (inStockOnly) {
-            filteredData = filteredData.filter(p => (p.stock || 0) > 0);
-          }
-          
-          // 4. Size Filter (Only products that have at least one of the selected sizes with quantity > 0)
-          if (selectedSizes.length > 0) {
-            filteredData = filteredData.filter(p => {
-              const stock = p.product_stock || [];
-              return selectedSizes.some(size => 
-                stock.some((s: any) => s.size === size && s.quantity > 0)
-              );
-            });
-          }
-
-          // 5. Smart Filters (Country, League, Year)
-          if (selectedCountries.length > 0) {
-            filteredData = filteredData.filter(p => p.country && selectedCountries.includes(p.country));
-          }
-          if (selectedLeagues.length > 0) {
-            filteredData = filteredData.filter(p => p.league && selectedLeagues.includes(p.league));
-          }
-          if (selectedYears.length > 0) {
-            filteredData = filteredData.filter(p => p.year && selectedYears.includes(p.year));
-          }
-          
-          // 6. Special Categories Logic
-          if (category === 'lancamentos') {
-             const threeDaysAgo = new Date();
-             threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-             filteredData = filteredData.filter(p => new Date(p.created_at) >= threeDaysAgo);
-          } else if (category === 'mais-vendidos') {
-             filteredData = filteredData.filter(p => (p.sales_count || 0) > 0 || (p.reviews?.length || 0) > 0);
-             filteredData.sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0));
-          }
-
-          // 7. Sorting (Override if not already sorted by category logic)
-          if (category !== 'mais-vendidos') {
-            if (sortBy === 'random') {
-              let sessionSeed = sessionStorage.getItem('category_products_seed');
-              if (!sessionSeed) {
-                sessionSeed = Math.floor(Math.random() * 10000).toString();
-                sessionStorage.setItem('category_products_seed', sessionSeed);
-              }
-              filteredData = seededShuffle(filteredData, parseInt(sessionSeed));
-            } else if (sortBy === 'newest') {
-              filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            } else if (sortBy === 'price-asc') {
-              filteredData.sort((a, b) => a.price - b.price);
-            } else if (sortBy === 'price-desc') {
-              filteredData.sort((a, b) => b.price - a.price);
-            }
-          }
-
-          setProducts(filteredData);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -161,8 +88,83 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
       }
     }
 
-    fetchProducts();
-  }, [category, sortBy, priceRange, selectedSizes, searchTerm, inStockOnly, selectedCountries, selectedLeagues, selectedYears]);
+    fetchAllCategoryProducts();
+  }, [category]);
+
+  // Filter and sort products (local operation)
+  useEffect(() => {
+    if (allProducts.length === 0 && !loading) return;
+
+    let filteredData = [...allProducts];
+
+    // 1. Search Filter (by Name or Description)
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filteredData = filteredData.filter(p => 
+        p.name.toLowerCase().includes(term) || 
+        (p.description || '').toLowerCase().includes(term)
+      );
+    }
+
+    // 2. Price Filter
+    filteredData = filteredData.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    
+    // 3. Availability Filter
+    if (inStockOnly) {
+      filteredData = filteredData.filter(p => (p.stock || 0) > 0);
+    }
+    
+    // 4. Size Filter
+    if (selectedSizes.length > 0) {
+      filteredData = filteredData.filter(p => {
+        const stock = p.product_stock || [];
+        return selectedSizes.some(size => 
+          stock.some((s: any) => s.size === size && s.quantity > 0)
+        );
+      });
+    }
+
+    // 5. Smart Filters (Country, League, Year)
+    if (selectedCountries.length > 0) {
+      filteredData = filteredData.filter(p => p.country && selectedCountries.includes(p.country));
+    }
+    if (selectedLeagues.length > 0) {
+      filteredData = filteredData.filter(p => p.league && selectedLeagues.includes(p.league));
+    }
+    if (selectedYears.length > 0) {
+      filteredData = filteredData.filter(p => p.year && selectedYears.includes(p.year));
+    }
+    
+    // 6. Special Categories Logic
+    if (category === 'lancamentos') {
+       const threeDaysAgo = new Date();
+       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+       filteredData = filteredData.filter(p => new Date(p.created_at) >= threeDaysAgo);
+    } else if (category === 'mais-vendidos') {
+       filteredData = filteredData.filter(p => (p.sales_count || 0) > 0 || (p.reviews?.length || 0) > 0);
+       filteredData.sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0));
+    }
+
+    // 7. Sorting
+    if (category !== 'mais-vendidos') {
+      if (sortBy === 'random') {
+        let sessionSeed = sessionStorage.getItem('category_products_seed');
+        if (!sessionSeed) {
+          sessionSeed = Math.floor(Math.random() * 10000).toString();
+          sessionStorage.setItem('category_products_seed', sessionSeed);
+        }
+        filteredData = seededShuffle(filteredData, parseInt(sessionSeed));
+      } else if (sortBy === 'newest') {
+        filteredData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      } else if (sortBy === 'price-asc') {
+        filteredData.sort((a, b) => a.price - b.price);
+      } else if (sortBy === 'price-desc') {
+        filteredData.sort((a, b) => b.price - a.price);
+      }
+    }
+
+    setProducts(filteredData);
+  }, [allProducts, sortBy, priceRange, selectedSizes, searchTerm, inStockOnly, selectedCountries, selectedLeagues, selectedYears, category, loading]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
 
@@ -236,139 +238,166 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Filters Sidebar */}
           <aside className={cn(
-            "lg:w-64 space-y-8 lg:block",
+            "lg:w-64 space-y-2 lg:block shrink-0",
             showFilters ? "block" : "hidden"
           )}>
-            {/* Price Filter */}
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Preço</h3>
-              <div className="space-y-4">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="1000" 
-                  value={priceRange[1]}
-                  onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-                  className="w-full accent-black dark:accent-white h-1 bg-gray-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-xs font-medium text-gray-500">
-                  <span>R$ 0</span>
-                  <span>R$ {priceRange[1]}</span>
+            <div className="bg-gray-50/50 dark:bg-zinc-900/30 rounded-2xl p-5 border border-gray-100 dark:border-zinc-800/50 backdrop-blur-sm sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">Filtros</h2>
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setPriceRange([0, 1000]);
+                    setSelectedSizes([]);
+                    setInStockOnly(false);
+                    setSelectedCountries([]);
+                    setSelectedLeagues([]);
+                    setSelectedYears([]);
+                  }}
+                  className="text-[9px] font-bold uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
+                >
+                  Limpar tudo
+                </button>
+              </div>
+
+              {/* Price Filter */}
+              <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Preço</h3>
+                <div className="space-y-3">
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="1000" 
+                    value={priceRange[1]}
+                    onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                    className="w-full accent-primary h-1 bg-gray-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider text-gray-500">
+                    <span>R$ 0</span>
+                    <span className="text-black dark:text-white">Até R$ {priceRange[1]}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Size Filter */}
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Tamanho</h3>
-              <div className="grid grid-cols-3 gap-2">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => toggleSize(size)}
-                    className={cn(
-                      "py-2 text-xs font-bold border transition-all uppercase",
-                      selectedSizes.includes(size)
-                        ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                        : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Availability Filter */}
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Disponibilidade</h3>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  checked={inStockOnly}
-                  onChange={(e) => setInStockOnly(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 dark:border-zinc-800 text-black dark:text-white focus:ring-black dark:focus:ring-white"
-                />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white transition-colors">
-                  Apenas em estoque
-                </span>
-              </label>
-            </div>
-
-            {/* Country Filter */}
-            {countries.length > 0 && (
-              <div>
-                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">País</h3>
-                <div className="flex flex-wrap gap-2">
-                  {countries.map((country) => (
+              {/* Size Filter */}
+              <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Tamanho</h3>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {sizes.map((size) => (
                     <button
-                      key={country}
-                      onClick={() => setSelectedCountries(prev => 
-                        prev.includes(country) ? prev.filter(c => c !== country) : [...prev, country]
-                      )}
+                      key={size}
+                      onClick={() => toggleSize(size)}
                       className={cn(
-                        "px-3 py-1.5 text-[10px] font-bold border transition-all uppercase rounded-full",
-                        selectedCountries.includes(country)
-                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                        "h-8 text-[9px] font-black border transition-all uppercase rounded-md",
+                        selectedSizes.includes(size)
+                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-sm"
+                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400 dark:hover:border-zinc-600"
                       )}
                     >
-                      {country}
+                      {size}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* League Filter */}
-            {leagues.length > 0 && (
-              <div>
-                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Liga</h3>
-                <div className="flex flex-wrap gap-2">
-                  {leagues.map((league) => (
-                    <button
-                      key={league}
-                      onClick={() => setSelectedLeagues(prev => 
-                        prev.includes(league) ? prev.filter(l => l !== league) : [...prev, league]
-                      )}
-                      className={cn(
-                        "px-3 py-1.5 text-[10px] font-bold border transition-all uppercase rounded-full",
-                        selectedLeagues.includes(league)
-                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
-                      )}
-                    >
-                      {league}
-                    </button>
-                  ))}
-                </div>
+              {/* Availability Filter */}
+              <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                <label className="flex items-center justify-between cursor-pointer group">
+                  <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.1em]">Em estoque</span>
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      checked={inStockOnly}
+                      onChange={(e) => setInStockOnly(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className={cn(
+                      "w-8 h-4 rounded-full transition-colors duration-200 ease-in-out",
+                      inStockOnly ? "bg-primary" : "bg-gray-200 dark:bg-zinc-800"
+                    )} />
+                    <div className={cn(
+                      "absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-200 ease-in-out shadow-sm",
+                      inStockOnly ? "translate-x-4" : "translate-x-0"
+                    )} />
+                  </div>
+                </label>
               </div>
-            )}
 
-            {/* Year Filter */}
-            {years.length > 0 && (
-              <div>
-                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm mb-4">Ano</h3>
-                <div className="flex flex-wrap gap-2">
-                  {years.map((year) => (
-                    <button
-                      key={year}
-                      onClick={() => setSelectedYears(prev => 
-                        prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
-                      )}
-                      className={cn(
-                        "px-3 py-1.5 text-[10px] font-bold border transition-all uppercase rounded-full",
-                        selectedYears.includes(year)
-                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
-                      )}
-                    >
-                      {year}
-                    </button>
-                  ))}
+              {/* Country Filter */}
+              {countries.length > 0 && (
+                <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">País</h3>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                    {countries.sort().map((country) => (
+                      <button
+                        key={country}
+                        onClick={() => setSelectedCountries(prev => 
+                          prev.includes(country) ? prev.filter(c => c !== country) : [...prev, country]
+                        )}
+                        className={cn(
+                          "px-2 py-1 text-[9px] font-bold border transition-all uppercase rounded-md whitespace-nowrap",
+                          selectedCountries.includes(country)
+                            ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                            : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                        )}
+                      >
+                        {country}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* League Filter */}
+              {leagues.length > 0 && (
+                <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Liga</h3>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                    {leagues.sort().map((league) => (
+                      <button
+                        key={league}
+                        onClick={() => setSelectedLeagues(prev => 
+                          prev.includes(league) ? prev.filter(l => l !== league) : [...prev, league]
+                        )}
+                        className={cn(
+                          "px-2 py-1 text-[9px] font-bold border transition-all uppercase rounded-md whitespace-nowrap",
+                          selectedLeagues.includes(league)
+                            ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                            : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                        )}
+                      >
+                        {league}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Year Filter */}
+              {years.length > 0 && (
+                <div className="mb-0">
+                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Ano</h3>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                    {years.sort((a, b) => b.localeCompare(a)).map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => setSelectedYears(prev => 
+                          prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
+                        )}
+                        className={cn(
+                          "px-2 py-1 text-[9px] font-bold border transition-all uppercase rounded-md whitespace-nowrap",
+                          selectedYears.includes(year)
+                            ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                            : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400"
+                        )}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </aside>
 
           {/* Product Grid */}
