@@ -12,7 +12,22 @@ export default function Shipping() {
     {
       icon: <Truck className="w-6 h-6" />,
       title: "Prazos de Entrega",
-      content: "O prazo total de entrega é a soma do tempo de processamento + o tempo de transporte dos Correios ou Transportadora. Em média, nossos clientes recebem seus mantos entre 7 a 15 dias úteis após a postagem, dependendo da sua região."
+      content: (
+        <div className="space-y-3">
+          <p>Trabalhamos com dois tipos de estoque:</p>
+          <ul className="space-y-1.5">
+            <li className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+              <span><strong>Estoque Nacional:</strong> 10 a 15 dias úteis.</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+              <span><strong>Importação Direta:</strong> 30 a 45 dias.</span>
+            </li>
+          </ul>
+          <p className="text-xs text-gray-400 italic">O prazo total é a soma do tempo de processamento + o tempo de transporte até sua região.</p>
+        </div>
+      )
     },
     {
       icon: <Search className="w-6 h-6" />,
@@ -57,7 +72,7 @@ export default function Shipping() {
                 {section.icon}
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-3 uppercase tracking-tight">{section.title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{section.content}</p>
+              <div className="text-gray-600 text-sm leading-relaxed">{section.content}</div>
             </div>
           ))}
         </div>

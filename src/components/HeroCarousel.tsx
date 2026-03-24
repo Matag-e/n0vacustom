@@ -10,7 +10,7 @@ const slides = [
     subtitle: 'Nacionais',
     description: 'A paixão pelo futebol brasileiro em cada detalhe. Vista as cores do seu time com orgulho.',
     image: '/CARRO 1.jpeg',
-    mobileImage: '/teste1 mob.jpeg',
+    mobileImage: '/carromob1.jpeg',
     link: '/clubes',
     buttonText: 'Explorar Clubes',
     color: 'from-zinc-900 to-zinc-800'
@@ -21,7 +21,7 @@ const slides = [
     subtitle: 'Restauração',
     description: 'Sua camisa antiga merece brilhar novamente. Especialistas em restauração de mantos históricos.',
     image: '/CARRO 2.jpeg',
-    mobileImage: '/CARRO 2.jpeg', // Recomendado: substituir por imagem vertical 4:5
+    mobileImage: '/carromob2.jpeg', // Recomendado: substituir por imagem vertical 4:5
     link: '/restauracao',
     buttonText: 'Ver Restauração',
     color: 'from-zinc-900 to-zinc-800'
@@ -32,7 +32,7 @@ const slides = [
     subtitle: 'Personalização',
     description: 'Nomes, números e patches oficiais. Deixe seu manto com a sua cara e exclusividade total.',
     image: '/CARRO 3.jpeg',
-    mobileImage: '/CARRO 3.jpeg', // Recomendado: substituir por imagem vertical 4:5
+    mobileImage: '/carromob3.jpeg', // Recomendado: substituir por imagem vertical 4:5
     link: '/personalizacao',
     buttonText: 'Personalizar Agora',
     color: 'from-zinc-900 to-zinc-800'
@@ -76,7 +76,7 @@ export function HeroCarousel() {
   };
 
   return (
-    <div className="relative w-full aspect-[4/5] md:aspect-auto md:h-[600px] overflow-hidden bg-black group mt-[72px] md:mt-20">
+    <div className="relative w-full aspect-[4/5] sm:aspect-auto sm:h-[540px] md:h-[600px] lg:h-[700px] overflow-hidden bg-black group mt-[72px] md:mt-20">
       
       {/* Background Images Layer */}
       {slides.map((slide, index) => (
@@ -106,7 +106,7 @@ export function HeroCarousel() {
                 src={slide.mobileImage} 
                 alt={slide.title} 
                 className={cn(
-                  "block md:hidden w-full h-full object-cover transition-all duration-700 ease-out",
+                  "block md:hidden w-full h-full object-cover object-center transition-all duration-700 ease-out",
                   currentSlide === index ? "scale-100" : "scale-105"
                 )}
               />

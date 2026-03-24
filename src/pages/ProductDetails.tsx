@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/components/ProductCard';
 import { CustomizationGallery } from '@/components/CustomizationGallery';
-import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -509,7 +509,7 @@ export default function ProductDetails() {
                 </span>
               </div>
             )}
-            <div className="flex items-baseline gap-4 mb-6">
+            <div className="flex items-baseline gap-4 mb-2">
               <span className="text-3xl font-medium text-gray-900">
                 R$ {(product.price + (wantsCustomization ? 30 : 0)).toFixed(2).replace('.', ',')}
               </span>
@@ -523,6 +523,25 @@ export default function ProductDetails() {
                 </span>
               )}
             </div>
+
+            {product.shipping_type && (
+              <div className="mb-8 p-4 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-between group hover:border-primary/30 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary group-hover:scale-110 transition-transform">
+                    {product.shipping_type === 'national' ? <Truck className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Entrega Estimada</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {product.shipping_type === 'national' ? '10 a 15 dias úteis' : '30 a 45 dias'}
+                    </p>
+                  </div>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-white border border-zinc-100 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  {product.shipping_type === 'national' ? 'Estoque Brasil' : 'Importado'}
+                </div>
+              </div>
+            )}
             
             <p className="text-gray-500 leading-relaxed text-sm lg:text-base border-l-2 border-black pl-4">
               {product.description || "Vista a tradição. Cada detalhe desta peça foi pensado para o torcedor que vive o futebol 24 horas por dia. Tecido respirável de alta performance."}

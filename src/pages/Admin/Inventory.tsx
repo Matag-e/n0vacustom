@@ -18,6 +18,7 @@ interface Product {
   league?: string;
   year?: string;
   sales_count?: number;
+  shipping_type?: 'national' | 'import';
   product_stock?: {
     size: string;
     quantity: number;

@@ -55,16 +55,16 @@ export default function Restoration() {
 
   const showcase = [
     {
-      title: "Restauração",
+      title: "Restauração total",
       before: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/sign/publics/barcaantes.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81YzgyMTA0Ni02MzdiLTRhY2EtYmE5Zi05MDhhOWZkZGM1ZTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwdWJsaWNzL2JhcmNhYW50ZXMuanBlZyIsImlhdCI6MTc3NDA1OTg3OSwiZXhwIjoxODA1NTk1ODc5fQ.uiXQj7QOW6OVh1NoiaxTHnhXS1uQzOYbD_qGxyXQoQE",
       after: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/sign/publics/barcadepois.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81YzgyMTA0Ni02MzdiLTRhY2EtYmE5Zi05MDhhOWZkZGM1ZTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwdWJsaWNzL2JhcmNhZGVwb2lzLmpwZWciLCJpYXQiOjE3NzQwNTk5MjAsImV4cCI6MTgwNTU5NTkyMH0.ldL0GbDyWlDz70cs-O7cdpfP4GQ2ZNgCQYdd6exppN0",
-      description: "Remoção de silk antigo craquelado e aplicação de novo material idêntico ao original."
+      description: "Aplicação de novo material idêntico ao original."
     },
     {
-      title: "Remoção de Manchas",
-      before: "",
-      after: "",
-      description: "Tratamento químico especializado para remover manchas amareladas de guardado."
+      title: "Restauração nome e número",
+      before: "/antes.jpeg",
+      after: "/depois.jpeg",
+      description: "Aplicação de novo material idêntico ao original."
     }
   ];
 
@@ -75,9 +75,9 @@ export default function Restoration() {
       </Helmet>
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 overflow-hidden bg-black text-white">
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-50">
           <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black z-10"></div>
-          <div className="w-full h-full bg-zinc-900" />
+          <img src="/restaura.jpeg" className="w-full h-full object-cover" alt="Hero" />
         </div>
         
         <div className="container mx-auto px-6 relative z-20">
@@ -110,7 +110,7 @@ export default function Restoration() {
                     </div>
                   ))}
                 </div>
-                <span className="text-sm font-medium text-gray-300">+500 camisas restauradas</span>
+                <span className="text-sm font-medium text-gray-300">+20 camisas restauradas</span>
               </div>
             </div>
           </div>

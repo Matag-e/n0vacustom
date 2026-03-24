@@ -37,7 +37,7 @@ export default function CustomizationService() {
     {
       title: "Nomes e Números Retrô",
       image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Back%20of%20a%20vintage%20football%20jersey%20from%20the%2090s%2C%20large%20velvet%20number%2010%2C%20iconic%20font%2C%20textured%20fabric%2C%20warm%20lighting&image_size=portrait_4_3",
-      tag: "Veludo Premium"
+      tag: "DTF"
     },
     {
       title: "Patches de Campeão",
@@ -53,8 +53,9 @@ export default function CustomizationService() {
       </Helmet>
       {/* Hero Section */}
       <section className="relative py-20 bg-zinc-950 text-white overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/40 via-transparent to-transparent"></div>
+                  <img src="/personaliza.jpeg" className="w-full h-full object-cover" alt="Hero" />
         </div>
         
         <div className="container mx-auto px-6 relative z-10">

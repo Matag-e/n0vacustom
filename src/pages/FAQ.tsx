@@ -16,7 +16,7 @@ const FAQ_DATA: FAQItem[] = [
   {
     category: 'Pedidos e Envio',
     question: 'Qual o prazo de entrega dos pedidos?',
-    answer: 'O prazo médio de entrega é de 15 a 25 dias úteis após a postagem, pois nossos produtos são importados e passam por um rigoroso processo de conferência de qualidade. Itens personalizados podem levar de 3 a 5 dias adicionais para a produção.'
+    answer: 'Trabalhamos com dois fluxos de entrega para melhor atendê-lo: \n\n• **Estoque Nacional (Pronta Entrega):** 10 a 15 dias úteis.\n• **Importação Direta (Sob Encomenda):** 30 a 45 dias.\n\n*Nota: Itens personalizados podem levar de 2 a 3 dias adicionais para a produção artesanal.*'
   },
   {
     category: 'Pedidos e Envio',
@@ -157,7 +157,7 @@ export default function FAQ() {
                     isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                   )}>
                     <div className="overflow-hidden">
-                      <div className="p-6 pt-0 text-gray-600 leading-relaxed border-t border-gray-100 mt-0">
+                      <div className="p-6 pt-0 text-gray-600 leading-relaxed border-t border-gray-100 mt-0 whitespace-pre-line">
                         {faq.answer}
                       </div>
                     </div>

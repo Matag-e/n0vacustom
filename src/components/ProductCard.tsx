@@ -18,6 +18,7 @@ export interface Product {
   model_type?: string | null;
   stock?: number;
   sales_count?: number;
+  shipping_type?: 'national' | 'import';
   product_stock?: any[];
   created_at: string;
 }
@@ -96,6 +97,11 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.model_type && (
               <span className="bg-primary px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
                 {product.model_type}
+              </span>
+            )}
+            {product.shipping_type === 'national' && (
+              <span className="bg-green-500 px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
+                Pronta Entrega
               </span>
             )}
             {Number(product.sales_count) > 50 && (

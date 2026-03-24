@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { ShippingNoticeModal } from '@/components/ShippingNoticeModal';
 import ScrollToTop from '@/components/ScrollToTop';
 import Home from '@/pages/Home';
 import ProductDetails from '@/pages/ProductDetails';
@@ -60,6 +61,7 @@ function App() {
     <HelmetProvider>
       <AuthProvider>
         <CartProvider>
+          <ShippingNoticeModal />
           <Toaster 
             position="top-right" 
             toastOptions={{

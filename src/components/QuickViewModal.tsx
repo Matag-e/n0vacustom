@@ -134,6 +134,11 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             <p className="text-xl font-medium text-gray-900 dark:text-white">
               R$ {product.price.toFixed(2).replace('.', ',')}
             </p>
+            {product.shipping_type === 'national' && (
+              <span className="inline-block mt-2 bg-green-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                Pronta Entrega
+              </span>
+            )}
           </div>
 
           <div className="space-y-6">

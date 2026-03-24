@@ -21,6 +21,7 @@ interface Product {
   year?: string;
   model_type?: string;
   sales_count?: number;
+  shipping_type?: 'national' | 'import' | null;
   stock: number;
   is_active: boolean;
 }
@@ -80,6 +81,7 @@ export default function AdminProducts() {
     league: '',
     year: '',
     model_type: '',
+    shipping_type: null as 'national' | 'import' | null,
     is_active: true,
   });
 
@@ -152,6 +154,7 @@ export default function AdminProducts() {
         league: product.league || '',
         year: product.year || '',
         model_type: product.model_type || '',
+        shipping_type: product.shipping_type || null,
         is_active: product.is_active ?? true,
       });
 
@@ -175,6 +178,7 @@ export default function AdminProducts() {
         league: '',
         year: '',
         model_type: '',
+        shipping_type: null as 'national' | 'import' | null,
         is_active: true,
       });
       setStockData({
@@ -429,6 +433,7 @@ export default function AdminProducts() {
             year: item.year || null,
             image_url: publicUrl,
             image_back_url: publicBackUrl,
+            shipping_type: null,
             is_active: true,
             stock: 0
           }])
@@ -563,6 +568,7 @@ export default function AdminProducts() {
         league: formData.league || null,
         year: formData.year || null,
         model_type: formData.model_type || null,
+        shipping_type: formData.shipping_type,
         is_active: formData.is_active,
       };
 
@@ -749,6 +755,20 @@ export default function AdminProducts() {
                     </div>
                   </div>
                 )}
+
+                {/* Shipping Type Badge */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {product.shipping_type && (
+                    <div className={cn(
+                      "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md border",
+                      product.shipping_type === 'national' 
+                        ? "bg-green-500/90 text-white border-green-400" 
+                        : "bg-blue-500/90 text-white border-blue-400"
+                    )}>
+                      {product.shipping_type === 'national' ? 'Brasil' : 'Importado'}
+                    </div>
+                  )}
+                </div>
                 <div className="absolute top-2 right-2 flex flex-col gap-1">
                   <button 
                     onClick={() => handleOpenModal(product)}
@@ -1065,6 +1085,18 @@ export default function AdminProducts() {
                           <option value="torcedor">Torcedor</option>
                           <option value="jogador">Jogador</option>
                           <option value="retro">Retrô</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Tipo de Envio</label>
+                        <select
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-black outline-none transition-all appearance-none shadow-sm"
+                          value={formData.shipping_type || ''}
+                          onChange={e => setFormData({ ...formData, shipping_type: (e.target.value || null) as 'national' | 'import' | null })}
+                        >
+                          <option value="">Não definido</option>
+                          <option value="import">Importação (30-45 dias)</option>
+                          <option value="national">Estoque Nacional (15 dias)</option>
                         </select>
                       </div>
                       <div>
