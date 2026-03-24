@@ -496,13 +496,10 @@ export default function ProductDetails() {
         {/* Right Column - Details & Action */}
         <div className="lg:w-1/3 px-6 py-12 lg:py-24 lg:px-12 flex flex-col justify-center bg-white min-h-screen">
           <div className="mb-8">
-            <span className="text-xs font-bold tracking-[0.2em] text-gray-400 uppercase mb-3 block">
-              {product.category || 'Nova Coleção'}
-            </span>
             <h1 className="text-3xl lg:text-5xl font-black text-gray-900 leading-[1.1] mb-4 tracking-tighter">
               {product.name}
             </h1>
-            {product.model_type && (
+            {product.model_type?.toLowerCase() === 'jogador' && (
               <div className="mb-4">
                 <span className="bg-zinc-900 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-sm">
                   Modelo {product.model_type}

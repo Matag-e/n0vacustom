@@ -91,27 +91,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Category & Info Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none transition-all duration-300 group-hover:opacity-0 group-hover:delay-500">
-            <span className="bg-white/95 dark:bg-black/90 backdrop-blur-sm px-2.5 py-1 text-[9px] font-black text-black dark:text-white uppercase tracking-widest shadow-sm">
-              {product.category || 'NOVA'}
-            </span>
-            {product.model_type && (
+            {product.model_type?.toLowerCase() === 'jogador' && (
               <span className="bg-primary px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
                 {product.model_type}
-              </span>
-            )}
-            {product.league && (
-              <span className="bg-zinc-800/90 backdrop-blur-sm px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
-                {product.league}
-              </span>
-            )}
-            {product.shipping_type === 'national' && (
-              <span className="bg-green-500 px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest w-fit shadow-sm">
-                Pronta Entrega
-              </span>
-            )}
-            {Number(product.sales_count) > 50 && (
-              <span className="bg-amber-400 px-2.5 py-1 text-[9px] font-black text-black uppercase tracking-widest w-fit shadow-sm">
-                Best Seller
               </span>
             )}
           </div>
@@ -133,10 +115,7 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.name}
             </h3>
           </Link>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              {product.category || 'Futebol'}
-            </p>
+          <div className="flex items-center justify-end">
             <span className="text-sm font-bold text-gray-900 dark:text-white">
               R$ {product.price.toFixed(2).replace('.', ',')}
             </span>

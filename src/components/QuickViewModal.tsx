@@ -125,18 +125,15 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
         {/* Right: Info */}
         <div className="md:w-1/2 p-8 md:p-12 overflow-y-auto">
           <div className="mb-6">
-            <span className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase mb-2 block">
-              {product.category || 'Futebol'}
-            </span>
             <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight mb-2 uppercase tracking-tighter">
               {product.name}
             </h2>
             <p className="text-xl font-medium text-gray-900 dark:text-white">
               R$ {product.price.toFixed(2).replace('.', ',')}
             </p>
-            {product.shipping_type === 'national' && (
-              <span className="inline-block mt-2 bg-green-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
-                Pronta Entrega
+            {product.model_type?.toLowerCase() === 'jogador' && (
+              <span className="inline-block mt-2 bg-primary text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                {product.model_type}
               </span>
             )}
           </div>
