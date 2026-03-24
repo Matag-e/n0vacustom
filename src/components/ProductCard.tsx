@@ -56,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   alt={product.name}
                   className={cn(
                     "w-full h-full object-cover object-center transition-all duration-700 ease-out mix-blend-multiply dark:mix-blend-normal",
-                    "group-hover:scale-105",
+                    "group-hover:scale-105 group-hover:delay-500",
                     product.image_back_url ? "group-hover:opacity-0" : ""
                   )}
                 />
@@ -67,7 +67,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   <img
                     src={product.image_back_url}
                     alt={`${product.name} - Costas`}
-                    className="w-full h-full object-cover object-center opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-105 mix-blend-multiply dark:mix-blend-normal"
+                    className="w-full h-full object-cover object-center opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-105 group-hover:delay-500 mix-blend-multiply dark:mix-blend-normal"
                   />
                 </div>
               )}
@@ -83,14 +83,14 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Quick View Button (Top Right) */}
           <button 
             onClick={handleQuickView}
-            className="absolute top-3 right-3 z-20 w-10 h-10 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm"
+            className="absolute top-3 right-3 z-20 w-10 h-10 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 group-hover:delay-500 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black shadow-sm"
             title="Visualização Rápida"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
 
           {/* Category & Info Badges */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none transition-all duration-300 group-hover:opacity-0 group-hover:delay-500">
             <span className="bg-white/95 dark:bg-black/90 backdrop-blur-sm px-2.5 py-1 text-[9px] font-black text-black dark:text-white uppercase tracking-widest shadow-sm">
               {product.category || 'NOVA'}
             </span>
@@ -112,7 +112,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Action Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent">
+          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 group-hover:delay-500 bg-gradient-to-t from-black/60 to-transparent">
             <button 
               onClick={handleCartClick}
               className="w-full bg-white text-black font-bold uppercase text-xs py-3 tracking-widest hover:bg-primary hover:text-white transition-colors flex items-center justify-center gap-2"
