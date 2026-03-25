@@ -152,7 +152,7 @@ export default function Checkout() {
   });
 
   const handleApplyCoupon = async () => {
-    if (!couponCode) return;
+    if (!couponCode || !user) return;
     
     try {
       const { data, error } = await supabase
@@ -166,27 +166,63 @@ export default function Checkout() {
         return;
       }
 
-      // Verificar validade
+      // 1. Verificar expiração
       const now = new Date();
       if (data.expires_at && new Date(data.expires_at) < now) {
         toast.error('Este cupom já expirou');
         return;
       }
 
+      // 2. Limite global de usos
       if (data.usage_limit && data.usage_count >= data.usage_limit) {
         toast.error('Este cupom atingiu o limite de usos');
         return;
       }
 
+      // 3. Compra mínima
       if (data.min_purchase_amount && totalPrice < data.min_purchase_amount) {
         toast.error(`Compra mínima para este cupom: R$ ${data.min_purchase_amount}`);
         return;
       }
 
+      // 4. Quantidade mínima
       const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
       if (data.min_quantity && totalItems < data.min_quantity) {
         toast.error(`Mínimo de ${data.min_quantity} itens para este cupom`);
         return;
+      }
+
+      // 5. Regra de Primeira Compra
+      if (data.is_first_purchase) {
+        const { count, error: countError } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .not('status', 'eq', 'cancelled');
+          
+        if (countError) throw countError;
+        
+        if (count && count > 0) {
+          toast.error('Este cupom é exclusivo para a primeira compra');
+          return;
+        }
+      }
+
+      // 6. Limite de uso por usuário
+      if (data.usage_limit_per_user) {
+        const { count, error: usageError } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('coupon_code', data.code)
+          .not('status', 'eq', 'cancelled');
+          
+        if (usageError) throw usageError;
+        
+        if (count && count >= data.usage_limit_per_user) {
+          toast.error(`Você já usou este cupom o limite de ${data.usage_limit_per_user} vezes`);
+          return;
+        }
       }
 
       setDiscount({
@@ -198,7 +234,8 @@ export default function Checkout() {
       });
       toast.success(`Cupom ${data.code} aplicado!`);
     } catch (err) {
-      toast.error('Erro ao aplicar cupom');
+      console.error('Erro ao aplicar cupom:', err);
+      toast.error('Erro ao processar cupom');
     }
   };
 

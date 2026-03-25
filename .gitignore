@@ -26,3 +26,7 @@ dist-ssr
 *.sln
 *.sw?
 .vite
+
+# Sensitive scripts
+scripts/create_admin.ts
+check_products.ts

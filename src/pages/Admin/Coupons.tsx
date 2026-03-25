@@ -18,7 +18,9 @@ export default function AdminCoupons() {
     min_quantity: '0',
     usage_limit: '',
     expires_at: '',
-    active: true
+    active: true,
+    is_first_purchase: false,
+    usage_limit_per_user: ''
   });
 
   useEffect(() => {
@@ -59,7 +61,9 @@ export default function AdminCoupons() {
           min_quantity: parseInt(newCoupon.min_quantity || '0'),
           usage_limit: newCoupon.usage_limit ? parseInt(newCoupon.usage_limit) : null,
           expires_at: newCoupon.expires_at || null,
-          active: newCoupon.active
+          active: newCoupon.active,
+          is_first_purchase: newCoupon.is_first_purchase,
+          usage_limit_per_user: newCoupon.usage_limit_per_user ? parseInt(newCoupon.usage_limit_per_user) : null
         }]);
 
       if (error) throw error;
@@ -73,7 +77,9 @@ export default function AdminCoupons() {
         min_quantity: '0',
         usage_limit: '',
         expires_at: '',
-        active: true
+        active: true,
+        is_first_purchase: false,
+        usage_limit_per_user: ''
       });
       fetchCoupons();
     } catch (error: any) {
@@ -201,6 +207,41 @@ export default function AdminCoupons() {
                 />
               </div>
 
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Limite por Usuário</label>
+                <input 
+                  type="number" 
+                  value={newCoupon.usage_limit_per_user}
+                  onChange={e => setNewCoupon({...newCoupon, usage_limit_per_user: e.target.value})}
+                  placeholder="Ex: 1 (uma vez por CPF)"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all"
+                />
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      checked={newCoupon.is_first_purchase}
+                      onChange={e => setNewCoupon({...newCoupon, is_first_purchase: e.target.checked})}
+                      className="sr-only"
+                    />
+                    <div className={cn(
+                      "w-10 h-5 rounded-full transition-colors duration-200 ease-in-out",
+                      newCoupon.is_first_purchase ? "bg-black" : "bg-gray-200"
+                    )} />
+                    <div className={cn(
+                      "absolute left-1 top-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ease-in-out",
+                      newCoupon.is_first_purchase ? "translate-x-5" : "translate-x-0"
+                    )} />
+                  </div>
+                  <span className="text-xs font-bold text-gray-600 group-hover:text-black transition-colors uppercase">
+                    Apenas Primeira Compra
+                  </span>
+                </label>
+              </div>
+
               <button 
                 type="submit"
                 className="w-full bg-black text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-zinc-800 transition-all shadow-lg mt-4 flex items-center justify-center gap-2"
@@ -300,6 +341,21 @@ export default function AdminCoupons() {
                             {coupon.min_quantity || '1'} {coupon.min_quantity === 1 ? 'item' : 'itens'}
                           </span>
                         </div>
+                        {coupon.usage_limit_per_user && (
+                          <div className="space-y-0.5">
+                            <span className="text-[9px] font-black uppercase text-gray-400 block">Limite/User</span>
+                            <span className="text-xs font-bold text-gray-700">
+                              {coupon.usage_limit_per_user}x por CPF
+                            </span>
+                          </div>
+                        )}
+                        {coupon.is_first_purchase && (
+                          <div className="col-span-2 mt-2">
+                            <span className="bg-black text-white text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest">
+                              Exclusivo Primeira Compra
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
