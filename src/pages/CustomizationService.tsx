@@ -47,9 +47,9 @@ export default function CustomizationService() {
   ];
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen pt-24 pb-20">
       <Helmet>
-        <title>Personalização Oficial | NovaCustom</title>
+        <title>Personalização de Mantos | NovaCustom</title>
       </Helmet>
       {/* Hero Section */}
       <section className="relative py-20 bg-zinc-950 text-white overflow-hidden">

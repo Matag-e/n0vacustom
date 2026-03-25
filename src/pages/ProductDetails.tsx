@@ -410,42 +410,15 @@ export default function ProductDetails() {
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
 
-  const currentUrl = `https://novacustom.com.br/product/${id}`;
-
-  const jsonLd = product ? {
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    "name": product.name,
-    "image": [product.image_url],
-    "description": product.description || `Confira ${product.name} na NovaCustom. Qualidade premium e personalização exclusiva.`,
-    "sku": product.id,
-    "brand": {
-      "@type": "Brand",
-      "name": "NovaCustom"
-    },
-    "offers": {
-      "@type": "Offer",
-      "url": currentUrl,
-      "priceCurrency": "BRL",
-      "price": product.price,
-      "availability": (product.stock ?? 0) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "itemCondition": "https://schema.org/NewCondition"
-    }
-  } : null;
+  const currentUrl = window.location.href;
 
   return (
     <div className="bg-white min-h-screen pb-20 pt-20 relative">
       <Helmet>
-          {jsonLd && (
-            <script type="application/ld+json">
-              {JSON.stringify(jsonLd)}
-            </script>
-          )}
-          <title>{`${product.name} | NovaCustom`}</title>
-          <meta name="description" content={product.description || `Confira ${product.name} na NovaCustom. Qualidade premium e personalização exclusiva.`} />
-          <link rel="canonical" href={currentUrl} />
-          
-          {/* OpenGraph / Facebook */}
+        <title>{`${product.name} | NovaCustom`}</title>
+        <meta name="description" content={product.description || `Confira ${product.name} na NovaCustom. Qualidade premium e personalização exclusiva.`} />
+        
+        {/* OpenGraph / Facebook */}
         <meta property="og:type" content="product" />
         <meta property="og:url" content={currentUrl} />
         <meta property="og:title" content={`${product.name} | NovaCustom`} />

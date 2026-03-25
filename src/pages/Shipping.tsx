@@ -52,7 +52,7 @@ export default function Shipping() {
   ];
 
   return (
-    <div className="min-h-screen bg-white pt-32 pb-20">
+    <div className="pt-32 pb-20 bg-white min-h-screen">
       <Helmet>
         <title>Envio e Entrega | NovaCustom</title>
       </Helmet>

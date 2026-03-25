@@ -69,7 +69,7 @@ export default function Restoration() {
   ];
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen pt-24 pb-20 overflow-hidden">
       <Helmet>
         <title>Restauração de Mantos | NovaCustom</title>
       </Helmet>
