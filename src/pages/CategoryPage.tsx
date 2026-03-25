@@ -178,6 +178,8 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     <div className="bg-white dark:bg-black min-h-screen pt-24 pb-20 transition-colors duration-300">
       <Helmet>
         <title>{`${title} | NovaCustom`}</title>
+        <meta name="description" content={`Explore a coleção ${title} na NovaCustom. Camisas de futebol com qualidade premium e personalização oficial.`} />
+        <link rel="canonical" href={`https://novacustom.com.br/categoria/${id}`} />
       </Helmet>
       {/* Header */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 mb-12">

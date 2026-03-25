@@ -36,7 +36,7 @@ export default function Returns() {
   ];
 
   return (
-    <div className="pt-32 pb-20 bg-white min-h-screen">
+    <div className="min-h-screen bg-white pt-32 pb-20">
       <Helmet>
         <title>Trocas e Devoluções | NovaCustom</title>
       </Helmet>

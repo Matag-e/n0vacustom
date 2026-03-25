@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, User as UserIcon, LogOut, ChevronDown, ShieldCheck, Search } from 'lucide-react';
+import { ShoppingCart, Menu, X, User as UserIcon, LogOut, ChevronDown, ShieldCheck, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { CartDrawer } from './CartDrawer';
+import { supabase } from '@/lib/supabase';
+import { Product } from './ProductCard';
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +16,12 @@ export function Navigation() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [liveResults, setLiveResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showLiveResults, setShowLiveResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+
   const { user, role, signInWithGoogle, signOut } = useAuth();
   const { totalItems } = useCart();
   const { theme, toggleTheme } = useTheme();
@@ -22,17 +30,83 @@ export function Navigation() {
 
   const isAdmin = role === 'admin';
 
+  // Fechar resultados ao mudar de rota
+  useEffect(() => {
+    setShowLiveResults(false);
+    setSearchQuery('');
+    setIsSearchOpen(false);
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  // Fechar resultados ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      // Se clicamos fora da área de busca, fechamos os resultados
+      const isOutsideDesktop = searchRef.current && !searchRef.current.contains(event.target as Node);
+      const isOutsideMobile = mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node);
+
+      if (isOutsideDesktop && isOutsideMobile) {
+        setShowLiveResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Busca em tempo real com debounce
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        setShowLiveResults(true);
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .ilike('name', `%${searchQuery}%`)
+            .limit(5);
+
+          if (error) throw error;
+          setLiveResults(data || []);
+        } catch (err) {
+          console.error('Erro na busca ao vivo:', err);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setLiveResults([]);
+        setShowLiveResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false);
+      setShowLiveResults(false);
       setSearchQuery('');
     }
   };
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const toggleCart = () => setIsCartOpen(!isCartOpen);
+
+  const handleLiveResultClick = (productId: string) => {
+    // Primeiro navegamos
+    navigate(`/product/${productId}`);
+    
+    // Depois limpamos o estado para o dropdown sumir suavemente
+    setTimeout(() => {
+      setShowLiveResults(false);
+      setSearchQuery('');
+      setIsSearchOpen(false);
+    }, 100);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -155,19 +229,75 @@ export function Navigation() {
 
             {/* Icons (Right) */}
             <div className="flex items-center space-x-4 md:space-x-6">
-              <div className="hidden lg:block">
+              <div className="hidden lg:block relative" ref={searchRef}>
                 <form onSubmit={handleSearch} className="relative group">
                   <input
                     type="text"
                     placeholder="Buscar..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => searchQuery.length >= 2 && setShowLiveResults(true)}
                     className="w-40 xl:w-60 bg-gray-100 dark:bg-zinc-900 border-transparent border focus:border-black dark:focus:border-white rounded-full py-1.5 pl-4 pr-10 text-xs transition-all outline-none"
                   />
                   <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black dark:hover:text-white transition-colors">
-                    <Search className="h-4 w-4" />
+                    {isSearching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
                 </form>
+
+                {/* Live Search Results Dropdown */}
+                {showLiveResults && (searchQuery.length >= 2) && (
+                  <div className="absolute top-full mt-2 right-0 w-80 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                    <div className="p-4 border-b border-gray-50 dark:border-zinc-800">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sugestões</p>
+                    </div>
+                    
+                    <div className="max-h-[320px] overflow-y-auto">
+                      {isSearching ? (
+                        <div className="p-8 text-center">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-300" />
+                        </div>
+                      ) : liveResults.length > 0 ? (
+                        <div className="divide-y divide-gray-50 dark:divide-zinc-800">
+                          {liveResults.map((product) => (
+                            <button
+                              key={product.id}
+                              type="button"
+                              onClick={() => handleLiveResultClick(product.id)}
+                              className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors text-left group cursor-pointer"
+                            >
+                              <div className="w-12 h-12 bg-gray-50 dark:bg-zinc-800 rounded-lg overflow-hidden flex-shrink-0">
+                                {product.image_url && (
+                                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate uppercase group-hover:text-primary transition-colors">
+                                  {product.name}
+                                </h4>
+                                <p className="text-[10px] text-gray-500 font-medium">
+                                  R$ {product.price.toFixed(2).replace('.', ',')}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <p className="text-xs text-gray-500 font-medium">Nenhum resultado para "{searchQuery}"</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {liveResults.length > 0 && (
+                      <button 
+                        onClick={handleSearch}
+                        className="w-full p-3 text-center bg-gray-50 dark:bg-zinc-800/50 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-black dark:hover:text-white transition-colors border-t border-gray-50 dark:border-zinc-800"
+                      >
+                        Ver todos os resultados
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button 
@@ -225,9 +355,10 @@ export function Navigation() {
         {/* Mobile Search Overlay */}
         <div 
           className={cn(
-            "lg:hidden absolute top-20 left-0 w-full bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 transition-all duration-300 transform origin-top",
+            "lg:hidden absolute top-20 left-0 w-full bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 transition-all duration-300 transform origin-top z-50",
             isSearchOpen ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"
           )}
+          ref={mobileSearchRef}
         >
           <div className="container mx-auto px-4 py-4">
             <form onSubmit={handleSearch} className="relative">
@@ -240,9 +371,57 @@ export function Navigation() {
                 className="w-full bg-gray-100 dark:bg-zinc-900 border-transparent border focus:border-black dark:focus:border-white rounded-xl py-3 pl-4 pr-12 text-sm outline-none transition-all"
               />
               <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2">
-                <Search className="h-5 w-5 text-gray-400" />
+                {isSearching ? <Loader2 className="h-5 w-5 animate-spin text-gray-400" /> : <Search className="h-5 w-5 text-gray-400" />}
               </button>
             </form>
+
+            {/* Mobile Live Results */}
+            {showLiveResults && searchQuery.length >= 2 && (
+              <div className="mt-4 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-50 dark:divide-zinc-800">
+                  {isSearching ? (
+                    <div className="p-8 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-300" />
+                    </div>
+                  ) : liveResults.length > 0 ? (
+                    <>
+                      {liveResults.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => handleLiveResultClick(product.id)}
+                          className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors text-left cursor-pointer"
+                        >
+                          <div className="w-14 h-14 bg-gray-50 dark:bg-zinc-800 rounded-lg overflow-hidden flex-shrink-0">
+                            {product.image_url && (
+                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate uppercase">
+                              {product.name}
+                            </h4>
+                            <p className="text-xs text-gray-500 font-medium">
+                              R$ {product.price.toFixed(2).replace('.', ',')}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                      <button 
+                        onClick={handleSearch}
+                        className="w-full p-4 text-center bg-gray-50 dark:bg-zinc-800/50 text-xs font-black text-gray-500 uppercase tracking-widest hover:text-black dark:hover:text-white transition-colors"
+                      >
+                        Ver todos os resultados
+                      </button>
+                    </>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <p className="text-sm text-gray-500 font-medium">Nenhum resultado para "{searchQuery}"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

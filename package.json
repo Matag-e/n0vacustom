@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "server:dev": "nodemon",
-    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\""
+    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\"",
+    "generate-sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.9.0",
