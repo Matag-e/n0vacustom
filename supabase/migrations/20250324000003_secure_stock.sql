@@ -30,7 +30,7 @@ BEGIN
     -- Note: The trigger 'trigger_update_product_total_stock' will 
     -- automatically update the global stock in 'products' table.
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Improved handle_payment_success using secure logic
 CREATE OR REPLACE FUNCTION public.handle_payment_success(order_uuid UUID)
@@ -60,7 +60,7 @@ BEGIN
         AND size = item.size;
     END LOOP;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Grant execution to authenticated users (and anon if checkout is public)
 GRANT EXECUTE ON FUNCTION public.secure_decrement_stock(UUID, TEXT, INTEGER) TO anon, authenticated;

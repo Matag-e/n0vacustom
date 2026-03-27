@@ -6,4 +6,4 @@ BEGIN
   SET stock = stock - amount
   WHERE id = p_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
