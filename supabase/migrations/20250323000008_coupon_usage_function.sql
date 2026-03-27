@@ -7,7 +7,7 @@ BEGIN
   SET usage_count = usage_count + 1
   WHERE code = coupon_code;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Grant access
 GRANT EXECUTE ON FUNCTION public.increment_coupon_usage(TEXT) TO authenticated;

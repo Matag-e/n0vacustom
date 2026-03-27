@@ -24,7 +24,7 @@ BEGIN
         AND size = item.size;
     END LOOP;
 END;
- LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Grant access to the function
 GRANT EXECUTE ON FUNCTION public.handle_payment_success(UUID) TO service_role;

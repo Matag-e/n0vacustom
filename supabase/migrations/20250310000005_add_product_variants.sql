@@ -31,7 +31,7 @@ BEGIN
     WHERE id = COALESCE(NEW.product_id, OLD.product_id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 -- Trigger to keep stock in sync
 CREATE TRIGGER trigger_update_product_total_stock
@@ -63,4 +63,4 @@ BEGIN
   SET quantity = quantity - amount
   WHERE product_id = p_id AND size = p_size;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
