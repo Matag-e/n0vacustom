@@ -453,9 +453,7 @@ router.post('/process-payment', async (req: Request, res: Response) => {
       const result = await payment.create({
         body: paymentData,
         requestOptions: {
-          headers: {
-            'X-Meli-Session-Id': deviceId || '',
-          }
+          meliSessionId: deviceId || '',
         }
       })
 
