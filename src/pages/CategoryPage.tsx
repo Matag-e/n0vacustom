@@ -57,7 +57,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
             baseData = baseData.filter(p => {
               const cat = (p.category || '').toLowerCase().trim();
               const tags = cat.split(',').map(t => t.trim());
-              return tags.includes('clubes') || tags.includes('nacionais');
+              return tags.includes('clubes') || tags.includes('nacionais') || tags.includes('internacionais') || tags.includes('international');
             });
           } else if (category === 'selecoes') {
             baseData = baseData.filter(p => {
