@@ -2,7 +2,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 
 export default function Cart() {
@@ -47,7 +47,8 @@ export default function Cart() {
                 <Link to={`/product/${item.product.id}`} className="w-24 h-32 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
                   {item.product.image_url ? (
                     <img 
-                      src={item.product.image_url} 
+                      src={item.product.image_url}
+                      loading="lazy"
                       alt={item.product.name} 
                       className="w-full h-full object-cover mix-blend-multiply" 
                     />

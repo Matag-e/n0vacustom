@@ -2,7 +2,7 @@ import { X, Trash2, ShoppingBag, ArrowRight, LogIn } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
 interface CartDrawerProps {
@@ -106,7 +106,16 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             items.map((item) => (
               <div key={item.id} className="flex gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="w-20 h-24 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700 overflow-hidden flex-shrink-0">
-                  <img src={item.product?.image_url || ''} alt={item.product?.name} className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal" />
+                  {item.product?.image_url ? (
+                    <img 
+                      src={item.product.image_url}
+                      alt={item.product.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-xs text-gray-300">Sem img</div>
+                  )}
                 </div>
                 <div className="flex-1 flex flex-col justify-between py-1">
                   <div>
