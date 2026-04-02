@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, ShoppingCart, Ruler, Sparkles, Shield, Truck } from 'lucide-react';
 import { Product } from './ProductCard';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -59,6 +59,29 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
     }
   }
 
+  // Realtime: estoque por tamanho no Quick View
+  useEffect(() => {
+    if (!product?.id) return;
+    const channel = supabase
+      .channel(`stock:${product.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_stock',
+        filter: `product_id=eq.${product.id}`,
+      }, (payload) => {
+        const newRow = payload.new as any;
+        const oldRow = payload.old as any;
+        if (newRow?.size && typeof newRow?.quantity === 'number') {
+          setStockBySize((prev) => ({ ...prev, [newRow.size]: newRow.quantity }));
+        } else if (oldRow?.size && payload.eventType === 'DELETE') {
+          setStockBySize((prev) => ({ ...prev, [oldRow.size]: 0 }));
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [product?.id]);
+
   if (!isOpen) return null;
 
   const handleAddToCart = () => {
@@ -95,7 +118,27 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
         {/* Left: Image */}
         <div className="md:w-1/2 bg-gray-50 dark:bg-zinc-800 p-8 flex flex-col items-center justify-center relative min-h-[300px]">
           <img
-            src={activeImage === 'front' ? (product.image_url || '') : (product.image_back_url || product.image_url || '')}
+            src={transformImageUrl(
+              activeImage === 'front' ? (product.image_url || '') : (product.image_back_url || product.image_url || ''),
+              { width: 800, quality: 80, format: 'webp' }
+            )}
+            srcSet={buildSrcSet(
+              activeImage === 'front' ? (product.image_url || '') : (product.image_back_url || product.image_url || ''),
+              [480, 800, 1200],
+              80,
+              'webp'
+            )}
+            sizes="(max-width: 640px) 480px, (max-width: 1024px) 800px, 1200px"
+            onError={(e) => {
+              const img = e.currentTarget as HTMLImageElement;
+              const original = originalImageUrl(
+                activeImage === 'front' ? (product.image_url || '') : (product.image_back_url || product.image_url || '')
+              );
+              img.src = original;
+              img.srcset = '';
+              img.sizes = '';
+            }}
+            loading="lazy"
             alt={product.name}
             className="w-full h-full object-contain drop-shadow-xl"
           />

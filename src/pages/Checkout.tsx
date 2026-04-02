@@ -3,7 +3,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, CreditCard, Truck, ShieldCheck, ShoppingBag, Copy, CheckCircle2, QrCode, X, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
 import { QRCodeSVG } from 'qrcode.react';
@@ -96,6 +96,27 @@ export default function Checkout() {
   }, [items, discount?.code]);
   const [copied, setCopied] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+
+  // Realtime: assina atualização de status do pedido
+  useEffect(() => {
+    if (!pixResult?.orderId) return;
+    const channel = supabase
+      .channel(`order:${pixResult.orderId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `id=eq.${pixResult.orderId}`,
+      }, (payload) => {
+        const status = (payload.new as any)?.status;
+        if (status === 'paid') {
+          setIsPaid(true);
+          toast.success('Pagamento confirmado!');
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [pixResult?.orderId]);
 
   // Polling para verificar se o PIX foi pago
   useEffect(() => {
@@ -864,7 +885,20 @@ export default function Checkout() {
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-20 bg-gray-50 rounded border border-gray-100 overflow-hidden flex-shrink-0">
-                      <img src={item.product.image_url || ''} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply" />
+                      <img 
+                        src={transformImageUrl(item.product.image_url || '', { width: 160, quality: 80, format: 'webp' })} 
+                        srcSet={buildSrcSet(item.product.image_url || '', [120, 160, 240], 80, 'webp')}
+                        sizes="(max-width: 640px) 120px, 160px"
+                        onError={(e) => {
+                          const img = e.currentTarget as HTMLImageElement;
+                          img.src = originalImageUrl(item.product.image_url || '');
+                          img.srcset = '';
+                          img.sizes = '';
+                        }}
+                        loading="lazy"
+                        alt={item.product.name} 
+                        className="w-full h-full object-cover mix-blend-multiply" 
+                      />
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-gray-900 line-clamp-1">{item.product.name}</h4>

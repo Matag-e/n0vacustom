@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Product } from '@/components/ProductCard';
 import { CustomizationGallery } from '@/components/CustomizationGallery';
 import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight, Globe } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { Helmet } from 'react-helmet-async';
@@ -31,28 +31,28 @@ export default function ProductDetails() {
 
   const SIZE_CHARTS = {
     torcedor: [
-      { s: 'P', w: '53–55', h: '69–71', minH: 162, maxH: 170, minW: 50, maxW: 62 },
-      { s: 'M', w: '55–57', h: '71–73', minH: 170, maxH: 176, minW: 62, maxW: 78 },
-      { s: 'G', w: '57–58', h: '73–75', minH: 176, maxH: 182, minW: 78, maxW: 83 },
-      { s: 'GG', w: '58–60', h: '75–78', minH: 182, maxH: 190, minW: 83, maxW: 90 },
-      { s: 'XG', w: '60–62', h: '78–81', minH: 190, maxH: 195, minW: 90, maxW: 97 },
-      { s: '2XG', w: '62–64', h: '81–83', minH: 192, maxH: 197, minW: 97, maxW: 104 },
-      { s: '3XL', w: '64–65', h: '83–85', minH: 197, maxH: 200, minW: 104, maxW: 110 },
-      { s: '4XL', w: '64–65', h: '83–85', minH: 197, maxH: 200, minW: 104, maxW: 110 }
+      { s: 'P', w: '53-55', h: '69-71', minH: 162, maxH: 170, minW: 50, maxW: 62 },
+      { s: 'M', w: '55-57', h: '71-73', minH: 170, maxH: 176, minW: 62, maxW: 78 },
+      { s: 'G', w: '57-58', h: '73-75', minH: 176, maxH: 182, minW: 78, maxW: 83 },
+      { s: 'GG', w: '58-60', h: '75-78', minH: 182, maxH: 190, minW: 83, maxW: 90 },
+      { s: 'XG', w: '60-62', h: '78-81', minH: 190, maxH: 195, minW: 90, maxW: 97 },
+      { s: '2XG', w: '62-64', h: '81-83', minH: 192, maxH: 197, minW: 97, maxW: 104 },
+      { s: '3XL', w: '64-65', h: '83-85', minH: 197, maxH: 200, minW: 104, maxW: 110 },
+      { s: '4XL', w: '64-65', h: '83-85', minH: 197, maxH: 200, minW: 104, maxW: 110 }
     ],
     jogador: [
-      { s: 'P', w: '49–51', h: '67–69', minH: 162, maxH: 170, minW: 50, maxW: 62 },
-      { s: 'M', w: '51–53', h: '69–71', minH: 170, maxH: 175, minW: 62, maxW: 75 },
-      { s: 'G', w: '53–55', h: '71–73', minH: 175, maxH: 180, minW: 75, maxW: 80 },
-      { s: 'GG', w: '55–57', h: '73–76', minH: 180, maxH: 185, minW: 80, maxW: 85 },
-      { s: 'XG', w: '57–60', h: '76–78', minH: 185, maxH: 190, minW: 85, maxW: 90 },
-      { s: '2XG', w: '60–63', h: '78–79', minH: 190, maxH: 195, minW: 90, maxW: 95 }
+      { s: 'P', w: '49-51', h: '67-69', minH: 162, maxH: 170, minW: 50, maxW: 62 },
+      { s: 'M', w: '51-53', h: '69-71', minH: 170, maxH: 175, minW: 62, maxW: 75 },
+      { s: 'G', w: '53-55', h: '71-73', minH: 175, maxH: 180, minW: 75, maxW: 80 },
+      { s: 'GG', w: '55-57', h: '73-76', minH: 180, maxH: 185, minW: 80, maxW: 85 },
+      { s: 'XG', w: '57-60', h: '76-78', minH: 185, maxH: 190, minW: 85, maxW: 90 },
+      { s: '2XG', w: '60-63', h: '78-79', minH: 190, maxH: 195, minW: 90, maxW: 95 }
     ],
     feminina: [
-      { s: 'P', w: '40–41', h: '61–63', minH: 150, maxH: 160, minW: 40, maxW: 55 },
-      { s: 'M', w: '41–44', h: '63–66', minH: 160, maxH: 165, minW: 55, maxW: 65 },
-      { s: 'G', w: '44–47', h: '66–69', minH: 165, maxH: 170, minW: 65, maxW: 75 },
-      { s: 'GG', w: '47–50', h: '69–71', minH: 170, maxH: 175, minW: 75, maxW: 85 }
+      { s: 'P', w: '40-41', h: '61-63', minH: 150, maxH: 160, minW: 40, maxW: 55 },
+      { s: 'M', w: '41-44', h: '63-66', minH: 160, maxH: 165, minW: 55, maxW: 65 },
+      { s: 'G', w: '44-47', h: '66-69', minH: 165, maxH: 170, minW: 65, maxW: 75 },
+      { s: 'GG', w: '47-50', h: '69-71', minH: 170, maxH: 175, minW: 75, maxW: 85 }
     ]
   };
 
@@ -168,6 +168,29 @@ export default function ProductDetails() {
 
     fetchProduct();
   }, [id]);
+
+  // Realtime: estoque por tamanho do produto
+  useEffect(() => {
+    if (!product?.id) return;
+    const channel = supabase
+      .channel(`stock:${product.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'product_stock',
+        filter: `product_id=eq.${product.id}`,
+      }, (payload) => {
+        const newRow = payload.new as any;
+        const oldRow = payload.old as any;
+        if (newRow?.size && typeof newRow?.quantity === 'number') {
+          setStockBySize((prev) => ({ ...prev, [newRow.size]: newRow.quantity }));
+        } else if (oldRow?.size && payload.eventType === 'DELETE') {
+          setStockBySize((prev) => ({ ...prev, [oldRow.size]: 0 }));
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [product?.id]);
 
   const FittingRoomModal = () => {
     const [height, setHeight] = useState('');
@@ -410,13 +433,40 @@ export default function ProductDetails() {
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
 
-  const currentUrl = window.location.href;
+  const currentUrl = `https://novacustom.com.br/product/${id}`;
+
+  const jsonLd = product ? {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "image": [product.image_url],
+    "description": product.description || `Confira ${product.name} na NovaCustom. Qualidade premium e personalização exclusiva.`,
+    "sku": product.id,
+    "brand": {
+      "@type": "Brand",
+      "name": "NovaCustom"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": currentUrl,
+      "priceCurrency": "BRL",
+      "price": product.price,
+      "availability": (product.stock ?? 0) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/NewCondition"
+    }
+  } : null;
 
   return (
     <div className="bg-white min-h-screen pb-20 pt-20 relative">
       <Helmet>
+        {jsonLd && (
+          <script type="application/ld+json">
+            {JSON.stringify(jsonLd)}
+          </script>
+        )}
         <title>{`${product.name} | NovaCustom`}</title>
         <meta name="description" content={product.description || `Confira ${product.name} na NovaCustom. Qualidade premium e personalização exclusiva.`} />
+        <link rel="canonical" href={currentUrl} />
         
         {/* OpenGraph / Facebook */}
         <meta property="og:type" content="product" />
@@ -457,7 +507,17 @@ export default function ProductDetails() {
           <div className="relative w-full max-w-xl mx-auto p-8 lg:p-0 transition-all duration-700 flex-1 flex items-center justify-center">
             {product.image_url ? (
               <img
-                src={activeImage === 'front' ? product.image_url : (product.image_back_url || product.image_url)}
+                src={transformImageUrl(activeImage === 'front' ? product.image_url : (product.image_back_url || product.image_url), { width: 1200, quality: 80, format: 'webp' })}
+                srcSet={buildSrcSet(activeImage === 'front' ? product.image_url : (product.image_back_url || product.image_url), [480, 800, 1200], 80, 'webp')}
+                sizes="(max-width: 640px) 480px, (max-width: 1024px) 800px, 1200px"
+                onError={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  const fallback = originalImageUrl(activeImage === 'front' ? product.image_url : (product.image_back_url || product.image_url));
+                  img.src = fallback;
+                  img.srcset = '';
+                  img.sizes = '';
+                }}
+                loading="lazy"
                 alt={product.name}
                 className="w-full max-h-[60vh] object-contain drop-shadow-xl transform hover:scale-105 transition-transform duration-700"
               />

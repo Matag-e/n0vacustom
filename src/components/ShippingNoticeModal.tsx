@@ -71,7 +71,7 @@ export function ShippingNoticeModal() {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900 dark:text-white uppercase text-xs tracking-[0.2em] mb-1">Importação (Sob Encomenda)</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Mantos exclusivos com entrega em <span className="text-primary font-black">30 a 45 dias</span>.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Mantos exclusivos com entrega em <span className="text-primary font-black">30 a 35 dias</span>.</p>
               </div>
             </div>
           </div>

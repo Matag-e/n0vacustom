@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Eye, Maximize2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useState } from 'react';
 import { QuickViewModal } from './QuickViewModal';
 
@@ -52,7 +52,16 @@ export function ProductCard({ product }: ProductCardProps) {
               {/* Main Image */}
               <div className="absolute inset-0 w-full h-full overflow-hidden">
                 <img
-                  src={product.image_url}
+                  src={transformImageUrl(product.image_url, { width: 480, quality: 80, format: 'webp' })}
+                  srcSet={buildSrcSet(product.image_url, [320, 480, 800], 80, 'webp')}
+                  sizes="(max-width: 640px) 320px, (max-width: 1024px) 480px, 800px"
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement;
+                    img.src = originalImageUrl(product.image_url || '');
+                    img.srcset = '';
+                    img.sizes = '';
+                  }}
+                  loading="lazy"
                   alt={product.name}
                   className={cn(
                     "w-full h-full object-cover object-center transition-all duration-700 ease-out mix-blend-multiply dark:mix-blend-normal",
@@ -65,7 +74,16 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.image_back_url && (
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
                   <img
-                    src={product.image_back_url}
+                    src={transformImageUrl(product.image_back_url, { width: 480, quality: 80, format: 'webp' })}
+                    srcSet={buildSrcSet(product.image_back_url, [320, 480, 800], 80, 'webp')}
+                    sizes="(max-width: 640px) 320px, (max-width: 1024px) 480px, 800px"
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      img.src = originalImageUrl(product.image_back_url || '');
+                      img.srcset = '';
+                      img.sizes = '';
+                    }}
+                    loading="lazy"
                     alt={`${product.name} - Costas`}
                     className="w-full h-full object-cover object-center opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-105 group-hover:delay-500 mix-blend-multiply dark:mix-blend-normal"
                   />

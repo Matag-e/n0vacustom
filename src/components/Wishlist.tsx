@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Heart, Trash2, ShoppingCart } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 
 interface WishlistItem {
@@ -28,6 +28,22 @@ export function Wishlist() {
       fetchWishlist();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`wishlist:${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'wishlist',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        fetchWishlist();
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [user?.id]);
 
   async function fetchWishlist() {
     try {
@@ -104,7 +120,16 @@ export function Wishlist() {
           
           <Link to={`/product/${item.product.id}`} className="flex-shrink-0 w-20 h-20 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center">
             <img 
-              src={item.product.image_url} 
+              src={transformImageUrl(item.product.image_url, { width: 160, quality: 80, format: 'webp' })} 
+              srcSet={buildSrcSet(item.product.image_url, [120, 160, 240], 80, 'webp')}
+              sizes="(max-width: 640px) 120px, 160px"
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                img.src = originalImageUrl(item.product.image_url);
+                img.srcset = '';
+                img.sizes = '';
+              }}
+              loading="lazy"
               alt={item.product.name} 
               className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500"
             />

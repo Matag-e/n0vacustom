@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { FloatingRequestButton } from '@/components/FloatingRequestButton';
 import { ShippingNoticeModal } from '@/components/ShippingNoticeModal';
 import ScrollToTop from '@/components/ScrollToTop';
 import Home from '@/pages/Home';
@@ -25,6 +26,7 @@ import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfUse from '@/pages/TermsOfUse';
 import CustomizationService from '@/pages/CustomizationService';
 import SearchPage from '@/pages/SearchPage';
+import RequestProduct from '@/pages/RequestProduct';
 import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
@@ -54,6 +56,13 @@ function WhatsAppWrapper() {
   const hideWhatsApp = ['/update-password', '/login', '/forgot-password'].includes(location.pathname);
   if (hideWhatsApp) return null;
   return <WhatsAppButton />;
+}
+
+function FloatingRequestWrapper() {
+  const location = useLocation();
+  const hideRequest = ['/update-password', '/login', '/forgot-password', '/encomenda-especial'].includes(location.pathname);
+  if (hideRequest) return null;
+  return <FloatingRequestButton />;
 }
 
 function App() {
@@ -116,6 +125,7 @@ function App() {
                     <Route path="/termos-de-uso" element={<TermsOfUse />} />
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/contato" element={<Contact />} />
+                    <Route path="/encomenda-especial" element={<RequestProduct />} />
                     
                     {/* Category Routes */}
                     <Route path="/clubes" element={<CategoryPage title="Clubes" category="clubes" />} />
@@ -131,6 +141,7 @@ function App() {
                   </Routes>
                 </main>
                 <WhatsAppWrapper />
+                <FloatingRequestWrapper />
                 <FooterWrapper />
               </div>
             } />

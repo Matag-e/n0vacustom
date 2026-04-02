@@ -34,6 +34,20 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     fetchReviews();
   }, [productId]);
 
+  useEffect(() => {
+    if (!productId) return;
+    const channel = supabase
+      .channel(`reviews:${productId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'reviews',
+        filter: `product_id=eq.${productId}`,
+      }, () => fetchReviews())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [productId]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {

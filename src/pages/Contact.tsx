@@ -56,6 +56,10 @@ export default function Contact() {
     <div className="pt-32 pb-20 bg-white min-h-screen">
       <Helmet>
         <title>Fale Conosco | NovaCustom</title>
+        <meta name="description" content="Entre em contato com a NovaCustom. Estamos aqui para tirar suas dúvidas sobre pedidos, personalização ou qualquer outro assunto." />
+        <link rel="canonical" href="https://www.novacustom.com.br/contato" />
+        <meta property="og:title" content="Fale Conosco | NovaCustom" />
+        <meta property="og:url" content="https://www.novacustom.com.br/contato" />
       </Helmet>
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-16">

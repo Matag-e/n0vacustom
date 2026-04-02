@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
+import { Pagination } from '@/components/Pagination';
 import { ProductCardSkeleton } from '@/components/Skeleton';
 import { Filter, ChevronDown, Search as SearchIcon } from 'lucide-react';
 import { cn, seededShuffle } from '@/lib/utils';
@@ -17,6 +18,15 @@ export default function SearchPage() {
   const [sortBy, setSortBy] = useState<'random' | 'newest' | 'price-asc' | 'price-desc'>('random');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState(queryParam);
+  
+  const ITEMS_PER_PAGE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+  const currentItems = products.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
   
   // Filter states
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
@@ -110,6 +120,7 @@ export default function SearchPage() {
     }
 
     setProducts(filteredData);
+    setDisplayLimit(ITEMS_PER_PAGE); // Reset limit on filter change
   }, [allProducts, searchTerm, sortBy, priceRange, selectedSizes, inStockOnly, loading]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
@@ -273,10 +284,21 @@ export default function SearchPage() {
                 ))}
               </div>
             ) : products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+              <div className="space-y-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
+                  {currentItems.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+
+                <Pagination 
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(page) => {
+                    setCurrentPage(page);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
               </div>
             ) : (
               <div className="text-center py-20 bg-gray-50 dark:bg-zinc-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
