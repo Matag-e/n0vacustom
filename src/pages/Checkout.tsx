@@ -170,6 +170,8 @@ export default function Checkout() {
     city: '',
     state: '',
     paymentMethod: 'pix' as 'mercadopago' | 'pix',
+    createAccount: false,
+    password: '',
   });
 
   const calculateTotal = () => {
@@ -382,11 +384,53 @@ export default function Checkout() {
       const { total, discountAmount, pixDiscount } = calculateTotal();
       const totalAmount = Number(total.toFixed(2));
 
+      let currentUserId = user?.id || null;
+
+      // 0. CRIAR CONTA SE SOLICITADO
+      if (formData.createAccount && !user) {
+        console.log('[Checkout] Tentando criar conta para o usuário...');
+        try {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              data: {
+                full_name: `${formData.firstName} ${formData.lastName}`,
+                phone: formData.phone,
+                cpf: formData.cpf,
+                cep: formData.cep,
+                address: formData.address,
+                number: formData.number,
+                complement: formData.complement,
+                district: formData.district,
+                city: formData.city,
+                state: formData.state,
+              }
+            }
+          });
+
+          if (signUpError) {
+            console.error('[Checkout] Erro ao criar conta:', signUpError);
+            if (signUpError.message.includes('already registered')) {
+              toast.error('Este e-mail já possui conta. A compra seguirá como convidado.');
+            } else {
+              toast.error('Erro ao criar conta. A compra seguirá como convidado.');
+            }
+          } else if (signUpData.user) {
+            currentUserId = signUpData.user.id;
+            console.log('[Checkout] Conta criada com sucesso ID:', currentUserId);
+            toast.success('Conta criada! Verifique seu e-mail futuramente.');
+          }
+        } catch (err) {
+          console.error('[Checkout] Falha crítica no signUp:', err);
+        }
+      }
+
       // 1. CRIAR O PEDIDO NO SUPABASE
       let orderId = String(Date.now()); // Fallback ID
 
       const orderPayload: any = {
-        user_id: user?.id || null, // Permite null para convidados
+        user_id: currentUserId, // Usa o ID logado ou recém-criado
         total_amount: totalAmount,
         status: 'pending',
         payment_method: formData.paymentMethod,
@@ -790,6 +834,51 @@ export default function Checkout() {
                     <label className="text-xs font-bold text-gray-500 uppercase">Celular</label>
                     <input required name="phone" onChange={handleChange} value={formData.phone} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all" placeholder="(00) 00000-0000" maxLength={15} />
                   </div>
+
+                  {/* Optional Signup */}
+                  {!user && (
+                    <div className="md:col-span-2 pt-6 mt-2 border-t border-gray-100">
+                      <label className="flex items-start gap-3 cursor-pointer group">
+                        <div className="relative flex items-center mt-0.5">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.createAccount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, createAccount: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-5 h-5 border-2 border-gray-200 rounded-md peer-checked:bg-black peer-checked:border-black transition-all flex items-center justify-center">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-sm font-bold text-gray-700 uppercase tracking-tight group-hover:text-black transition-colors">
+                            Criar uma conta para acompanhar meu pedido e salvar meus dados
+                          </span>
+                          <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                            Ganhe acesso ao histórico de pedidos e salve seus dados para compras futuras.
+                          </p>
+                        </div>
+                      </label>
+
+                      {formData.createAccount && (
+                        <div className="mt-6 p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Defina sua Senha</label>
+                            <input 
+                              type="password"
+                              name="password"
+                              required={formData.createAccount}
+                              value={formData.password}
+                              onChange={handleChange}
+                              className="w-full bg-white border border-gray-200 rounded-xl px-5 py-4 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all" 
+                              placeholder="Mínimo 6 caracteres"
+                              minLength={6}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
