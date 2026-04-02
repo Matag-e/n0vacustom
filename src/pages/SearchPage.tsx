@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
 import { Pagination } from '@/components/Pagination';
 import { ProductCardSkeleton } from '@/components/Skeleton';
-import { Filter, ChevronDown, Search as SearchIcon } from 'lucide-react';
+import { Filter, ChevronDown, Search as SearchIcon, Sparkles } from 'lucide-react';
 import { cn, seededShuffle } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 
@@ -301,10 +301,37 @@ export default function SearchPage() {
                 />
               </div>
             ) : (
-              <div className="text-center py-20 bg-gray-50 dark:bg-zinc-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
-                <SearchIcon className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Nenhum produto encontrado</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Tente buscar por outro termo ou limpar os filtros.</p>
+              /* Dica 2: Tela de Resultados Vazios Aprimorada */
+              <div className="text-center py-20 px-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center">
+                <div className="w-20 h-20 bg-white dark:bg-black rounded-full flex items-center justify-center mb-6 shadow-sm">
+                  <SearchIcon className="w-10 h-10 text-zinc-300" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2">Não encontrou seu manto?</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 max-w-sm leading-relaxed">
+                  Se você pesquisou por uma camisa específica e ela não apareceu, nós podemos buscá-la para você com nossos fornecedores exclusivos.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link 
+                    to="/encomenda-especial"
+                    className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-full font-black uppercase text-xs tracking-[0.2em] hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    Fazer Encomenda Especial
+                  </Link>
+                  
+                  <button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setPriceRange([0, 1000]);
+                      setSelectedSizes([]);
+                      setInStockOnly(false);
+                    }}
+                    className="px-8 py-4 rounded-full font-black uppercase text-xs tracking-[0.2em] border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-white dark:hover:bg-black transition-all"
+                  >
+                    Limpar Filtros
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductCard, Product } from '@/components/ProductCard';
 import { Pagination } from '@/components/Pagination';
 import { ProductCardSkeleton } from '@/components/Skeleton';
-import { Filter, ChevronDown, Search } from 'lucide-react';
+import { Filter, ChevronDown, Search, Sparkles } from 'lucide-react';
 import { cn, seededShuffle } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 
@@ -420,6 +421,27 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
 
           {/* Product Grid */}
           <div className="flex-1">
+            {/* Dica 3: Banner Estratégico no Topo */}
+            {!loading && products.length > 0 && (
+              <div className="mb-8 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 group hover:border-primary/30 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-black flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-tight">Procurando um modelo específico?</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-medium">Nós buscamos qualquer manto exclusivo para você.</p>
+                  </div>
+                </div>
+                <Link 
+                  to="/encomenda-especial"
+                  className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all shadow-md"
+                >
+                  Fazer Encomenda
+                </Link>
+              </div>
+            )}
+
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
                 {[...Array(6)].map((_, i) => (
@@ -444,24 +466,40 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
                 />
               </div>
             ) : (
-              <div className="text-center py-20 bg-gray-50 dark:bg-zinc-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
-                <Search className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Nenhum produto encontrado</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Tente ajustar seus filtros ou buscar por outro termo.</p>
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setPriceRange([0, 1000]);
-                    setSelectedSizes([]);
-                    setInStockOnly(false);
-                    setSelectedCountries([]);
-                    setSelectedLeagues([]);
-                    setSelectedYears([]);
-                  }}
-                  className="mt-6 text-primary font-bold uppercase text-xs tracking-widest border-b border-primary pb-1 hover:opacity-80 transition-opacity"
-                >
-                  Limpar todos os filtros
-                </button>
+              /* Dica 2: Tela de Resultados Vazios Aprimorada */
+              <div className="text-center py-20 px-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center">
+                <div className="w-20 h-20 bg-white dark:bg-black rounded-full flex items-center justify-center mb-6 shadow-sm">
+                  <Search className="w-10 h-10 text-zinc-300" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2">Não encontrou o que procurava?</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 max-w-sm leading-relaxed">
+                  Não se preocupe! Se o manto dos seus sonhos não está em nosso catálogo, nós podemos buscá-lo para você em nossa rede de fornecedores globais.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link 
+                    to="/encomenda-especial"
+                    className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-full font-black uppercase text-xs tracking-[0.2em] hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    Encomendar Manto Exclusivo
+                  </Link>
+                  
+                  <button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setPriceRange([0, 1000]);
+                      setSelectedSizes([]);
+                      setInStockOnly(false);
+                      setSelectedCountries([]);
+                      setSelectedLeagues([]);
+                      setSelectedYears([]);
+                    }}
+                    className="px-8 py-4 rounded-full font-black uppercase text-xs tracking-[0.2em] border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-white dark:hover:bg-black transition-all"
+                  >
+                    Limpar Filtros
+                  </button>
+                </div>
               </div>
             )}
           </div>
