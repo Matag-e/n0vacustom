@@ -1,6 +1,5 @@
-import { X, Trash2, ShoppingBag, ArrowRight, LogIn } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
@@ -12,7 +11,6 @@ interface CartDrawerProps {
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { items, removeFromCart, updateQuantity, totalPrice } = useCart();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -42,11 +40,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const handleCheckout = () => {
     onClose();
-    if (user) {
-      navigate('/checkout');
-    } else {
-      navigate('/login?redirect=/checkout');
-    }
+    navigate('/checkout');
   };
 
   return (
@@ -178,17 +172,8 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               onClick={handleCheckout}
               className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 group"
             >
-              {user ? (
-                <>
-                  Finalizar Compra
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </>
-              ) : (
-                <>
-                  Login para Finalizar
-                  <LogIn className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
+              Finalizar Compra
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
               onClick={() => {

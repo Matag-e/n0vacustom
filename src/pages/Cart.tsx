@@ -1,13 +1,11 @@
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
-import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield, LogIn } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, totalPrice } = useCart();
-  const { user } = useAuth();
 
   if (items.length === 0) {
     return (
@@ -148,17 +146,10 @@ export default function Cart() {
                 </div>
               </div>
               
-              {user ? (
-                <Link to="/checkout" className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
-                  Finalizar Compra
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-              ) : (
-                <Link to="/login?redirect=/checkout" className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
-                  Login para Finalizar
-                  <LogIn className="h-5 w-5" />
-                </Link>
-              )}
+              <Link to="/checkout" className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
+                Finalizar Compra
+                <ArrowRight className="h-5 w-5" />
+              </Link>
               
               <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
                 <Shield className="h-3 w-3" />
