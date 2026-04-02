@@ -5,7 +5,6 @@ import { CartProvider } from '@/context/CartContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
-import { FloatingRequestButton } from '@/components/FloatingRequestButton';
 import { ShippingNoticeModal } from '@/components/ShippingNoticeModal';
 import ScrollToTop from '@/components/ScrollToTop';
 import Home from '@/pages/Home';
@@ -56,13 +55,6 @@ function WhatsAppWrapper() {
   const hideWhatsApp = ['/update-password', '/login', '/forgot-password'].includes(location.pathname);
   if (hideWhatsApp) return null;
   return <WhatsAppButton />;
-}
-
-function FloatingRequestWrapper() {
-  const location = useLocation();
-  const hideRequest = ['/update-password', '/login', '/forgot-password', '/encomenda-especial'].includes(location.pathname);
-  if (hideRequest) return null;
-  return <FloatingRequestButton />;
 }
 
 function App() {
@@ -141,7 +133,6 @@ function App() {
                   </Routes>
                 </main>
                 <WhatsAppWrapper />
-                <FloatingRequestWrapper />
                 <FooterWrapper />
               </div>
             } />
