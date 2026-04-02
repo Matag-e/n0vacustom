@@ -31,17 +31,17 @@ export default function CustomizationService() {
   const portfolio = [
     {
       title: "Fonte Oficial Seleção",
-      image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Close-up%20of%20a%20yellow%20Brazil%20National%20Team%20jersey%20with%20official%20font%20for%20name%20and%20number%2C%20pristine%20condition%2C%20sharp%20details%2C%20studio%20photography&image_size=portrait_4_3",
+      image: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/public/products/products/patro.jpeg",
       tag: "Patch Original"
     },
     {
-      title: "Nomes e Números Retrô",
-      image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Back%20of%20a%20vintage%20football%20jersey%20from%20the%2090s%2C%20large%20velvet%20number%2010%2C%20iconic%20font%2C%20textured%20fabric%2C%20warm%20lighting&image_size=portrait_4_3",
+      title: "Nomes e Números",
+      image: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/public/products/products/nome.jpeg",
       tag: "DTF"
     },
     {
-      title: "Patches de Campeão",
-      image: "https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=Detail%20of%20a%20football%20jersey%20sleeve%20with%20a%20gold%20champions%20patch%2C%20official%20embroidery%2C%20high%20quality%2C%20macro%20photography&image_size=portrait_4_3",
+      title: "Patches",
+      image: "https://ejzimdctlmmeylmlfmvj.supabase.co/storage/v1/object/public/products/products/detalhes.jpeg",
       tag: "Aplicação Oficial"
     }
   ];
