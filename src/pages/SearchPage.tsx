@@ -120,7 +120,7 @@ export default function SearchPage() {
     }
 
     setProducts(filteredData);
-    setDisplayLimit(ITEMS_PER_PAGE); // Reset limit on filter change
+    setCurrentPage(1); // Reset to page 1 on filter change
   }, [allProducts, searchTerm, sortBy, priceRange, selectedSizes, inStockOnly, loading]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
