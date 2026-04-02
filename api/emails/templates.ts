@@ -28,7 +28,7 @@ export const orderConfirmationTemplate = (order: any) => {
       <p>Recebemos o seu pedido com sucesso! Estamos muito felizes que você escolheu a NovaCustom para vestir o seu manto.</p>
       
       <div class="order-info">
-        <p><strong>Pedido:</strong> #${orderId.slice(0, 8)}</p>
+        <p><strong>Pedido:</strong> #${order.order_code || order.id.slice(0, 8)}</p>
         <p><strong>Valor Total:</strong> R$ ${totalAmount.toFixed(2).replace('.', ',')}</p>
         <p><strong>Status:</strong> Aguardando Pagamento</p>
       </div>
@@ -49,7 +49,11 @@ export const orderConfirmationTemplate = (order: any) => {
 `;
 };
 
-export const orderPaidTemplate = (orderId: string, customerName: string) => `
+export const orderPaidTemplate = (order: any) => {
+  const orderCode = order.order_code || order.id.slice(0, 8);
+  const customerName = order.first_name || 'Cliente';
+  
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -69,7 +73,7 @@ export const orderPaidTemplate = (orderId: string, customerName: string) => `
     </div>
     <div class="content">
       <h2>Pagamento Confirmado! ⚽🔥</h2>
-      <p>Olá, ${customerName}! Ótimas notícias: o pagamento do seu pedido <strong>#${orderId}</strong> foi confirmado com sucesso.</p>
+      <p>Olá, ${customerName}! Ótimas notícias: o pagamento do seu pedido <strong>#${orderCode}</strong> foi confirmado com sucesso.</p>
       <p>Nossa equipe já está preparando o seu manto com todo o cuidado que ele merece. Você receberá um novo e-mail assim que o produto for postado com o código de rastreio.</p>
       
       <div style="text-align: center; margin-top: 30px;">
@@ -83,8 +87,13 @@ export const orderPaidTemplate = (orderId: string, customerName: string) => `
 </body>
 </html>
 `;
+};
 
-export const orderShippedTemplate = (orderId: string, customerName: string, trackingCode?: string | null) => `
+export const orderShippedTemplate = (order: any, trackingCode?: string | null) => {
+  const orderCode = order.order_code || order.id.slice(0, 8);
+  const customerName = order.first_name || 'Cliente';
+
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -106,7 +115,7 @@ export const orderShippedTemplate = (orderId: string, customerName: string, trac
     </div>
     <div class="content">
       <h2>Seu pedido foi enviado! 📦🚚</h2>
-      <p>Olá, ${customerName}! Seu pedido <strong>#${orderId}</strong> já foi postado e está a caminho.</p>
+      <p>Olá, ${customerName}! Seu pedido <strong>#${orderCode}</strong> já foi postado e está a caminho.</p>
 
       <div class="box">
         <p><strong>Status:</strong> Enviado</p>
@@ -124,3 +133,4 @@ export const orderShippedTemplate = (orderId: string, customerName: string, trac
 </body>
 </html>
 `;
+};

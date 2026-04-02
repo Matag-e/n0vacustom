@@ -13,6 +13,7 @@ import { Helmet } from 'react-helmet-async';
 interface PixResult {
   id: number;
   orderId: string;
+  order_code?: string;
   qr_code: string;
   qr_code_base64: string;
   status: string;
@@ -462,8 +463,7 @@ export default function Checkout() {
 
       if (orderError) {
         console.error('[Checkout] Erro ao salvar pedido no Supabase:', orderError);
-        // Se for PIX, podemos prosseguir mesmo sem salvar no banco (para não perder a venda)
-        if (!isPix) throw new Error(`Erro ao registrar pedido: ${orderError.message}`);
+        throw new Error(`Erro ao registrar pedido: ${orderError.message}`);
       }
       
       if (orderData) {
@@ -478,20 +478,19 @@ export default function Checkout() {
         try {
           const { data } = await supabase.auth.getSession()
           const token = data.session?.access_token
-          if (token) {
-            const emailRes = await fetch('/api/emails/order-confirmation', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ orderId }),
-            })
+          
+          const emailRes = await fetch('/api/emails/order-confirmation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ orderId }),
+          })
 
-            if (!emailRes.ok) {
-              const json = await emailRes.json().catch(() => ({}))
-              console.error('[Checkout] Email confirmação (pedido) falhou:', json)
-            }
+          if (!emailRes.ok) {
+            const json = await emailRes.json().catch(() => ({}))
+            console.error('[Checkout] Email confirmação (pedido) falhou:', json)
           }
         } catch (emailErr) {
           console.error('[Checkout] Falha ao disparar e-mail de confirmação:', emailErr)
@@ -549,6 +548,7 @@ export default function Checkout() {
           setPixResult({
             id: data.id,
             orderId: orderId,
+            order_code: orderData?.order_code,
             qr_code: data.qr_code,
             qr_code_base64: data.qr_code_base64,
             status: data.status,
@@ -666,6 +666,11 @@ export default function Checkout() {
             <div className="p-8 md:p-12 space-y-8 text-center">
               {!isPaid ? (
                 <>
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número do Pedido</span>
+                    <p className="text-lg font-black text-gray-900">#{pixResult.order_code || pixResult.orderId.slice(0, 8)}</p>
+                  </div>
+
                   <div className="space-y-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Valor do Pagamento</span>
                     <p className="text-4xl font-black text-gray-900">

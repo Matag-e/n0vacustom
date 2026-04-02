@@ -85,7 +85,7 @@ router.post('/order-confirmation', async (req: Request, res: Response) => {
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: [order.email],
-      subject: `Pedido Recebido! #${order.id.slice(0, 8)} - NovaCustom`,
+      subject: `Pedido Recebido! #${order.order_code || order.id.slice(0, 8)} - NovaCustom`,
       html: orderConfirmationTemplate(order)
     })
 
@@ -124,7 +124,7 @@ router.post('/order-shipped', async (req: Request, res: Response) => {
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: [order.email],
-      subject: `Seu manto está a caminho! 🚚 - NovaCustom`,
+      subject: `Seu manto está a caminho! #${order.order_code || order.id.slice(0, 8)} 🚚 - NovaCustom`,
       html: orderShippedTemplate(order, trackingCode)
     })
 

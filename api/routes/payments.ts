@@ -263,7 +263,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         // Buscar status atual para não sobrescrever 'shipped' ou 'completed'
         const { data: currentOrder, error: fetchError } = await supabase
           .from('orders')
-          .select('status, total_amount, payment_method, email, first_name, email_payment_confirmed_sent')
+          .select('status, total_amount, payment_method, email, first_name, email_payment_confirmed_sent, order_code')
           .eq('id', orderId)
           .maybeSingle()
 
@@ -325,8 +325,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
               await resend.emails.send({
                 from: EMAIL_FROM,
                 to: currentOrder.email,
-                subject: 'Pagamento Confirmado! 🔥 NovaCustom',
-                html: orderPaidTemplate(String(orderId).slice(0, 8), currentOrder.first_name || 'Cliente'),
+                subject: `Pagamento Confirmado! #${currentOrder.order_code || String(orderId).slice(0, 8)} - NovaCustom`,
+                html: orderPaidTemplate(currentOrder),
               });
               await supabase
                 .from('orders')

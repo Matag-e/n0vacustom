@@ -15,6 +15,7 @@ interface Order {
   status: string;
   payment_method?: string;
   tracking_code?: string;
+  order_code?: string;
 }
 
 import { Wishlist } from '@/components/Wishlist';
@@ -320,7 +321,7 @@ export default function Profile() {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                            Pedido #{order.id.slice(0, 8)}
+                            Pedido #{order.order_code || order.id.slice(0, 8)}
                           </p>
                           <h3 className="font-bold text-gray-900">
                             {new Date(order.created_at).toLocaleDateString('pt-BR', { 

@@ -30,6 +30,7 @@ interface Order {
   city: string;
   state: string;
   tracking_code: string;
+  order_code: string;
   order_items: {
     quantity: number;
     price: number;
@@ -346,7 +347,11 @@ Cidade: ${order.city} - ${order.state}`;
 
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
-    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (order.order_code && order.order_code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      `${order.first_name} ${order.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.email.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -590,7 +595,7 @@ Cidade: ${order.city} - ${order.state}`;
                   return (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-6 py-4">
-                        <span className="font-mono font-bold text-gray-900">#{order.id.slice(0, 8)}</span>
+                        <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id.slice(0, 8)}</span>
                         <div className="text-xs text-gray-500 mt-1">
                           {order.order_items?.length || 0} itens
                         </div>
