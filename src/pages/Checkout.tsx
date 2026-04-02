@@ -172,8 +172,41 @@ export default function Checkout() {
     paymentMethod: 'pix' as 'mercadopago' | 'pix',
   });
 
+  const calculateTotal = () => {
+    let subtotal = totalPrice;
+    let discountAmount = 0;
+
+    if (discount) {
+      if (discount.type === 'percentage') {
+        discountAmount = subtotal * (discount.value / 100);
+      } else if (discount.type === 'fixed') {
+        discountAmount = discount.value;
+      } else if (discount.type === 'buy_x_get_y') {
+        const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+        const freeItemsCount = Math.floor(totalItems / discount.value);
+        
+        if (freeItemsCount > 0) {
+          const allPrices = items.flatMap(item => Array(item.quantity).fill(item.product.price + (item.isCustomized ? 30 : 0)))
+            .sort((a, b) => a - b);
+          
+          discountAmount = allPrices.slice(0, freeItemsCount).reduce((acc, price) => acc + price, 0);
+        }
+      }
+    }
+
+    const afterCoupon = subtotal - discountAmount;
+    const pixDiscount = formData.paymentMethod === 'pix' ? afterCoupon * 0.05 : 0;
+    
+    return {
+      subtotal,
+      discountAmount,
+      pixDiscount,
+      total: Math.max(0, afterCoupon - pixDiscount)
+    };
+  };
+
   const handleApplyCoupon = async () => {
-    if (!couponCode || !user) return;
+    if (!couponCode) return;
     
     try {
       const { data, error } = await supabase
@@ -213,8 +246,13 @@ export default function Checkout() {
         return;
       }
 
-      // 5. Regra de Primeira Compra
+      // 5. Regra de Primeira Compra (Só para usuários logados)
       if (data.is_first_purchase) {
+        if (!user) {
+          toast.error('Faça login para usar este cupom de primeira compra');
+          return;
+        }
+
         const { count, error: countError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true })
@@ -229,8 +267,8 @@ export default function Checkout() {
         }
       }
 
-      // 6. Limite de uso por usuário
-      if (data.usage_limit_per_user) {
+      // 6. Limite de uso por usuário (Só para usuários logados)
+      if (data.usage_limit_per_user && user) {
         const { count, error: usageError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true })
@@ -260,68 +298,33 @@ export default function Checkout() {
     }
   };
 
-  const calculateTotal = () => {
-    let subtotal = totalPrice;
-    let discountAmount = 0;
-
-    if (discount) {
-      if (discount.type === 'percentage') {
-        discountAmount = subtotal * (discount.value / 100);
-      } else if (discount.type === 'fixed') {
-        discountAmount = discount.value;
-      } else if (discount.type === 'buy_x_get_y') {
-        // Promoção Leve X Pague Y (X = value, Y = value - 1)
-        // Ex: Leve 4 Pague 3. Descontamos o valor do item mais barato a cada X itens.
-        const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-        const freeItemsCount = Math.floor(totalItems / discount.value);
-        
-        if (freeItemsCount > 0) {
-          // Pegamos os preços de todos os itens individualmente para encontrar os mais baratos
-          const allPrices = items.flatMap(item => Array(item.quantity).fill(item.product.price + (item.isCustomized ? 30 : 0)))
-            .sort((a, b) => a - b);
-          
-          discountAmount = allPrices.slice(0, freeItemsCount).reduce((acc, price) => acc + price, 0);
-        }
-      }
-    }
-
-    const afterCoupon = subtotal - discountAmount;
-    const pixDiscount = formData.paymentMethod === 'pix' ? afterCoupon * 0.05 : 0;
-    
-    return {
-      subtotal,
-      discountAmount,
-      pixDiscount,
-      total: Math.max(0, afterCoupon - pixDiscount)
-    };
-  };
-
-  // Mandatory Login Check
-  useEffect(() => {
-    if (!authLoading && !user) {
-      toast.error('Por favor, faça login para continuar com a compra.');
-      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
-    }
-  }, [user, authLoading, navigate, location.pathname]);
-
   // Pre-fill user data
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({ ...prev, email: user.email || '' }));
+      setFormData(prev => ({ ...prev, email: user.email || prev.email }));
       
       const fetchProfile = async () => {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, phone, cpf, cep, address, number, complement, district, city, state')
           .eq('id', user.id)
           .single();
         
-        if (data?.full_name) {
-          const names = data.full_name.split(' ');
+        if (data) {
+          const names = (data.full_name || '').split(' ');
           setFormData(prev => ({
             ...prev,
-            firstName: names[0] || '',
-            lastName: names.slice(1).join(' ') || ''
+            firstName: names[0] || prev.firstName,
+            lastName: names.slice(1).join(' ') || prev.lastName,
+            phone: data.phone || prev.phone,
+            cpf: data.cpf || prev.cpf,
+            cep: data.cep || prev.cep,
+            address: data.address || prev.address,
+            number: data.number || prev.number,
+            complement: data.complement || prev.complement,
+            district: data.district || prev.district,
+            city: data.city || prev.city,
+            state: data.state || prev.state,
           }));
         }
       };
@@ -383,7 +386,7 @@ export default function Checkout() {
       let orderId = String(Date.now()); // Fallback ID
 
       const orderPayload: any = {
-        user_id: user.id,
+        user_id: user?.id || null, // Permite null para convidados
         total_amount: totalAmount,
         status: 'pending',
         payment_method: formData.paymentMethod,
@@ -578,7 +581,7 @@ export default function Checkout() {
     }
   };
 
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="w-8 h-8 animate-spin text-black" />
@@ -678,11 +681,33 @@ export default function Checkout() {
                       Obrigado pela sua compra! Você receberá um e-mail com os detalhes do seu pedido em instantes.
                     </p>
                   </div>
+                  
+                  {!user && (
+                    <div className="bg-blue-50 p-8 rounded-[2.5rem] border border-blue-100 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm text-blue-600 mb-2">
+                        <UserIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-lg font-black text-blue-900 uppercase tracking-tighter">Quer acompanhar seu pedido?</h4>
+                      <p className="text-sm text-blue-700 leading-relaxed">
+                        Crie uma conta agora para acompanhar o status da entrega, salvar seus endereços e ganhar descontos exclusivos em suas próximas compras!
+                      </p>
+                      <button 
+                        onClick={() => navigate(`/login?isRegister=true&email=${encodeURIComponent(formData.email)}&fullName=${encodeURIComponent(formData.firstName + ' ' + formData.lastName)}`)}
+                        className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
+                      >
+                        Criar minha conta agora
+                      </button>
+                      <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
+                        Ou enviaremos as atualizações para seu e-mail e celular
+                      </p>
+                    </div>
+                  )}
+
                   <button 
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate(user ? '/profile' : '/')}
                     className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
                   >
-                    Ver Meus Pedidos
+                    {user ? 'Ver Meus Pedidos' : 'Voltar para a Loja'}
                   </button>
                 </div>
               )}
@@ -690,10 +715,10 @@ export default function Checkout() {
               <div className="pt-4">
                 {!isPaid && (
                   <button 
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate(user ? '/profile' : '/')}
                     className="text-sm font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
                   >
-                    Ver meus pedidos
+                    {user ? 'Ver meus pedidos' : 'Voltar para a loja'}
                   </button>
                 )}
               </div>

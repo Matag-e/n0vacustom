@@ -7,18 +7,22 @@ import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
 
 export default function Login() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const initialIsLogin = searchParams.get('isRegister') !== 'true';
+  const initialEmail = searchParams.get('email') || '';
+  const initialFullName = searchParams.get('fullName') || '';
+  
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/profile';
 
   const [formData, setFormData] = useState({
-    email: '',
+    email: initialEmail,
     password: '',
-    fullName: ''
+    fullName: initialFullName
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
