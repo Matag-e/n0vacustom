@@ -236,7 +236,7 @@ Cidade: ${order.city} - ${order.state}`;
     const shippingLabelHtml = `
       <html>
         <head>
-          <title>Etiqueta de Envio - Pedido #${order.id.slice(0, 8)}</title>
+          <title>Etiqueta de Envio - Pedido #${order.id?.slice(0, 8) || ''}</title>
           <style>
             @media print {
               @page { size: 100mm 150mm; margin: 0; }
@@ -258,7 +258,7 @@ Cidade: ${order.city} - ${order.state}`;
         <body>
           <div class="header">
             <div class="logo">NOVA CUSTOM</div>
-            <div style="font-size: 12px;">Pedido: #${order.id.slice(0, 8)}</div>
+            <div style="font-size: 12px;">Pedido: #${order.id?.slice(0, 8) || ''}</div>
           </div>
 
           <div class="address-box">
@@ -316,7 +316,7 @@ Cidade: ${order.city} - ${order.state}`;
 
     const rows = paidOrders.flatMap(order => 
       order.order_items.map(item => [
-        order.id.slice(0, 8),
+        order.id?.slice(0, 8) || '',
         `${order.first_name} ${order.last_name}`,
         order.cpf.replace(/\D/g, ''),
         order.email,
@@ -595,7 +595,7 @@ Cidade: ${order.city} - ${order.state}`;
                   return (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-6 py-4">
-                        <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id.slice(0, 8)}</span>
+                        <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id?.slice(0, 8) || ''}</span>
                         <div className="text-xs text-gray-500 mt-1">
                           {order.order_items?.length || 0} itens
                         </div>
@@ -611,7 +611,7 @@ Cidade: ${order.city} - ${order.state}`;
                       </td>
                       <td className="px-6 py-4 text-gray-900 font-medium">
                         <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500" title={order.user_id}>
-                          {order.user_id.slice(0, 8)}...
+                          {order.user_id?.slice(0, 8) || ''}...
                         </span>
                       </td>
                       <td className="px-6 py-4 font-bold text-gray-900">

@@ -668,7 +668,7 @@ export default function Checkout() {
                 <>
                   <div className="space-y-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número do Pedido</span>
-                    <p className="text-lg font-black text-gray-900">#{pixResult.order_code || pixResult.orderId.slice(0, 8)}</p>
+                    <p className="text-lg font-black text-gray-900">#{pixResult.order_code || pixResult.orderId?.slice(0, 8) || ''}</p>
                   </div>
 
                   <div className="space-y-2">
