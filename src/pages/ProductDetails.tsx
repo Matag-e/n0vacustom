@@ -590,7 +590,7 @@ export default function ProductDetails() {
                   <div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Entrega Estimada</p>
                     <p className="text-sm font-bold text-gray-900">
-                      {product.shipping_type === 'national' ? '10 a 15 dias úteis' : '30 a 45 dias'}
+                      {product.shipping_type === 'national' ? '10 a 15 dias úteis' : '30 a 35 dias'}
                     </p>
                   </div>
                 </div>
