@@ -8,9 +8,6 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
   ],
-  build: {
-    chunkSizeWarningLimit: 2000,
-  },
   server: {
     port: 5174,
     proxy: {

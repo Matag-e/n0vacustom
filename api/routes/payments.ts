@@ -263,7 +263,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         // Buscar status atual para não sobrescrever 'shipped' ou 'completed'
         const { data: currentOrder, error: fetchError } = await supabase
           .from('orders')
-          .select('status, total_amount, payment_method, email, first_name, email_payment_confirmed_sent, order_code')
+          .select('status, total_amount, payment_method, email, first_name, email_payment_confirmed_sent')
           .eq('id', orderId)
           .maybeSingle()
 
@@ -325,8 +325,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
               await resend.emails.send({
                 from: EMAIL_FROM,
                 to: currentOrder.email,
-                subject: `Pagamento Confirmado! #${currentOrder.order_code || String(orderId).slice(0, 8)} - NovaCustom`,
-                html: orderPaidTemplate(currentOrder),
+                subject: 'Pagamento Confirmado! 🔥 NovaCustom',
+                html: orderPaidTemplate(String(orderId).slice(0, 8), currentOrder.first_name || 'Cliente'),
               });
               await supabase
                 .from('orders')
@@ -453,7 +453,9 @@ router.post('/process-payment', async (req: Request, res: Response) => {
       const result = await payment.create({
         body: paymentData,
         requestOptions: {
-          meliSessionId: deviceId || '',
+          headers: {
+            'X-Meli-Session-Id': deviceId || '',
+          }
         }
       })
 

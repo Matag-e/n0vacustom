@@ -215,7 +215,7 @@ export default function Profile() {
               <div className="pt-6 border-t border-gray-100 space-y-4">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">ID da Conta</span>
-                  <span className="font-mono text-xs bg-gray-50 px-2 py-1 rounded text-gray-400">{user.id?.slice(0, 8) || ''}...</span>
+                  <span className="font-mono text-xs bg-gray-50 px-2 py-1 rounded text-gray-400">{user.id.slice(0, 8)}...</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Membro desde</span>
@@ -321,7 +321,7 @@ export default function Profile() {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                            Pedido #{order.order_code || order.id?.slice(0, 8) || ''}
+                            Pedido #{order.order_code || order.id.slice(0, 8)}
                           </p>
                           <h3 className="font-bold text-gray-900">
                             {new Date(order.created_at).toLocaleDateString('pt-BR', { 

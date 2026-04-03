@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { 
   Package, Truck, CheckCircle2, Clock, XCircle, Search, 
   ChevronDown, Filter, DollarSign, Calendar, Eye, Copy, FileText, Download, Plus, Trash2,
-  AlertTriangle, TrendingUp, BarChart3, Users
+  AlertTriangle, TrendingUp, BarChart3, Users, MessageSquare, Phone
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -236,7 +236,7 @@ Cidade: ${order.city} - ${order.state}`;
     const shippingLabelHtml = `
       <html>
         <head>
-          <title>Etiqueta de Envio - Pedido #${order.id?.slice(0, 8) || ''}</title>
+          <title>Etiqueta de Envio - Pedido #${order.id.slice(0, 8)}</title>
           <style>
             @media print {
               @page { size: 100mm 150mm; margin: 0; }
@@ -258,7 +258,7 @@ Cidade: ${order.city} - ${order.state}`;
         <body>
           <div class="header">
             <div class="logo">NOVA CUSTOM</div>
-            <div style="font-size: 12px;">Pedido: #${order.id?.slice(0, 8) || ''}</div>
+            <div style="font-size: 12px;">Pedido: #${order.id.slice(0, 8)}</div>
           </div>
 
           <div class="address-box">
@@ -316,7 +316,7 @@ Cidade: ${order.city} - ${order.state}`;
 
     const rows = paidOrders.flatMap(order => 
       order.order_items.map(item => [
-        order.id?.slice(0, 8) || '',
+        order.id.slice(0, 8),
         `${order.first_name} ${order.last_name}`,
         order.cpf.replace(/\D/g, ''),
         order.email,
@@ -571,6 +571,7 @@ Cidade: ${order.city} - ${order.state}`;
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Pedido</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Data</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Cliente</th>
+                <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Contato</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Total</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Status</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Ações</th>
@@ -579,23 +580,26 @@ Cidade: ${order.city} - ${order.state}`;
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     Carregando pedidos...
                   </td>
                 </tr>
               ) : filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     Nenhum pedido encontrado.
                   </td>
                 </tr>
               ) : (
                 filteredOrders.map((order) => {
                   const StatusIcon = STATUS_MAP[order.status]?.icon || Clock;
+                  const whatsappNumber = order.phone?.replace(/\D/g, '');
+                  const whatsappUrl = whatsappNumber ? `https://wa.me/55${whatsappNumber}` : null;
+
                   return (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-6 py-4">
-                        <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id?.slice(0, 8) || ''}</span>
+                        <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id.slice(0, 8)}</span>
                         <div className="text-xs text-gray-500 mt-1">
                           {order.order_items?.length || 0} itens
                         </div>
@@ -609,10 +613,37 @@ Cidade: ${order.city} - ${order.state}`;
                           {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-900 font-medium">
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500" title={order.user_id}>
-                          {order.user_id?.slice(0, 8) || ''}...
-                        </span>
+                      <td className="px-6 py-4">
+                        <div className="text-gray-900 font-bold">
+                          {order.first_name} {order.last_name}
+                        </div>
+                        <div className="text-xs text-gray-500 lowercase">
+                          {order.email}
+                        </div>
+                        {!order.user_id && (
+                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase font-bold mt-1 inline-block">
+                            Convidado
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 text-gray-600">
+                            <Phone className="w-3 h-3" />
+                            <span className="text-xs">{order.phone || 'N/A'}</span>
+                          </div>
+                          {whatsappUrl && (
+                            <a 
+                              href={whatsappUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-green-600 hover:text-green-700 font-bold text-[10px] uppercase transition-colors"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              WhatsApp
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 font-bold text-gray-900">
                         R$ {order.total_amount.toFixed(2).replace('.', ',')}
@@ -717,6 +748,45 @@ Cidade: ${order.city} - ${order.state}`;
                   </div>
                 </div>
 
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                    <Users className="w-3 h-3" />
+                    Informações de Contato
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-xl space-y-4 text-sm">
+                    <div className="space-y-2">
+                      <p className="flex items-center gap-2">
+                        <strong>E-mail:</strong> 
+                        <span className="text-gray-600">{selectedOrder.email}</span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <strong>Telefone:</strong> 
+                        <span className="text-gray-600">{selectedOrder.phone || 'N/A'}</span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <strong>Tipo:</strong> 
+                        <span className="text-xs bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-500 uppercase font-bold">
+                          {selectedOrder.user_id ? 'Cliente Cadastrado' : 'Convidado'}
+                        </span>
+                      </p>
+                    </div>
+
+                    {selectedOrder.phone && (
+                      <a 
+                        href={`https://wa.me/55${selectedOrder.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-3 rounded-lg transition-all w-full justify-center"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        ENTRAR EM CONTATO VIA WHATSAPP
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                     <Truck className="w-3 h-3" />

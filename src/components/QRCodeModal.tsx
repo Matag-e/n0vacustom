@@ -91,7 +91,7 @@ export function QRCodeModal({ isOpen, onClose, order }: QRCodeModalProps) {
               </div>
               
               <p className="text-sm text-gray-500">
-                Escaneie o QR Code para pagar o pedido <span className="font-mono font-bold text-black">#{order.id?.slice(0, 8) || ''}</span>
+                Escaneie o QR Code para pagar o pedido <span className="font-mono font-bold text-black">#{order.id.slice(0, 8)}</span>
               </p>
 
               <div className="bg-white p-4 rounded-xl border-2 border-gray-100 inline-block mx-auto">
