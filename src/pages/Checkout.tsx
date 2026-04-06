@@ -156,6 +156,18 @@ export default function Checkout() {
     };
   }, [pixResult, isPaid]);
 
+  useEffect(() => {
+    if (items.length > 0 && typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        content_ids: items.map(item => item.product.id),
+        content_type: 'product',
+        value: totalPrice,
+        currency: 'BRL',
+        num_items: items.reduce((acc, item) => acc + item.quantity, 0)
+      });
+    }
+  }, []);
+
   // Form States
   const [formData, setFormData] = useState({
     firstName: '',
@@ -668,7 +680,7 @@ export default function Checkout() {
                 <>
                   <div className="space-y-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número do Pedido</span>
-                    <p className="text-lg font-black text-gray-900">#{pixResult.order_code || pixResult.orderId.slice(0, 8)}</p>
+                    <p className="text-lg font-black text-gray-900">#{pixResult.order_code || pixResult.orderId?.slice(0, 8)}</p>
                   </div>
 
                   <div className="space-y-2">

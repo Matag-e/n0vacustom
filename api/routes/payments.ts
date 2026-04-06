@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url'
 import { z } from 'zod'
 import { resend, EMAIL_FROM } from '../lib/resend.js'
 import { orderPaidTemplate } from '../emails/templates.js'
+import { sendMetaEvent } from '../lib/meta.js'
 
 // Validation Schemas
 const CreatePreferenceSchema = z.object({
@@ -333,6 +334,28 @@ router.post('/webhook', async (req: Request, res: Response) => {
                 .update({ email_payment_confirmed_sent: true })
                 .eq('id', orderId)
               console.log(`[Email] Confirmação de pagamento enviada para: ${currentOrder.email}`);
+
+              // Enviar Evento de Compra para Meta CAPI
+              try {
+                await sendMetaEvent({
+                  eventName: 'Purchase',
+                  eventSourceUrl: 'https://novacustom.com.br/checkout',
+                  userData: {
+                    em: currentOrder.email,
+                    ph: currentOrder.phone,
+                    client_ip_address: req.ip,
+                    client_user_agent: req.headers['user-agent']
+                  },
+                  customData: {
+                    value: Number(currentOrder.total_amount),
+                    currency: 'BRL',
+                    order_id: currentOrder.order_code || String(orderId),
+                    content_type: 'product'
+                  }
+                });
+              } catch (metaErr) {
+                console.error('[Meta CAPI] Falha ao enviar evento de Purchase:', metaErr);
+              }
             }
           } catch (emailErr) {
             console.error('[Email] Erro ao enviar confirmação de pagamento:', emailErr);

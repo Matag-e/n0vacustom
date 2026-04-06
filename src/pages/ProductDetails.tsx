@@ -149,6 +149,18 @@ export default function ProductDetails() {
         if (error) throw error;
         
         setProduct(data);
+
+        // Disparar evento ViewContent para o Meta Pixel
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+          (window as any).fbq('track', 'ViewContent', {
+            content_name: data.name,
+            content_category: data.category,
+            content_ids: [data.id],
+            content_type: 'product',
+            value: data.price,
+            currency: 'BRL'
+          });
+        }
         
         // Map stock array to object for easier lookup
         const stockMap: Record<string, number> = {};
@@ -418,6 +430,18 @@ export default function ProductDetails() {
     setIsAdding(true);
     
     addToCart(product, selectedSize, wantsCustomization, customName, customNumber);
+
+    // Disparar evento AddToCart para o Meta Pixel
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'AddToCart', {
+        content_name: product.name,
+        content_category: product.category,
+        content_ids: [product.id],
+        content_type: 'product',
+        value: product.price + (wantsCustomization ? 30 : 0),
+        currency: 'BRL'
+      });
+    }
     
     setTimeout(() => {
       setIsAdding(false);

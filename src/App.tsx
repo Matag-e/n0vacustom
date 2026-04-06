@@ -26,6 +26,7 @@ import TermsOfUse from '@/pages/TermsOfUse';
 import CustomizationService from '@/pages/CustomizationService';
 import SearchPage from '@/pages/SearchPage';
 import RequestProduct from '@/pages/RequestProduct';
+import VIP from '@/pages/VIP';
 import AdminLayout from '@/pages/Admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
@@ -113,6 +114,7 @@ function App() {
                     <Route path="/personalizacao" element={<CustomizationService />} />
                     <Route path="/envio-e-entrega" element={<Shipping />} />
                     <Route path="/trocas-e-devolucoes" element={<Returns />} />
+                    <Route path="/vip" element={<VIP />} />
                     <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                     <Route path="/termos-de-uso" element={<TermsOfUse />} />
                     <Route path="/faq" element={<FAQ />} />

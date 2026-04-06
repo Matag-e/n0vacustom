@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, User as UserIcon, LogOut, ChevronDown, ShieldCheck, Search, Loader2 } from 'lucide-react';
+import { ShoppingCart, Menu, X, User as UserIcon, LogOut, ChevronDown, ShieldCheck, Search, Loader2, Crown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -210,6 +210,14 @@ export function Navigation() {
                 className="font-medium transition-colors hover:text-primary text-sm uppercase tracking-wide text-gray-700 dark:text-gray-200"
               >
                 Personalização
+              </Link>
+
+              <Link
+                to="/vip"
+                className="group flex items-center gap-1.5 font-bold transition-all hover:scale-105 text-sm uppercase tracking-widest text-purple-600 dark:text-purple-400"
+              >
+                <Crown className="w-4 h-4 animate-bounce" />
+                VIP
               </Link>
 
               <Link
@@ -464,6 +472,15 @@ export function Navigation() {
               onClick={() => setIsOpen(false)}
             >
               Personalização
+            </Link>
+
+            <Link
+              to="/vip"
+              className="flex items-center gap-3 px-4 py-3 rounded-md text-base font-black text-purple-600 hover:bg-purple-50"
+              onClick={() => setIsOpen(false)}
+            >
+              <Crown className="h-5 w-5 animate-bounce" />
+              CLUBE VIP
             </Link>
 
             <Link
