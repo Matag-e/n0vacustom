@@ -1,17 +1,16 @@
 import { Router, type Request, type Response } from 'express'
-import dotenv from 'dotenv'
-
-// Carregar variáveis ANTES de qualquer outro import
-dotenv.config()
-
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'
 import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { z } from 'zod'
 import { resend, EMAIL_FROM } from '../lib/resend.js'
 import { orderPaidTemplate } from '../emails/templates.js'
 import { sendMetaEvent } from '../lib/meta.js'
+
+// Carregar variáveis de ambiente
+dotenv.config()
 
 // Validation Schemas
 const CreatePreferenceSchema = z.object({
@@ -50,18 +49,14 @@ const supabase = createClient(
 
 // Configuração robusta do Mercado Pago para ambiente Vercel
 const getMPClient = () => {
-  // Tentar pegar o token de qualquer uma das chaves possíveis
-  const rawToken = (
+  const token = (
     process.env.MERCADOPAGO_ACCESS_TOKEN || 
     process.env.MERCADO_PAGO_ACCESS_TOKEN || 
     process.env.MP_ACCESS_TOKEN || 
     ''
   ).trim();
 
-  // Proteção contra tokens que vêm como strings "undefined" ou "null"
-  const token = (rawToken === 'undefined' || rawToken === 'null') ? '' : rawToken;
-
-  if (!token) {
+  if (!token || token === 'undefined' || token === 'null') {
     console.error('[MP] ERRO CRÍTICO: Token não encontrado no ambiente.');
     throw new Error('Access Token do Mercado Pago não configurado corretamente no servidor.');
   }
@@ -439,15 +434,19 @@ router.post('/process-payment', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valor do pagamento inválido.' });
     }
 
-    const client = getMPClient()
-    const payment = new Payment(client)
+    // 1. Verificar Token manualmente para PIX (Bypass do SDK para estabilidade)
+    const mpToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
+    if (!mpToken || mpToken === 'undefined' || mpToken === 'null') {
+      console.error('[MP] ERRO: Token não encontrado no ambiente para PIX.');
+      return res.status(500).json({ error: 'Configuração de pagamento indisponível no servidor.' });
+    }
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('novacustom.com.br')
     const origin = isProduction ? 'https://www.novacustom.com.br' : (req.headers.origin || 'http://localhost:5174')
     const notification_url = 'https://www.novacustom.com.br/api/payments/webhook'
 
     if (paymentMethod === 'pix') {
-      console.log('[MP] Iniciando pagamento PIX direto para Order:', orderId);
+      console.log('[MP] Iniciando pagamento PIX via API Direta para Order:', orderId);
       
       // Sanitização do CPF e nomes
       const cleanCPF = (payer.cpf || '').replace(/\D/g, '');
@@ -478,21 +477,27 @@ router.post('/process-payment', async (req: Request, res: Response) => {
         notification_url: notification_url,
       };
 
-      console.log('[MP] Enviando payload para API do Mercado Pago...');
+      console.log('[MP] Enviando payload para API do Mercado Pago via Fetch...');
 
-      const mpToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
+      // Chamada Direta via Fetch para evitar erros de inicialização do SDK
+      const response = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${mpToken}`,
+          'Content-Type': 'application/json',
+          'X-Meli-Session-Id': deviceId || '',
+        },
+        body: JSON.stringify(paymentData)
+      });
 
-      const result = await payment.create({
-        body: paymentData,
-        requestOptions: {
-          accessToken: mpToken, // Forçar o token diretamente na requisição para evitar erro do SDK
-          headers: {
-            'X-Meli-Session-Id': deviceId || '',
-          }
-        }
-      })
+      const result = await response.json();
 
-      console.log('[MP] Pagamento criado com sucesso! ID:', result.id);
+      if (!response.ok) {
+        console.error('[MP] Erro na API Direta:', result);
+        throw new Error(result.message || 'Erro ao comunicar com Mercado Pago');
+      }
+
+      console.log('[MP] Pagamento PIX criado com sucesso! ID:', result.id);
       
       // Log detalhado do point_of_interaction para debug se necessário
       if (!result.point_of_interaction?.transaction_data?.qr_code) {
