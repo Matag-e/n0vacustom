@@ -37,10 +37,12 @@ const ProcessPaymentSchema = z.object({
   }),
 })
 
+// Configuração inicial do dotenv para garantir que as variáveis sejam lidas
 dotenv.config()
 
 console.log('[MP] Carregando variáveis de ambiente...');
 console.log('[MP] VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Definida' : 'NÃO DEFINIDA');
+console.log('[MP] MERCADOPAGO_ACCESS_TOKEN:', process.env.MERCADOPAGO_ACCESS_TOKEN ? 'Definida' : 'NÃO DEFINIDA');
 
 const router = Router()
 
@@ -51,21 +53,30 @@ const supabase = createClient(
 
 // Inicializamos o cliente dentro da rota ou usamos uma função para garantir que pegue o valor atual do process.env
 const getMPClient = () => {
+  // Tentar recarregar o dotenv caso as variáveis não estejam presentes (comum em alguns ambientes serverless)
+  if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    dotenv.config();
+  }
+
   const token = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim()
   
   // Log de diagnóstico (mascarado por segurança)
   if (!token) {
-    console.error('[MP] ERRO: MERCADOPAGO_ACCESS_TOKEN não foi encontrado no process.env');
+    console.error('[MP] ERRO CRÍTICO: MERCADOPAGO_ACCESS_TOKEN não foi encontrado no process.env após tentativa de carregamento.');
   } else {
-    console.log(`[MP] Token encontrado (Início: ${token.substring(0, 5)}... Fim: ${token.substring(token.length - 5)})`);
+    const maskedToken = `${token.substring(0, 8)}...${token.substring(token.length - 8)}`;
+    console.log(`[MP] Token detectado com sucesso: ${maskedToken}`);
   }
 
   if (!token) {
-    throw new Error('Configuração do Mercado Pago (ACCESS_TOKEN) ausente no servidor. Verifique as variáveis de ambiente.');
+    throw new Error('Configuração do Mercado Pago (ACCESS_TOKEN) ausente no servidor. Verifique as variáveis de ambiente no painel do Vercel.');
   }
 
   return new MercadoPagoConfig({
     accessToken: token,
+    options: {
+      timeout: 10000, // 10 segundos de timeout
+    }
   })
 }
 
