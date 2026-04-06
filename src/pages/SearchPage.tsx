@@ -32,6 +32,10 @@ export default function SearchPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+
+  // Derived filter options
+  const models = Array.from(new Set(allProducts.map(p => p.model_type).filter(Boolean))) as string[];
 
   useEffect(() => {
     setSearchTerm(queryParam);
@@ -100,7 +104,12 @@ export default function SearchPage() {
       });
     }
 
-    // 5. Sorting
+    // 5. Model Filter
+    if (selectedModels.length > 0) {
+      filteredData = filteredData.filter(p => p.model_type && selectedModels.includes(p.model_type));
+    }
+
+    // 6. Sorting
     if (sortBy === 'random') {
       let sessionSeed = sessionStorage.getItem('search_products_seed');
       if (!sessionSeed) {
@@ -118,7 +127,7 @@ export default function SearchPage() {
 
     setProducts(filteredData);
     setCurrentPage(1); // Reset to page 1 on filter change
-  }, [allProducts, searchTerm, sortBy, priceRange, selectedSizes, inStockOnly, loading]);
+  }, [allProducts, searchTerm, sortBy, priceRange, selectedSizes, inStockOnly, selectedModels, loading]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
   const kidsSizes = ['16', '18', '20', '22', '24', '26', '28'];
@@ -155,6 +164,23 @@ export default function SearchPage() {
                 className="w-full md:w-64 pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-zinc-900 border border-transparent focus:border-black dark:focus:border-white rounded-lg text-sm transition-all outline-none"
               />
             </div>
+
+            {/* Quick Filter: Jogador */}
+            <button 
+              onClick={() => setSelectedModels(prev => 
+                prev.includes('jogador') ? prev.filter(m => m !== 'jogador') : [...prev, 'jogador']
+              )}
+              className={cn(
+                "hidden md:flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                selectedModels.includes('jogador')
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "bg-gray-50 dark:bg-zinc-900 text-gray-500 hover:text-black dark:hover:text-white"
+              )}
+            >
+              <Sparkles className={cn("w-3.5 h-3.5", selectedModels.includes('jogador') ? "animate-pulse" : "")} />
+              Modelo Jogador
+            </button>
+
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className="md:hidden p-2.5 bg-gray-50 dark:bg-zinc-900 rounded-lg"
@@ -202,6 +228,7 @@ export default function SearchPage() {
                     setPriceRange([0, 1000]);
                     setSelectedSizes([]);
                     setInStockOnly(false);
+                    setSelectedModels([]);
                   }}
                   className="text-[9px] font-bold uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
                 >
@@ -272,6 +299,33 @@ export default function SearchPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Model Filter */}
+              {models.length > 0 && (
+                <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
+                  <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Modelo</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {models.sort().map((model) => (
+                      <button
+                        key={model}
+                        onClick={() => setSelectedModels(prev => 
+                          prev.includes(model) ? prev.filter(m => m !== model) : [...prev, model]
+                        )}
+                        className={cn(
+                          "px-2 py-1 text-[9px] font-bold border transition-all uppercase rounded-md whitespace-nowrap",
+                          selectedModels.includes(model)
+                            ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-sm"
+                            : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400 dark:hover:border-zinc-600"
+                        )}
+                      >
+                        {model === 'jogador' ? 'Modelo Jogador' : 
+                         model === 'torcedor' ? 'Modelo Torcedor' : 
+                         model === 'retro' ? 'Retrô' : model}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Availability Filter */}
               <div className="mb-0">
