@@ -44,7 +44,7 @@ export default function VIP() {
 
         <div className="space-y-6">
           <a 
-            href="https://wa.me/5511999999999?text=Quero%20entrar%20no%20grupo%20VIP" 
+            href="https://chat.whatsapp.com/G675nJFbpvFHXCnUzTOzOW?mode=gi_t" 
             target="_blank" 
             rel="noopener noreferrer"
             onClick={handleWhatsAppClick}
