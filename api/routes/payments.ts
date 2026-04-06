@@ -52,9 +52,18 @@ const supabase = createClient(
 // Inicializamos o cliente dentro da rota ou usamos uma função para garantir que pegue o valor atual do process.env
 const getMPClient = () => {
   const token = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim()
+  
+  // Log de diagnóstico (mascarado por segurança)
   if (!token) {
-    throw new Error('MERCADOPAGO_ACCESS_TOKEN não configurado no arquivo .env do servidor.');
+    console.error('[MP] ERRO: MERCADOPAGO_ACCESS_TOKEN não foi encontrado no process.env');
+  } else {
+    console.log(`[MP] Token encontrado (Início: ${token.substring(0, 5)}... Fim: ${token.substring(token.length - 5)})`);
   }
+
+  if (!token) {
+    throw new Error('Configuração do Mercado Pago (ACCESS_TOKEN) ausente no servidor. Verifique as variáveis de ambiente.');
+  }
+
   return new MercadoPagoConfig({
     accessToken: token,
   })
