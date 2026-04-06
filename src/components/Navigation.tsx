@@ -62,7 +62,7 @@ export function Navigation() {
             .from('products')
             .select('*')
             .eq('is_active', true)
-            .ilike('name', `%${searchQuery}%`)
+            .or(`name.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%,model_type.ilike.%${searchQuery}%`)
             .limit(5);
 
           if (error) throw error;
