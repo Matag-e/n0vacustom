@@ -1,7 +1,11 @@
 import { Router, type Request, type Response } from 'express'
+import dotenv from 'dotenv'
+
+// Carregar variáveis ANTES de qualquer outro import
+dotenv.config()
+
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'
 import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { z } from 'zod'
@@ -37,13 +41,6 @@ const ProcessPaymentSchema = z.object({
   }),
 })
 
-// Configuração inicial do dotenv para garantir que as variáveis sejam lidas
-dotenv.config()
-
-console.log('[MP] Carregando variáveis de ambiente...');
-console.log('[MP] VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Definida' : 'NÃO DEFINIDA');
-console.log('[MP] MERCADOPAGO_ACCESS_TOKEN:', process.env.MERCADOPAGO_ACCESS_TOKEN ? 'Definida' : 'NÃO DEFINIDA');
-
 const router = Router()
 
 const supabase = createClient(
@@ -61,7 +58,7 @@ const getMPClient = () => {
     ''
   ).trim();
 
-  // Proteção contra tokens que vêm como strings "undefined" ou "null" (comum em erros de config)
+  // Proteção contra tokens que vêm como strings "undefined" ou "null"
   const token = (rawToken === 'undefined' || rawToken === 'null') ? '' : rawToken;
 
   if (!token) {
@@ -69,13 +66,9 @@ const getMPClient = () => {
     throw new Error('Access Token do Mercado Pago não configurado corretamente no servidor.');
   }
 
-  // Log de sucesso mascarado para debug no Vercel
-  const masked = `${token.substring(0, 8)}...${token.substring(token.length - 4)}`;
-  console.log(`[MP] Cliente inicializado com token: ${masked}`);
-
   return new MercadoPagoConfig({ 
     accessToken: token,
-    options: { timeout: 20000 } // Aumentado para 20s para maior estabilidade
+    options: { timeout: 20000 }
   });
 }
 
@@ -487,9 +480,12 @@ router.post('/process-payment', async (req: Request, res: Response) => {
 
       console.log('[MP] Enviando payload para API do Mercado Pago...');
 
+      const mpToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
+
       const result = await payment.create({
         body: paymentData,
         requestOptions: {
+          accessToken: mpToken, // Forçar o token diretamente na requisição para evitar erro do SDK
           headers: {
             'X-Meli-Session-Id': deviceId || '',
           }
