@@ -53,32 +53,29 @@ const supabase = createClient(
 
 // Configuração robusta do Mercado Pago para ambiente Vercel
 const getMPClient = () => {
-  // 1. Tentar pegar o token de qualquer uma das chaves possíveis
-  const token = (
+  // Tentar pegar o token de qualquer uma das chaves possíveis
+  const rawToken = (
     process.env.MERCADOPAGO_ACCESS_TOKEN || 
     process.env.MERCADO_PAGO_ACCESS_TOKEN || 
     process.env.MP_ACCESS_TOKEN || 
     ''
   ).trim();
 
+  // Proteção contra tokens que vêm como strings "undefined" ou "null" (comum em erros de config)
+  const token = (rawToken === 'undefined' || rawToken === 'null') ? '' : rawToken;
+
   if (!token) {
-    // Tentar recarregar o dotenv em tempo de execução como último recurso
-    dotenv.config();
-    const retryToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
-    if (!retryToken) {
-      console.error('[MP] ERRO CRÍTICO: Token não encontrado. Verifique as Variáveis de Ambiente no Vercel.');
-      throw new Error('Access Token do Mercado Pago não configurado.');
-    }
-    return new MercadoPagoConfig({ accessToken: retryToken });
+    console.error('[MP] ERRO CRÍTICO: Token não encontrado no ambiente.');
+    throw new Error('Access Token do Mercado Pago não configurado corretamente no servidor.');
   }
 
-  // Log de sucesso mascarado
+  // Log de sucesso mascarado para debug no Vercel
   const masked = `${token.substring(0, 8)}...${token.substring(token.length - 4)}`;
-  console.log(`[MP] Usando token: ${masked}`);
+  console.log(`[MP] Cliente inicializado com token: ${masked}`);
 
   return new MercadoPagoConfig({ 
     accessToken: token,
-    options: { timeout: 15000 }
+    options: { timeout: 20000 } // Aumentado para 20s para maior estabilidade
   });
 }
 
@@ -449,17 +446,7 @@ router.post('/process-payment', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valor do pagamento inválido.' });
     }
 
-    // Inicialização explícita para PIX
-    const mpToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MERCADO_PAGO_ACCESS_TOKEN || '').trim();
-    if (!mpToken) {
-      console.error('[MP] ERRO: Token não encontrado no ambiente para PIX.');
-      return res.status(500).json({ error: 'Configuração de pagamento indisponível no momento.' });
-    }
-
-    const client = new MercadoPagoConfig({ 
-      accessToken: mpToken,
-      options: { timeout: 15000 }
-    });
+    const client = getMPClient()
     const payment = new Payment(client)
 
     const isProduction = process.env.NODE_ENV === 'production' || req.headers.host?.includes('novacustom.com.br')

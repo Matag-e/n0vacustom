@@ -1,7 +1,4 @@
-import dotenv from 'dotenv';
 import crypto from 'crypto';
-
-dotenv.config();
 
 const PIXEL_ID = process.env.META_PIXEL_ID;
 const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
