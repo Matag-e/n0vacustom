@@ -479,12 +479,16 @@ router.post('/process-payment', async (req: Request, res: Response) => {
 
       console.log('[MP] Enviando payload para API do Mercado Pago via Fetch...');
 
+      // Chave de Idempotência única para evitar pagamentos duplicados
+      const idempotencyKey = `pix-${orderId}-${Date.now()}`;
+
       // Chamada Direta via Fetch para evitar erros de inicialização do SDK
       const response = await fetch('https://api.mercadopago.com/v1/payments', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${mpToken}`,
           'Content-Type': 'application/json',
+          'X-Idempotency-Key': idempotencyKey,
           'X-Meli-Session-Id': deviceId || '',
         },
         body: JSON.stringify(paymentData)
