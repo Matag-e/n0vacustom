@@ -9,6 +9,16 @@ import {
 } from 'lucide-react';
 
 export default function VIP() {
+  const handleWhatsAppClick = () => {
+    // Disparar evento de Lead para a Meta
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Lead', {
+        content_name: 'Entrada Grupo WhatsApp VIP',
+        content_category: 'VIP'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white pt-32 pb-20 px-4">
       <Helmet>
@@ -37,6 +47,7 @@ export default function VIP() {
             href="https://wa.me/5511999999999?text=Quero%20entrar%20no%20grupo%20VIP" 
             target="_blank" 
             rel="noopener noreferrer"
+            onClick={handleWhatsAppClick}
             className="flex items-center justify-center gap-3 w-full py-5 bg-black text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200 group"
           >
             Entrar no Grupo Agora
