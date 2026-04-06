@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Package, Search, Filter, Calendar, Clock, ChevronDown, Eye, Trash2, 
-  XCircle, Truck, MapPin, Phone, MessageSquare, Copy, Users, FileText
+  XCircle, Truck, MapPin, Phone, MessageSquare, Copy, Users, FileText, Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
