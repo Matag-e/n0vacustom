@@ -13,6 +13,7 @@ import { seededShuffle } from '@/lib/utils';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [brasilProducts, setBrasilProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +29,18 @@ export default function Home() {
         }
 
         if (data) {
+          // Filtrar Coleção Brasil (2026 + Femininas)
+          const brasilCollection = data.filter(p => {
+            const desc = (p.description || '').toUpperCase();
+            const name = (p.name || '').toUpperCase();
+            const isBrasil = desc.includes('BRASIL') || name.includes('BRASIL');
+            const is2026 = p.year === '2026';
+            const isFeminina = desc.includes('FEMININA') || name.includes('FEMININA');
+            
+            return isBrasil && (is2026 || isFeminina);
+          });
+          setBrasilProducts(brasilCollection);
+
           // Lógica de Semente (Seed) por Sessão
           let sessionSeed = sessionStorage.getItem('home_products_seed');
           if (!sessionSeed) {
@@ -71,6 +84,28 @@ export default function Home() {
       
       {/* Minimal Categories */}
       <MinimalCategories />
+
+      {/* Coleção Brasil */}
+      {brasilProducts.length > 0 && (
+        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+            <div>
+              <span className="text-primary font-bold tracking-[0.2em] uppercase text-sm mb-2 block">Exclusivo</span>
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Coleção Brasil</h2>
+            </div>
+            <Link to="/search?q=Brasil" className="hidden md:flex items-center gap-2 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors group">
+              <span className="text-sm font-medium uppercase tracking-wider">Ver tudo</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+            {brasilProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Featured Products */}
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-24">

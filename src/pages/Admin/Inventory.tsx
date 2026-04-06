@@ -116,7 +116,8 @@ export default function AdminInventory() {
     product.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
+  const adultSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
+  const kidsSizes = ['16', '18', '20', '22', '24', '26', '28'];
 
   return (
     <div className="space-y-8">
@@ -162,104 +163,102 @@ export default function AdminInventory() {
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs">Categoria</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs text-right">Preço</th>
                 <th className="px-6 py-4 font-bold text-gray-500 uppercase text-xs text-center">Status</th>
-                {sizes.map(size => (
-                  <th key={size} className="px-4 py-4 font-bold text-gray-500 uppercase text-xs text-center w-24">{size}</th>
-                ))}
+                <th className="px-4 py-4 font-bold text-gray-500 uppercase text-xs text-center">Tamanhos Disponíveis</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
                     Carregando produtos...
                   </td>
                 </tr>
               ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     Nenhum produto encontrado.
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                          {product.image_url ? (
-                            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Package className="w-full h-full p-2 text-gray-400" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{product.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium uppercase">
-                        {product.category || 'Geral'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right font-medium text-gray-900">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {product.stock > 0 ? (
-                        <span className="text-green-600 font-bold text-[10px] uppercase tracking-wider bg-green-50 px-2 py-1 rounded">Em Estoque</span>
-                      ) : (
-                        <span className="text-red-600 font-bold text-[10px] uppercase tracking-wider bg-red-50 px-2 py-1 rounded">Esgotado</span>
-                      )}
-                    </td>
-                    
-                    {/* Sizes Columns */}
-                    {sizes.map(size => {
-                      const modelType = (product as any).model_type?.toLowerCase() || '';
-                      const category = (product as any).category?.toLowerCase() || '';
-                      const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
-                      const isJogador = modelType === 'jogador';
-                      
-                      const is4XLNotAllowed = size === '4XL' && (isRetro || isJogador);
+                filteredProducts.map((product) => {
+                  const modelType = (product as any).model_type?.toLowerCase() || '';
+                  const category = (product as any).category?.toLowerCase() || '';
+                  const name = (product as any).name?.toLowerCase() || '';
+                  
+                  const isKids = category.includes('kids') || category.includes('infantil') || category.includes('criança') || category.includes('crianca') || name.includes('infantil') || name.includes('kids');
+                  const productSizes = isKids ? kidsSizes : adultSizes;
 
-                      if (is4XLNotAllowed) {
-                        return (
-                          <td key={size} className="px-4 py-4 text-center">
-                            <div className="w-full py-2 text-gray-200 text-[10px] font-black uppercase tracking-widest">
-                              N/A
-                            </div>
-                          </td>
-                        );
-                      }
-                      
-                      const stockItem = product.product_stock?.find(s => s.size === size);
-                      const isAvailable = (stockItem?.quantity || 0) > 0;
-                      const isSaving = savingStock?.productId === product.id && savingStock?.size === size;
-
-                      return (
-                        <td key={size} className="px-4 py-4 text-center">
-                          <button
-                            onClick={() => updateStockSize(product.id, size, !isAvailable)}
-                            disabled={isSaving}
-                            className={cn(
-                              "w-full py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                              isAvailable 
-                                ? "bg-black text-white shadow-sm" 
-                                : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                            )}
-                          >
-                            {isSaving ? (
-                              <Loader2 className="w-3 h-3 animate-spin mx-auto" />
+                  return (
+                    <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                            {product.image_url ? (
+                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                             ) : (
-                              isAvailable ? 'SIM' : 'NÃO'
+                              <Package className="w-full h-full p-2 text-gray-400" />
                             )}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{product.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium uppercase">
+                          {product.category || 'Geral'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium text-gray-900">
+                        R$ {product.price.toFixed(2).replace('.', ',')}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {product.stock > 0 ? (
+                          <span className="text-green-600 font-bold text-[10px] uppercase tracking-wider bg-green-50 px-2 py-1 rounded">Em Estoque</span>
+                        ) : (
+                          <span className="text-red-600 font-bold text-[10px] uppercase tracking-wider bg-red-50 px-2 py-1 rounded">Esgotado</span>
+                        )}
+                      </td>
+                      
+                      {/* Sizes Grid */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {productSizes.map(size => {
+                            const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
+                            const isJogador = modelType === 'jogador';
+                            const isFeminina = modelType === 'feminina' || category.includes('feminina');
+                            
+                            const is4XLNotAllowed = size === '4XL' && (isRetro || isJogador);
+                            const isAdultBigSizeNotAllowedForFem = (size === 'XG' || size === '2XG' || size === '3XL' || size === '4XL') && isFeminina;
+
+                            if (is4XLNotAllowed || isAdultBigSizeNotAllowedForFem) return null;
+                            
+                            const stockItem = product.product_stock?.find(s => s.size === size);
+                            const isAvailable = (stockItem?.quantity || 0) > 0;
+                            const isSaving = savingStock?.productId === product.id && savingStock?.size === size;
+
+                            return (
+                              <button
+                                key={size}
+                                onClick={() => updateStockSize(product.id, size, !isAvailable)}
+                                disabled={isSaving}
+                                className={cn(
+                                  "w-12 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                  isAvailable 
+                                    ? "bg-black text-white shadow-sm" 
+                                    : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                                )}
+                              >
+                                {isSaving ? '...' : size}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

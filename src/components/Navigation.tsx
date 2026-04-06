@@ -122,6 +122,7 @@ export function Navigation() {
     { name: 'Seleções', path: '/selecoes' },
     { name: 'Retrô', path: '/retro' },
     { name: 'Personalizados', path: '/personalizados' },
+    { name: 'Kids', path: '/kids' },
   ];
 
   return (

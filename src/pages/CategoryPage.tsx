@@ -78,6 +78,12 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
               const tags = cat.split(',').map(t => t.trim());
               return tags.includes('selecoes') || tags.includes('seleção') || tags.includes('selecao');
             });
+          } else if (category === 'kids') {
+            baseData = baseData.filter(p => {
+              const cat = (p.category || '').toLowerCase().trim();
+              const tags = cat.split(',').map(t => t.trim());
+              return tags.includes('kids') || tags.includes('infantil') || tags.includes('criança') || tags.includes('crianca');
+            });
           } else if (category === 'retro') {
             baseData = baseData.filter(p => {
               const cat = (p.category || '').toLowerCase().trim();
@@ -182,6 +188,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
   }, [allProducts, sortBy, priceRange, selectedSizes, searchTerm, inStockOnly, selectedCountries, selectedLeagues, selectedYears, category, loading]);
 
   const sizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL'];
+  const kidsSizes = ['16', '18', '20', '22', '24', '26', '28'];
 
   const toggleSize = (size: string) => {
     setSelectedSizes(prev => 
@@ -301,21 +308,45 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
               {/* Size Filter */}
               <div className="border-b border-gray-100 dark:border-zinc-800/50 pb-5 mb-5">
                 <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-[0.1em] text-[10px] mb-4">Tamanho</h3>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSize(size)}
-                      className={cn(
-                        "h-8 text-[9px] font-black border transition-all uppercase rounded-md",
-                        selectedSizes.includes(size)
-                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-sm"
-                          : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400 dark:hover:border-zinc-600"
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2">Adulto</p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {sizes.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => toggleSize(size)}
+                          className={cn(
+                            "h-8 text-[9px] font-black border transition-all uppercase rounded-md",
+                            selectedSizes.includes(size)
+                              ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-sm"
+                              : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400 dark:hover:border-zinc-600"
+                          )}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2">Infantil</p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {kidsSizes.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => toggleSize(size)}
+                          className={cn(
+                            "h-8 text-[9px] font-black border transition-all uppercase rounded-md",
+                            selectedSizes.includes(size)
+                              ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-sm"
+                              : "border-gray-200 dark:border-zinc-800 text-gray-500 hover:border-gray-400 dark:hover:border-zinc-600"
+                          )}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 

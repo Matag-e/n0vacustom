@@ -53,10 +53,20 @@ export default function ProductDetails() {
       { s: 'M', w: '41-44', h: '63-66', minH: 160, maxH: 165, minW: 55, maxW: 65 },
       { s: 'G', w: '44-47', h: '66-69', minH: 165, maxH: 170, minW: 65, maxW: 75 },
       { s: 'GG', w: '47-50', h: '69-71', minH: 170, maxH: 175, minW: 75, maxW: 85 }
+    ],
+    infantil: [
+      { s: '16', w: '35', h: '44', minH: 95, maxH: 105, minW: 10, maxW: 15 },
+      { s: '18', w: '37', h: '47', minH: 105, maxH: 115, minW: 15, maxW: 20 },
+      { s: '20', w: '39', h: '50', minH: 115, maxH: 125, minW: 20, maxW: 25 },
+      { s: '22', w: '41', h: '53', minH: 125, maxH: 135, minW: 25, maxW: 30 },
+      { s: '24', w: '43', h: '56', minH: 135, maxH: 145, minW: 30, maxW: 35 },
+      { s: '26', w: '45', h: '59', minH: 145, maxH: 155, minW: 35, maxW: 40 },
+      { s: '28', w: '47', h: '62', minH: 155, maxH: 165, minW: 40, maxW: 45 }
     ]
   };
 
   const baseSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const kidsSizes = ['16', '18', '20', '22', '24', '26', '28'];
   const [availableSizes, setAvailableSizes] = useState<string[]>(baseSizes);
 
   const getModelType = () => {
@@ -64,6 +74,7 @@ export default function ProductDetails() {
     const cat = (product?.category || '').toLowerCase();
     const title = (product?.name || '').toLowerCase();
     
+    if (cat.includes('kids') || cat.includes('infantil') || cat.includes('criança') || cat.includes('crianca') || title.includes('infantil') || title.includes('kids')) return 'infantil';
     if (model === 'feminina' || cat.includes('feminina') || cat.includes('feminino') || title.includes('feminina') || title.includes('feminino')) return 'feminina';
     if (model === 'jogador' || model === 'retro' || cat.includes('retrô') || cat.includes('retro')) return 'jogador';
     return 'torcedor';
@@ -73,7 +84,9 @@ export default function ProductDetails() {
     if (product) {
       const model = getModelType();
       
-      if (model === 'torcedor') {
+      if (model === 'infantil') {
+        setAvailableSizes(kidsSizes);
+      } else if (model === 'torcedor') {
         setAvailableSizes([...baseSizes, '4XL']);
       } else if (model === 'jogador') {
         setAvailableSizes(baseSizes);
@@ -334,7 +347,7 @@ export default function ProductDetails() {
 
   const SizeGuideModal = () => {
     const currentModel = getModelType();
-    const chart = SIZE_CHARTS[currentModel as keyof typeof SIZE_CHARTS] || SIZE_CHARTS.torcedor;
+    const chart = (SIZE_CHARTS[currentModel as keyof typeof SIZE_CHARTS] || SIZE_CHARTS.torcedor) as any[];
 
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
@@ -347,7 +360,7 @@ export default function ProductDetails() {
             <div>
               <h3 className="text-lg font-bold text-white uppercase tracking-widest">Guia de Medidas</h3>
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                Modelo: {currentModel === 'jogador' ? 'Jogador / Retrô' : currentModel === 'feminina' ? 'Feminina' : 'Torcedor'}
+                Modelo: {currentModel === 'jogador' ? 'Jogador / Retrô' : currentModel === 'feminina' ? 'Feminina' : currentModel === 'infantil' ? 'Kit Infantil' : 'Torcedor'}
               </p>
             </div>
             <button 
@@ -358,7 +371,7 @@ export default function ProductDetails() {
             </button>
           </div>
           
-          <div className="p-8 space-y-8">
+          <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             {/* Visual Aid */}
             <div className="flex justify-center bg-gray-50 rounded-2xl py-8 border border-gray-100">
               <div className="relative w-40 h-44">
@@ -381,21 +394,30 @@ export default function ProductDetails() {
             </div>
 
             {/* Dynamic Table */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-100 text-black font-black uppercase text-[10px] tracking-widest">
                   <tr>
-                    <th className="px-6 py-4 border-b border-gray-200">Tamanho</th>
-                    <th className="px-6 py-4 border-b border-gray-200 text-center">Largura (A)</th>
-                    <th className="px-6 py-4 border-b border-gray-200 text-center">Comprimento (B)</th>
+                    <th className="px-4 py-4 border-b border-gray-200 whitespace-nowrap">Tamanho</th>
+                    {currentModel === 'infantil' && (
+                      <th className="px-4 py-4 border-b border-gray-200 text-center whitespace-nowrap">Altura/Idade</th>
+                    )}
+                    <th className="px-4 py-4 border-b border-gray-200 text-center whitespace-nowrap">Largura (A)</th>
+                    <th className="px-4 py-4 border-b border-gray-200 text-center whitespace-nowrap">Comprimento (B)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {chart.map((item) => (
                     <tr key={item.s} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="px-6 py-3.5 font-black text-black">{item.s}</td>
-                      <td className="px-6 py-3.5 text-center font-medium text-gray-600 bg-gray-50/30">{item.w} cm</td>
-                      <td className="px-6 py-3.5 text-center font-medium text-gray-600">{item.h} cm</td>
+                      <td className="px-4 py-3.5 font-black text-black">{item.s}</td>
+                      {currentModel === 'infantil' && (
+                        <td className="px-4 py-3.5 text-center font-medium text-gray-500 text-xs">
+                          {item.minH}-{item.maxH}cm <br/>
+                          <span className="text-[10px] text-zinc-400">({item.s === '16' ? '3-4' : item.s === '18' ? '4-5' : item.s === '20' ? '5-6' : item.s === '22' ? '6-7' : item.s === '24' ? '8-9' : item.s === '26' ? '10-11' : '12-13'} anos)</span>
+                        </td>
+                      )}
+                      <td className="px-4 py-3.5 text-center font-medium text-gray-600 bg-gray-50/30">{item.w} cm</td>
+                      <td className="px-4 py-3.5 text-center font-medium text-gray-600">{item.h} cm</td>
                     </tr>
                   ))}
                 </tbody>
@@ -406,6 +428,7 @@ export default function ProductDetails() {
               <p className="text-[10px] text-zinc-500 text-center leading-relaxed font-medium">
                 * As medidas são aproximadas e podem variar em até 2cm. 
                 {currentModel === 'jogador' && " O modelo Jogador/Retrô possui um corte mais justo (Fit)."}
+                {currentModel === 'infantil' && " O Kit Infantil inclui camisa e calção."}
               </p>
             </div>
           </div>

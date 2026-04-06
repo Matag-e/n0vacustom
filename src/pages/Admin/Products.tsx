@@ -87,26 +87,34 @@ export default function AdminProducts() {
   });
 
   const [stockData, setStockData] = useState<Record<string, boolean>>({
-    'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false, '4XL': false
+    'P': false, 'M': false, 'G': false, 'GG': false, 'XG': false, '2XG': false, '3XL': false, '4XL': false,
+    '16': false, '18': false, '20': false, '22': false, '24': false, '26': false, '28': false
   });
 
   const baseSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL'];
+  const kidsSizes = ['16', '18', '20', '22', '24', '26', '28'];
   const [availableSizes, setAvailableSizes] = useState<string[]>(baseSizes);
 
   useEffect(() => {
     const modelType = (formData.model_type || '').toLowerCase();
     const category = (formData.category || '').toLowerCase();
+    const name = (formData.name || '').toLowerCase();
     
+    const isKids = category.includes('kids') || category.includes('infantil') || category.includes('criança') || category.includes('crianca') || name.includes('infantil') || name.includes('kids');
     const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
     const isJogador = modelType === 'jogador';
-    
-    if (!isRetro && !isJogador) {
+    const isFeminina = modelType === 'feminina' || category.includes('feminina');
+
+    if (isKids) {
+      setAvailableSizes(kidsSizes);
+    } else if (isFeminina) {
+      setAvailableSizes(['P', 'M', 'G', 'GG']);
+    } else if (!isRetro && !isJogador) {
       setAvailableSizes([...baseSizes, '4XL']);
     } else {
       setAvailableSizes(baseSizes);
-      setStockData(prev => ({ ...prev, '4XL': false }));
     }
-  }, [formData.model_type, formData.category]);
+  }, [formData.model_type, formData.category, formData.name]);
 
   const sizes = availableSizes;
 
@@ -161,7 +169,8 @@ export default function AdminProducts() {
 
       // Popular estoque se existir
       const initialStock: Record<string, boolean> = {};
-      sizes.forEach(size => {
+      const allPossibleSizes = ['P', 'M', 'G', 'GG', 'XG', '2XG', '3XL', '4XL', '16', '18', '20', '22', '24', '26', '28'];
+      allPossibleSizes.forEach(size => {
         const item = product.product_stock?.find((s: any) => s.size === size);
         initialStock[size] = item ? item.quantity > 0 : false;
       });

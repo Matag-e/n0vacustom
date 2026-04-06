@@ -124,6 +124,7 @@ function App() {
                     {/* Category Routes */}
                     <Route path="/clubes" element={<CategoryPage title="Clubes" category="clubes" />} />
                     <Route path="/selecoes" element={<CategoryPage title="Seleções" category="selecoes" />} />
+                    <Route path="/kids" element={<CategoryPage title="Kids" category="kids" />} />
                     <Route path="/retro" element={<CategoryPage title="Retrô" category="retro" />} />
                     <Route path="/personalizados" element={<CategoryPage title="Personalizados" category="personalizados" />} />
                     <Route path="/search" element={<SearchPage />} />
