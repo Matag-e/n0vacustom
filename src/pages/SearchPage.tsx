@@ -143,7 +143,9 @@ export default function SearchPage() {
   return (
     <div className="bg-white dark:bg-black min-h-screen pt-24 pb-20 transition-colors duration-300">
       <Helmet>
-        <title>{`Busca: ${searchTerm} | NovaCustom`}</title>
+        <title>{searchTerm ? `Busca: ${searchTerm} | NovaCustom` : 'Buscar Produtos | NovaCustom'}</title>
+        <meta name="description" content="Encontre os melhores mantos de futebol na NovaCustom. Qualidade premium 1:1 e personalização exclusiva." />
+        <link rel="canonical" href="https://www.novacustom.com.br/search" />
       </Helmet>
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 mb-12">

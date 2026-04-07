@@ -30,7 +30,7 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     currentPage * ITEMS_PER_PAGE
   );
   
-  const canonicalUrl = `https://www.novacustom.com.br/${category || ''}`;
+  const canonicalUrl = `https://www.novacustom.com.br/${category || ''}`.replace(/\/$/, '');
 
   // Filter states
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);

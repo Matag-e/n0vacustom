@@ -483,7 +483,7 @@ export default function ProductDetails() {
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
 
-  const currentUrl = `https://novacustom.com.br/product/${id}`;
+  const currentUrl = `https://www.novacustom.com.br/product/${id}`;
 
   const jsonLd = product ? {
     "@context": "https://schema.org/",

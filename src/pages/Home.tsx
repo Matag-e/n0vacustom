@@ -68,11 +68,11 @@ export default function Home() {
       <Helmet>
         <title>NovaCustom | Mantos de Futebol 1:1</title>
         <meta name="description" content="A NovaCustom é a sua loja premium de mantos exclusivos. Qualidade tailandesa 1:1, personalização oficial e a paixão pelo futebol em cada detalhe." />
-        <link rel="canonical" href="https://www.novacustom.com.br/" />
+        <link rel="canonical" href="https://www.novacustom.com.br" />
         <meta property="og:title" content="NovaCustom | Mantos de Futebol 1:1" />
         <meta property="og:description" content="Mantos exclusivos com qualidade premium 1:1. Personalize com seu nome e número oficial." />
         <meta property="og:image" content="https://www.novacustom.com.br/og-image.jpg" />
-        <meta property="og:url" content="https://www.novacustom.com.br/" />
+        <meta property="og:url" content="https://www.novacustom.com.br" />
         <meta property="og:site_name" content="NovaCustom" />
         <meta property="og:locale" content="pt_BR" />
         <meta property="og:type" content="website" />
