@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { resend, EMAIL_FROM } from '../lib/resend.js'
-import { orderConfirmationTemplate, orderShippedTemplate } from '../emails/templates.js'
+import { orderConfirmationTemplate, orderShippedTemplate, orderPaidTemplate } from '../emails/templates.js'
 
 dotenv.config()
 
@@ -82,6 +82,9 @@ router.post('/order-confirmation', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Order not found' })
     }
 
+    console.log(`[Email] Enviando e-mail de confirmação para: ${order.email}`);
+    console.log(`[Email] Remetente: ${EMAIL_FROM}`);
+
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: [order.email],
@@ -90,9 +93,11 @@ router.post('/order-confirmation', async (req: Request, res: Response) => {
     })
 
     if (error) {
-      console.error('Resend error:', error)
-      return res.status(500).json({ error: 'Error sending email' })
+      console.error('[Email] Erro do Resend:', JSON.stringify(error, null, 2))
+      return res.status(500).json({ error: 'Error sending email', details: error })
     }
+
+    console.log('[Email] E-mail de confirmação enviado com sucesso via Resend');
 
     res.json({ success: true, data })
   } catch (error: any) {

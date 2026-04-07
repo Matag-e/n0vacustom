@@ -409,7 +409,10 @@ CEP: ${order.cep}
                 filteredOrders.map((order) => {
                   const StatusIcon = STATUS_MAP[order.status]?.icon || Clock;
                   const whatsappNumber = order.phone?.replace(/\D/g, '');
-                  const whatsappUrl = whatsappNumber ? `https://wa.me/55${whatsappNumber}` : null;
+                  const whatsappMessage = encodeURIComponent(
+                    `Olá, ${order.first_name}! Tudo certo?\n\nAqui é da Nova Custom.\n\nIdentificamos sua compra e seu pedido já está em produção!\n\nDentro de 2 a 3 dias, vamos te enviar fotos das camisas para aprovação. Após o seu ok, já liberamos o envio e te mandamos o código de rastreio pra acompanhar tudo.\n\nQualquer dúvida, só chamar!`
+                  );
+                  const whatsappUrl = whatsappNumber ? `https://wa.me/55${whatsappNumber}?text=${whatsappMessage}` : null;
 
                   return (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
@@ -588,7 +591,9 @@ CEP: ${order.cep}
 
                     {selectedOrder.phone && (
                       <a 
-                        href={`https://wa.me/55${selectedOrder.phone.replace(/\D/g, '')}`}
+                        href={`https://wa.me/55${selectedOrder.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                          `Olá, ${selectedOrder.first_name}! Tudo certo?\n\nAqui é da Nova Custom.\n\nIdentificamos sua compra e seu pedido já está em produção!\n\nDentro de 2 a 3 dias, vamos te enviar fotos das camisas para aprovação. Após o seu ok, já liberamos o envio e te mandamos o código de rastreio pra acompanhar tudo.\n\nQualquer dúvida, só chamar!`
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-3 rounded-lg transition-all w-full justify-center"

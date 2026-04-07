@@ -329,7 +329,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
                 from: EMAIL_FROM,
                 to: currentOrder.email,
                 subject: 'Pagamento Confirmado! 🔥 NovaCustom',
-                html: orderPaidTemplate(String(orderId).slice(0, 8), currentOrder.first_name || 'Cliente'),
+                html: orderPaidTemplate({ ...currentOrder, id: String(orderId) }),
               });
               await supabase
                 .from('orders')
