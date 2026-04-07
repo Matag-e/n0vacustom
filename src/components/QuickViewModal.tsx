@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ShoppingCart, Ruler, Sparkles, Shield, Truck } from 'lucide-react';
+import { X, ShoppingCart, Ruler, Sparkles, Shield, Truck, AlertTriangle } from 'lucide-react';
 import { Product } from './ProductCard';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
@@ -91,7 +91,10 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
     }
 
     setIsAdding(true);
-    addToCart(product, selectedSize, false); // No customization in quick view for simplicity
+    
+    const plusSizeFee = (product.model_type?.toLowerCase() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL')) ? 20 : 0;
+    
+    addToCart(product, selectedSize, false, undefined, undefined, plusSizeFee); // No customization in quick view for simplicity
     
     setTimeout(() => {
       setIsAdding(false);
@@ -172,7 +175,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
               {product.name}
             </h2>
             <p className="text-xl font-medium text-gray-900 dark:text-white">
-              R$ {product.price.toFixed(2).replace('.', ',')}
+              R$ {(product.price + (product.model_type?.toLowerCase() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL') ? 20 : 0)).toFixed(2).replace('.', ',')}
             </p>
             {product.model_type?.toLowerCase() === 'jogador' && (
               <span className="inline-block mt-2 bg-primary text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
@@ -208,6 +211,18 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                   );
                 })}
               </div>
+
+              {product.model_type?.toLowerCase() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL') && (
+                <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-lg flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-orange-800 dark:text-orange-300 uppercase tracking-tight">Aviso de Produção</p>
+                    <p className="text-[10px] text-orange-700 dark:text-orange-400 leading-tight mt-0.5">
+                      Tamanhos acima de 2XG no modelo Jogador possuem um acréscimo de **R$ 20,00**.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button

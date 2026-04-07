@@ -85,6 +85,15 @@ export default function Cart() {
                           </span>
                         </div>
                       )}
+                      {item.plusSizeFee ? (
+                        <div className="flex flex-col gap-1 mt-2">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-orange-50 px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+                              Acréscimo Plus Size (+ R$ 20)
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   
@@ -108,7 +117,7 @@ export default function Cart() {
                     </div>
                     
                     <span className="text-lg font-bold text-gray-900">
-                      R$ {((item.product.price + (item.isCustomized ? 30 : 0)) * item.quantity).toFixed(2).replace('.', ',')}
+                      R$ {((item.product.price + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0)) * item.quantity).toFixed(2).replace('.', ',')}
                     </span>
                   </div>
                 </div>

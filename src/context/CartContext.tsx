@@ -9,11 +9,12 @@ export interface CartItem {
   isCustomized: boolean;
   customName?: string;
   customNumber?: string;
+  plusSizeFee?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, size: string, isCustomized: boolean, customName?: string, customNumber?: string) => void;
+  addToCart: (product: Product, size: string, isCustomized: boolean, customName?: string, customNumber?: string, plusSizeFee?: number) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -41,10 +42,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product, size: string, isCustomized: boolean, customName?: string, customNumber?: string) => {
+  const addToCart = (product: Product, size: string, isCustomized: boolean, customName?: string, customNumber?: string, plusSizeFee?: number) => {
     setItems((prevItems) => {
       // Create a unique ID based on product and options to differentiate items
-      const itemId = `${product.id}-${size}-${isCustomized}-${customName || ''}-${customNumber || ''}`;
+      const itemId = `${product.id}-${size}-${isCustomized}-${customName || ''}-${customNumber || ''}-${plusSizeFee || 0}`;
       
       const existingItem = prevItems.find((item) => item.id === itemId);
 
@@ -64,6 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           isCustomized,
           customName: isCustomized ? customName : '',
           customNumber: isCustomized ? customNumber : '',
+          plusSizeFee: plusSizeFee || 0,
         },
       ];
     });
@@ -92,7 +94,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!item || !item.product) return total;
     const itemBasePrice = item.product.price || 0;
     const customizationFee = item.isCustomized ? 30 : 0;
-    return total + (itemBasePrice + customizationFee) * (item.quantity || 0);
+    const plusSizeFee = item.plusSizeFee || 0;
+    return total + (itemBasePrice + customizationFee + plusSizeFee) * (item.quantity || 0);
   }, 0);
 
   return (

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/components/ProductCard';
 import { CustomizationGallery } from '@/components/CustomizationGallery';
-import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight, Globe } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight, Globe, AlertTriangle } from 'lucide-react';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -452,7 +452,10 @@ export default function ProductDetails() {
 
     setIsAdding(true);
     
-    addToCart(product, selectedSize, wantsCustomization, customName, customNumber);
+    const isBigSizeJogador = getModelType() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL');
+    const plusSizeFee = isBigSizeJogador ? 20 : 0;
+    
+    addToCart(product, selectedSize, wantsCustomization, customName, customNumber, plusSizeFee);
 
     // Disparar evento AddToCart para o Meta Pixel
     if (typeof window !== 'undefined' && (window as any).fbq) {
@@ -461,7 +464,7 @@ export default function ProductDetails() {
         content_category: product.category,
         content_ids: [product.id],
         content_type: 'product',
-        value: product.price + (wantsCustomization ? 30 : 0),
+        value: product.price + (wantsCustomization ? 30 : 0) + plusSizeFee,
         currency: 'BRL'
       });
     }
@@ -615,7 +618,7 @@ export default function ProductDetails() {
             )}
             <div className="flex items-baseline gap-4 mb-2">
               <span className="text-3xl font-medium text-gray-900">
-                R$ {(product.price + (wantsCustomization ? 30 : 0)).toFixed(2).replace('.', ',')}
+                R$ {(product.price + (wantsCustomization ? 30 : 0) + (getModelType() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL') ? 20 : 0)).toFixed(2).replace('.', ',')}
               </span>
               {(product.stock ?? 0) > 0 ? (
                 <span className="text-sm text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
@@ -722,6 +725,18 @@ export default function ProductDetails() {
                   );
                 })}
               </div>
+
+              {getModelType() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL') && (
+                <div className="mt-4 p-3 bg-orange-50 border border-orange-100 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-orange-800 uppercase tracking-tight">Aviso de Produção</p>
+                    <p className="text-[10px] text-orange-700 leading-tight mt-0.5">
+                      Tamanhos acima de 2XG no modelo Jogador possuem um acréscimo de **R$ 20,00** devido ao custo diferenciado de produção.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Customization Toggle */}

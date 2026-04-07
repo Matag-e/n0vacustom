@@ -120,6 +120,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                          Personalizado: {item.customName} {item.customNumber && `#${item.customNumber}`}
                        </p>
                     )}
+                    {item.plusSizeFee ? (
+                       <p className="text-[10px] text-orange-600 dark:text-orange-400 font-bold mt-0.5 uppercase">
+                         Acréscimo Plus Size: R$ 20,00
+                       </p>
+                    ) : null}
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center border border-gray-200 dark:border-zinc-700 rounded-lg">
@@ -139,7 +144,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        R$ {((item.product?.price || 0 + (item.isCustomized ? 30 : 0)) * (item.quantity || 0)).toFixed(2).replace('.', ',')}
+                        R$ {(( (item.product?.price || 0) + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0) ) * (item.quantity || 0)).toFixed(2).replace('.', ',')}
                       </span>
                       <button 
                         onClick={() => removeFromCart(item.id)}
