@@ -521,11 +521,15 @@ export default function ProductDetails() {
         {/* OpenGraph / Facebook */}
         <meta property="og:type" content="product" />
         <meta property="og:url" content={currentUrl} />
+        <meta property="og:site_name" content="NovaCustom" />
+        <meta property="og:locale" content="pt_BR" />
         <meta property="og:title" content={`${product.name} | NovaCustom`} />
-        <meta property="og:description" content={product.description || `Confira ${product.name} na NovaCustom.`} />
+        <meta property="og:description" content={product.description || `Confira ${product.name} na NovaCustom. Qualidade tailandesa 1:1 e personalização oficial.`} />
         <meta property="og:image" content={product.image_url} />
         <meta property="product:price:amount" content={product.price.toString()} />
         <meta property="product:price:currency" content="BRL" />
+        <meta property="product:condition" content="new" />
+        <meta property="product:availability" content={(product.stock ?? 0) > 0 ? "in stock" : "out of stock"} />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />

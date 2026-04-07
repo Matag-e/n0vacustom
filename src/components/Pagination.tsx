@@ -15,6 +15,22 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     pages.push(i);
   }
 
+  const getVisiblePages = () => {
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) return pages;
+
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxVisible - 1);
+
+    if (end === totalPages) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    return pages.slice(start - 1, end);
+  };
+
+  const visiblePages = getVisiblePages();
+
   return (
     <div className="flex flex-col items-center gap-6 pt-12 border-t border-gray-100 dark:border-zinc-800">
       <div className="flex items-center gap-2">
@@ -27,7 +43,19 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         </button>
 
         <div className="flex items-center gap-1">
-          {pages.map((page) => (
+          {visiblePages[0] > 1 && (
+            <>
+              <button
+                onClick={() => onPageChange(1)}
+                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl font-bold text-xs hover:bg-gray-100 dark:hover:bg-zinc-900 text-gray-500"
+              >
+                1
+              </button>
+              <span className="hidden sm:flex w-6 justify-center text-gray-300">...</span>
+            </>
+          )}
+
+          {visiblePages.map((page) => (
             <button
               key={page}
               onClick={() => onPageChange(page)}
@@ -41,6 +69,18 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
               {page}
             </button>
           ))}
+
+          {visiblePages[visiblePages.length - 1] < totalPages && (
+            <>
+              <span className="hidden sm:flex w-6 justify-center text-gray-300">...</span>
+              <button
+                onClick={() => onPageChange(totalPages)}
+                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl font-bold text-xs hover:bg-gray-100 dark:hover:bg-zinc-900 text-gray-500"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
         </div>
 
         <button

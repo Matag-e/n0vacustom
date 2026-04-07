@@ -350,8 +350,8 @@ export default function Profile() {
                       </div>
 
                       {/* Status & Total */}
-                      <div className="flex items-center justify-between md:justify-end gap-8 flex-1">
-                        <div className="text-right">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-8 flex-1 border-t sm:border-t-0 pt-4 sm:pt-0">
+                        <div className="flex justify-between sm:block sm:text-right">
                           <p className="text-xs text-gray-400 mb-1">Status</p>
                           <div className="flex flex-col items-end gap-2">
                             <span className={cn(
@@ -370,7 +370,7 @@ export default function Profile() {
                             </span>
                             
                             {order.status === 'pending' && (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 mt-2 sm:mt-0">
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -386,9 +386,9 @@ export default function Profile() {
                                     e.stopPropagation();
                                     handlePayNow(order);
                                   }}
-                                  className="bg-black text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-900 transition-colors flex items-center gap-1 shadow-sm"
+                                  className="bg-black text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-900 transition-colors flex items-center gap-1 shadow-sm"
                                 >
-                                  {order.payment_method === 'pix' ? 'Pagar com PIX' : 'Pagar com Cartão'}
+                                  {order.payment_method === 'pix' ? 'Pagar PIX' : 'Pagar Cartão'}
                                   <ChevronRight className="w-3 h-3" />
                                 </button>
                               </div>
@@ -408,7 +408,7 @@ export default function Profile() {
                           </div>
                         </div>
                         
-                        <div className="text-right min-w-[100px]">
+                        <div className="flex justify-between sm:block sm:text-right sm:min-w-[100px]">
                           <p className="text-xs text-gray-400 mb-1">Total</p>
                           <p className="text-lg font-black text-gray-900">
                             R$ {order.total_amount.toFixed(2).replace('.', ',')}

@@ -66,15 +66,20 @@ export default function Home() {
   return (
     <div className="space-y-12 pb-12">
       <Helmet>
-        <title>NovaCustom | Personalize seu Manto</title>
+        <title>NovaCustom | Mantos de Futebol 1:1</title>
         <meta name="description" content="A NovaCustom é a sua loja premium de mantos exclusivos. Qualidade tailandesa 1:1, personalização oficial e a paixão pelo futebol em cada detalhe." />
         <link rel="canonical" href="https://www.novacustom.com.br/" />
-        <meta property="og:title" content="NovaCustom | Personalize seu Manto" />
+        <meta property="og:title" content="NovaCustom | Mantos de Futebol 1:1" />
         <meta property="og:description" content="Mantos exclusivos com qualidade premium 1:1. Personalize com seu nome e número oficial." />
-        <meta property="og:image" content="https://www.novacustom.com.br/logo-social.png" />
+        <meta property="og:image" content="https://www.novacustom.com.br/og-image.jpg" />
         <meta property="og:url" content="https://www.novacustom.com.br/" />
+        <meta property="og:site_name" content="NovaCustom" />
+        <meta property="og:locale" content="pt_BR" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="NovaCustom | Mantos de Futebol 1:1" />
+        <meta name="twitter:description" content="Mantos exclusivos com qualidade premium 1:1. Personalize com seu nome e número oficial." />
+        <meta name="twitter:image" content="https://www.novacustom.com.br/og-image.jpg" />
       </Helmet>
       {/* Hero Section */}
       <HeroCarousel />
@@ -99,7 +104,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12">
             {brasilProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -121,13 +126,13 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12">
             {[...Array(8)].map((_, i) => (
               <ProductCardSkeleton key={i} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12">
             {products.slice(0, 8).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

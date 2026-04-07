@@ -379,7 +379,7 @@ CEP: ${order.cep}
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50">
@@ -520,6 +520,113 @@ CEP: ${order.cep}
             </tbody>
           </table>
         </div>
+
+        {/* Mobile View: Cards */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {loading ? (
+            <div className="px-6 py-12 text-center text-gray-500">Carregando pedidos...</div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="px-6 py-12 text-center text-gray-500">Nenhum pedido encontrado.</div>
+          ) : (
+            filteredOrders.map((order) => {
+              const StatusIcon = STATUS_MAP[order.status]?.icon || Clock;
+              const whatsappNumber = order.phone?.replace(/\D/g, '');
+              const whatsappMessage = encodeURIComponent(
+                `Olá, ${order.first_name}! Tudo certo?\n\nAqui é da Nova Custom.\n\nIdentificamos sua compra e seu pedido já está em produção!\n\nDentro de 2 a 3 dias, vamos te enviar fotos das camisas para aprovação. Após o seu ok, já liberamos o envio e te mandamos o código de rastreio pra acompanhar tudo.\n\nQualquer dúvida, só chamar!`
+              );
+              const whatsappUrl = whatsappNumber ? `https://wa.me/55${whatsappNumber}?text=${whatsappMessage}` : null;
+
+              return (
+                <div key={order.id} className="p-4 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id?.slice(0, 8)}</span>
+                      <div className="text-[10px] text-gray-400 uppercase font-bold mt-1">
+                        {new Date(order.created_at).toLocaleDateString()} às {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <span className={cn(
+                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter",
+                      STATUS_MAP[order.status]?.color || "bg-gray-100 text-gray-800"
+                    )}>
+                      <StatusIcon className="w-2 h-2" />
+                      {STATUS_MAP[order.status]?.label || order.status}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <div className="text-sm font-black text-gray-900 uppercase tracking-tighter">
+                        {order.first_name} {order.last_name}
+                      </div>
+                      <div className="text-[10px] text-gray-500 lowercase mt-0.5">
+                        {order.email}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-1 text-gray-600 text-[10px] font-bold">
+                          <Phone className="w-3 h-3" />
+                          {order.phone || 'N/A'}
+                        </div>
+                        {whatsappUrl && (
+                          <a 
+                            href={whatsappUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-green-600 font-black text-[10px] uppercase flex items-center gap-1"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-black text-gray-900">
+                        R$ {order.total_amount.toFixed(2).replace('.', ',')}
+                      </div>
+                      <div className="text-[10px] text-gray-400 uppercase font-bold">
+                        {order.payment_method}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setTrackingInput(order.tracking_code || '');
+                      }}
+                      className="flex-1 bg-gray-100 text-gray-900 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      <Eye className="w-3 h-3" />
+                      Detalhes
+                    </button>
+                    <div className="relative flex-1">
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateStatus(order.id, e.target.value)}
+                        className="w-full bg-white border border-gray-200 text-gray-700 text-[10px] font-black uppercase tracking-widest rounded-lg py-2 px-3 appearance-none outline-none"
+                      >
+                        <option value="pending">Pendente</option>
+                        <option value="paid">Pago</option>
+                        <option value="shipped">Enviado</option>
+                        <option value="completed">Entregue</option>
+                        <option value="cancelled">Cancelado</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                    </div>
+                    <button
+                      onClick={() => deleteOrder(order.id)}
+                      className="p-2 text-red-400 bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Order Details Modal */}
@@ -539,7 +646,7 @@ CEP: ${order.cep}
               </button>
             </div>
 
-            <div className="p-8 space-y-8">
+            <div className="p-4 sm:p-8 space-y-8">
               {/* Customer Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
@@ -575,7 +682,7 @@ CEP: ${order.cep}
                     <div className="space-y-2">
                       <p className="flex items-center gap-2">
                         <strong>E-mail:</strong> 
-                        <span className="text-gray-600">{selectedOrder.email}</span>
+                        <span className="text-gray-600 truncate">{selectedOrder.email}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <strong>Telefone:</strong> 
@@ -596,10 +703,10 @@ CEP: ${order.cep}
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-3 rounded-lg transition-all w-full justify-center"
+                        className="flex items-center gap-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-3 rounded-lg transition-all w-full justify-center text-center"
                       >
-                        <MessageSquare className="w-4 h-4" />
-                        ENTRAR EM CONTATO VIA WHATSAPP
+                        <MessageSquare className="w-4 h-4 shrink-0" />
+                        WHATSAPP
                       </a>
                     )}
                   </div>

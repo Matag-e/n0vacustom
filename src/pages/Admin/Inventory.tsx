@@ -153,8 +153,8 @@ export default function AdminInventory() {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* Products Table (Desktop) */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -250,7 +250,7 @@ export default function AdminInventory() {
                                     : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                                 )}
                               >
-                                {isSaving ? '...' : size}
+                                {isSaving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : size}
                               </button>
                             );
                           })}
@@ -263,6 +263,84 @@ export default function AdminInventory() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile View (Cards) */}
+      <div className="md:hidden space-y-4">
+        {loading ? (
+          <div className="bg-white p-8 text-center rounded-2xl border border-gray-100">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+            <p className="mt-2 text-gray-500 text-sm">Carregando estoque...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="bg-white p-8 text-center rounded-2xl border border-gray-100">
+            <p className="text-gray-500 text-sm">Nenhum produto encontrado.</p>
+          </div>
+        ) : (
+          filteredProducts.map((product) => {
+            const modelType = (product as any).model_type?.toLowerCase() || '';
+            const category = (product as any).category?.toLowerCase() || '';
+            const name = (product as any).name?.toLowerCase() || '';
+            const isKids = category.includes('kids') || category.includes('infantil') || category.includes('criança') || category.includes('crianca') || name.includes('infantil') || name.includes('kids');
+            const productSizes = isKids ? kidsSizes : adultSizes;
+
+            return (
+              <div key={product.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
+                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 truncate text-sm">{product.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase font-bold">
+                        {product.category || 'Geral'}
+                      </span>
+                      <span className="text-xs font-bold text-gray-900">
+                        R$ {product.price.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Tamanhos Disponíveis</p>
+                  <div className="grid grid-cols-4 xs:grid-cols-5 gap-2">
+                    {productSizes.map(size => {
+                      const isRetro = modelType === 'retro' || category.includes('retrô') || category.includes('retro');
+                      const isJogador = modelType === 'jogador';
+                      const isFeminina = modelType === 'feminina' || category.includes('feminina');
+                      const is4XLNotAllowed = size === '4XL' && (isRetro || isJogador);
+                      const isAdultBigSizeNotAllowedForFem = (size === 'XG' || size === '2XG' || size === '3XL' || size === '4XL') && isFeminina;
+
+                      if (is4XLNotAllowed || isAdultBigSizeNotAllowedForFem) return null;
+                      
+                      const stockItem = product.product_stock?.find(s => s.size === size);
+                      const isAvailable = (stockItem?.quantity || 0) > 0;
+                      const isSaving = savingStock?.productId === product.id && savingStock?.size === size;
+
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => updateStockSize(product.id, size, !isAvailable)}
+                          disabled={isSaving}
+                          className={cn(
+                            "py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                            isAvailable 
+                              ? "bg-black text-white shadow-sm" 
+                              : "bg-gray-100 text-gray-400"
+                          )}
+                        >
+                          {isSaving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

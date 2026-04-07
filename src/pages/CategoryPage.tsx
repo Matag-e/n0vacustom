@@ -207,10 +207,24 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
     <div className="bg-white dark:bg-black min-h-screen pt-24 pb-20 transition-colors duration-300">
       <Helmet>
         <title>{`${title} | NovaCustom`}</title>
-        <meta name="description" content={`Explore nossa coleção de ${title}. Mantos premium com qualidade tailandesa 1:1 e personalização oficial.`} />
+        <meta name="description" content={`Explore nossa coleção de ${title} na NovaCustom. Qualidade premium 1:1 e personalização exclusiva.`} />
         <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={`${title} | NovaCustom`} />
+
+        {/* OpenGraph / Facebook */}
+        <meta property="og:type" content="website" />
         <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:site_name" content="NovaCustom" />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="og:title" content={`${title} | NovaCustom`} />
+        <meta property="og:description" content={`Explore nossa coleção de ${title} na NovaCustom. Qualidade premium 1:1 e personalização exclusiva.`} />
+        <meta property="og:image" content="https://www.novacustom.com.br/og-image.jpg" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={canonicalUrl} />
+        <meta property="twitter:title" content={`${title} | NovaCustom`} />
+        <meta property="twitter:description" content={`Explore nossa coleção de ${title} na NovaCustom.`} />
+        <meta property="twitter:image" content="https://www.novacustom.com.br/og-image.jpg" />
       </Helmet>
       {/* Header */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 mb-12">
@@ -510,14 +524,14 @@ export default function CategoryPage({ title, category }: CategoryPageProps) {
             )}
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12">
                 {[...Array(6)].map((_, i) => (
                   <ProductCardSkeleton key={i} />
                 ))}
               </div>
             ) : products.length > 0 ? (
               <div className="space-y-12">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12">
                   {currentItems.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
