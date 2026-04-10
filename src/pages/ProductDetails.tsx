@@ -484,6 +484,9 @@ export default function ProductDetails() {
   if (!product) return <div className="h-screen flex items-center justify-center">Produto não encontrado</div>;
 
   const currentUrl = `https://www.novacustom.com.br/product/${id}`;
+  
+  // WhatsApp/Facebook prefer images with a specific size and format
+  const ogImageUrl = transformImageUrl(product.image_url, { width: 600, quality: 80, format: 'jpeg' });
 
   const jsonLd = product ? {
     "@context": "https://schema.org/",
@@ -523,9 +526,14 @@ export default function ProductDetails() {
         <meta property="og:url" content={currentUrl} />
         <meta property="og:site_name" content="NovaCustom" />
         <meta property="og:locale" content="pt_BR" />
-        <meta property="og:title" content={`${product.name} | NovaCustom`} />
-        <meta property="og:description" content={product.description || `Confira ${product.name} na NovaCustom. Qualidade tailandesa 1:1 e personalização oficial.`} />
-        <meta property="og:image" content={product.image_url} />
+        <meta property="og:title" content={`${product.name} | NovaCustom - Manto Sagrado`} />
+        <meta property="og:description" content={product.description || `Adquira o seu ${product.name} com personalização oficial e qualidade tailandesa 1:1. O melhor preço do Brasil!`} />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:secure_url" content={ogImageUrl} />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="600" />
+        <meta property="og:image:height" content="600" />
+        <meta property="og:image:alt" content={product.name} />
         <meta property="product:price:amount" content={product.price.toString()} />
         <meta property="product:price:currency" content="BRL" />
         <meta property="product:condition" content="new" />
@@ -535,8 +543,16 @@ export default function ProductDetails() {
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={currentUrl} />
         <meta property="twitter:title" content={`${product.name} | NovaCustom`} />
-        <meta property="twitter:description" content={product.description || `Confira ${product.name} na NovaCustom.`} />
-        <meta property="twitter:image" content={product.image_url} />
+        <meta property="twitter:description" content={`Qualidade premium e personalização exclusiva para o seu ${product.name}. Confira na NovaCustom!`} />
+        <meta property="twitter:image" content={ogImageUrl} />
+        <meta name="twitter:label1" content="Preço" />
+        <meta name="twitter:data1" content={`R$ ${product.price.toString()}`} />
+        <meta name="twitter:label2" content="Disponibilidade" />
+        <meta name="twitter:data2" content={(product.stock ?? 0) > 0 ? "Em Estoque" : "Esgotado"} />
+
+        {/* WhatsApp/Telegram extra tags */}
+        <meta itemprop="image" content={ogImageUrl} />
+        <meta name="theme-color" content="#000000" />
       </Helmet>
 
       {/* Back Button - Desktop Only (Floating) */}

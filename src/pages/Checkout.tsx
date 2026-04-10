@@ -198,12 +198,21 @@ export default function Checkout() {
         discountAmount = discount.value;
       } else if (discount.type === 'buy_x_get_y') {
         const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+        // A cada X itens (discount.value), o usuário ganha 1 grátis.
+        // Se comprar 4 e pagar 3, discount.value é 4.
         const freeItemsCount = Math.floor(totalItems / discount.value);
         
         if (freeItemsCount > 0) {
-          const allPrices = items.flatMap(item => Array(item.quantity).fill(item.product.price + (item.isCustomized ? 30 : 0)))
-            .sort((a, b) => a - b);
+          // Coletar todos os preços individuais incluindo personalização e taxas plus size
+          const allPrices = items.flatMap(item => 
+            Array(item.quantity).fill(
+              (item.product.price || 0) + 
+              (item.isCustomized ? 30 : 0) + 
+              (item.plusSizeFee || 0)
+            )
+          ).sort((a, b) => a - b); // Ordenar do mais barato para o mais caro
           
+          // O desconto é a soma dos 'freeItemsCount' itens mais baratos
           discountAmount = allPrices.slice(0, freeItemsCount).reduce((acc, price) => acc + price, 0);
         }
       }
