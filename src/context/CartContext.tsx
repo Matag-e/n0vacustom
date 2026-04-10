@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 
 export interface CartItem {
   id: string; // Unique ID for cart item (combination of product id + options)
+  dbId?: string; // Database ID from cart_items table
   product: Product;
   quantity: number;
   size: string;
@@ -74,6 +75,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       const mappedServerItems: CartItem[] = (serverItems || []).map(item => ({
         id: `${item.product_id}-${item.size}-${item.is_customized}-${item.custom_name || ''}-${item.custom_number || ''}-${item.plus_size_fee || 0}`,
+        dbId: item.id,
         product: item.product,
         quantity: item.quantity,
         size: item.size,
@@ -92,7 +94,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           if (existsIndex === -1) {
             merged.push(localItem);
             // Persist local item to server
-            saveItemToSupabase(localItem);
+            saveItemToSupabase(localItem).then(dbId => {
+              if (dbId) {
+                setItems(current => current.map(i => i.id === localItem.id ? { ...i, dbId } : i));
+              }
+            });
           } else if (localItem.quantity > merged[existsIndex].quantity) {
             // Update quantity if local has more
             merged[existsIndex].quantity = localItem.quantity;
@@ -107,10 +113,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const saveItemToSupabase = async (item: CartItem) => {
-    if (!user) return;
+  const saveItemToSupabase = async (item: CartItem): Promise<string | null> => {
+    if (!user) return null;
     try {
-      await supabase.from('cart_items').upsert({
+      const { data, error } = await supabase.from('cart_items').upsert({
         user_id: user.id,
         product_id: item.product.id,
         quantity: item.quantity,
@@ -119,24 +125,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         custom_name: item.customName || null,
         custom_number: item.customNumber || null,
         plus_size_fee: item.plusSizeFee || 0
-      }, { onConflict: 'user_id, product_id, size, is_customized, custom_name, custom_number, plus_size_fee' });
+      }, { onConflict: 'user_id, product_id, size, is_customized, custom_name, custom_number, plus_size_fee' })
+      .select('id')
+      .single();
+
+      if (error) throw error;
+      return data?.id || null;
     } catch (err) {
       console.error('Error saving item to Supabase:', err);
+      return null;
     }
   };
 
   const updateItemInSupabase = async (item: CartItem) => {
     if (!user) return;
     try {
-      await supabase.from('cart_items')
-        .update({ quantity: item.quantity })
-        .eq('user_id', user.id)
-        .eq('product_id', item.product.id)
-        .eq('size', item.size)
-        .eq('is_customized', item.isCustomized)
-        .eq('custom_name', item.customName || null)
-        .eq('custom_number', item.customNumber || null)
-        .eq('plus_size_fee', item.plusSizeFee || 0);
+      let query = supabase.from('cart_items').update({ quantity: item.quantity });
+      
+      if (item.dbId) {
+        query = query.eq('id', item.dbId);
+      } else {
+        query = query
+          .eq('user_id', user.id)
+          .eq('product_id', item.product.id)
+          .eq('size', item.size)
+          .eq('is_customized', item.isCustomized);
+        
+        if (item.customName) query = query.eq('custom_name', item.customName); else query = query.is('custom_name', null);
+        if (item.customNumber) query = query.eq('custom_number', item.customNumber); else query = query.is('custom_number', null);
+        query = query.eq('plus_size_fee', item.plusSizeFee || 0);
+      }
+
+      await query;
     } catch (err) {
       console.error('Error updating item in Supabase:', err);
     }
@@ -145,15 +165,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const deleteItemFromSupabase = async (item: CartItem) => {
     if (!user) return;
     try {
-      await supabase.from('cart_items')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('product_id', item.product.id)
-        .eq('size', item.size)
-        .eq('is_customized', item.isCustomized)
-        .eq('custom_name', item.customName || null)
-        .eq('custom_number', item.customNumber || null)
-        .eq('plus_size_fee', item.plusSizeFee || 0);
+      let query = supabase.from('cart_items').delete();
+      
+      if (item.dbId) {
+        query = query.eq('id', item.dbId);
+      } else {
+        query = query
+          .eq('user_id', user.id)
+          .eq('product_id', item.product.id)
+          .eq('size', item.size)
+          .eq('is_customized', item.isCustomized);
+        
+        if (item.customName) query = query.eq('custom_name', item.customName); else query = query.is('custom_name', null);
+        if (item.customNumber) query = query.eq('custom_number', item.customNumber); else query = query.is('custom_number', null);
+        query = query.eq('plus_size_fee', item.plusSizeFee || 0);
+      }
+
+      const { error } = await query;
+      if (error) throw error;
     } catch (err) {
       console.error('Error deleting item from Supabase:', err);
     }
@@ -162,7 +191,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Sync cart across tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'cart' && e.newValue) {
+      if (e.key === 'cart') {
+        if (!e.newValue) {
+          setItems([]);
+          return;
+        }
         try {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
@@ -204,7 +237,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         plusSizeFee: plusSizeFee || 0,
       };
       
-      saveItemToSupabase(newItem);
+      saveItemToSupabase(newItem).then(dbId => {
+        if (dbId) {
+          setItems(current => current.map(i => i.id === newItem.id ? { ...i, dbId } : i));
+        }
+      });
       return [...prevItems, newItem];
     });
   };
