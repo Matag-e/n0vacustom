@@ -24,6 +24,8 @@ const CreatePreferenceSchema = z.object({
   })).optional(),
   orderId: z.string().or(z.number()),
   totalAmount: z.number().positive(),
+  discountAmount: z.number().optional(),
+  couponCode: z.string().optional(),
   paymentMethod: z.enum(['pix', 'mercadopago']),
 })
 
@@ -101,12 +103,14 @@ const getMPClient = () => {
 router.post('/create-preference', async (req: Request, res: Response) => {
   try {
     const validatedData = CreatePreferenceSchema.parse(req.body)
-    const { items, orderId, totalAmount, paymentMethod } = validatedData
+    const { items, orderId, totalAmount, discountAmount, couponCode, paymentMethod } = validatedData
 
     console.log('[MP] Recebendo pedido de preferência:', {
       orderId,
       paymentMethod,
       totalAmount,
+      discountAmount,
+      couponCode,
       itemsCount: items?.length
     });
 
@@ -125,30 +129,69 @@ router.post('/create-preference', async (req: Request, res: Response) => {
 
     const cleanAmount = Number(Number(totalAmount).toFixed(2));
 
-    // Se for PIX, enviamos um único item com o valor já descontado para evitar erros de cálculo no MP
-    const mpItems = (paymentMethod === 'pix') ? [{
-      id: String(orderId),
-      title: `Pedido #${String(orderId).slice(0, 8)} (Desconto PIX)`,
-      description: 'Pagamento via PIX com 5% de desconto',
-      unit_price: cleanAmount,
-      quantity: 1,
-      currency_id: 'BRL',
-      category_id: 'clothing'
-    }] : (items ? items.map((item: any) => ({
-      id: String(item.product?.id || 'unknown'),
-      title: String(item.product?.name || 'Produto Sem Nome'),
-      unit_price: Number(Number(item.product?.price || 0).toFixed(2)),
-      quantity: Math.max(1, Number(item.quantity || 1)),
-      currency_id: 'BRL',
-      category_id: 'clothing'
-    })) : [{
-      id: String(orderId),
-      title: `Pedido #${String(orderId).slice(0, 8)}`,
-      unit_price: cleanAmount,
-      quantity: 1,
-      currency_id: 'BRL',
-      category_id: 'clothing'
-    }])
+    // Montar os itens para o Mercado Pago
+    let mpItems: any[] = []
+
+    if (paymentMethod === 'pix') {
+      // No PIX, enviamos um único item com o valor final já descontado
+      mpItems = [{
+        id: String(orderId),
+        title: `Pedido #${String(orderId).slice(0, 8)} (Desconto PIX)`,
+        description: 'Pagamento via PIX com 5% de desconto',
+        unit_price: cleanAmount,
+        quantity: 1,
+        currency_id: 'BRL',
+        category_id: 'clothing'
+      }]
+    } else if (items && items.length > 0) {
+      // Mapear itens normais
+      mpItems = items.map((item: any) => ({
+        id: String(item.product?.id || 'unknown'),
+        title: String(item.product?.name || 'Produto Sem Nome'),
+        unit_price: Number(Number(item.product?.price || 0).toFixed(2)),
+        quantity: Math.max(1, Number(item.quantity || 1)),
+        currency_id: 'BRL',
+        category_id: 'clothing'
+      }))
+
+      // Adicionar item de desconto se houver (para Cupom ou Promoção)
+      if (discountAmount && discountAmount > 0) {
+        mpItems.push({
+          id: 'discount',
+          title: `Desconto ${couponCode ? `(Cupom: ${couponCode})` : ''}`,
+          unit_price: -Math.abs(Number(Number(discountAmount).toFixed(2))),
+          quantity: 1,
+          currency_id: 'BRL',
+          category_id: 'clothing'
+        })
+      }
+    } else {
+      // Fallback: único item com o valor total
+      mpItems = [{
+        id: String(orderId),
+        title: `Pedido #${String(orderId).slice(0, 8)}`,
+        unit_price: cleanAmount,
+        quantity: 1,
+        currency_id: 'BRL',
+        category_id: 'clothing'
+      }]
+    }
+
+    // Verificar se a soma dos itens bate com o totalAmount enviado
+    const itemsSum = mpItems.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0)
+    const diff = Math.abs(itemsSum - cleanAmount)
+    
+    if (diff > 0.05) { // Diferença maior que 5 centavos
+      console.warn(`[MP] Divergência detectada entre soma dos itens (R$${itemsSum}) e totalAmount (R$${cleanAmount}). Corrigindo via ajuste.`);
+      mpItems.push({
+        id: 'adjustment',
+        title: 'Ajuste de centavos',
+        unit_price: Number((cleanAmount - itemsSum).toFixed(2)),
+        quantity: 1,
+        currency_id: 'BRL',
+        category_id: 'clothing'
+      })
+    }
 
     const back_urls = {
       success: `${origin}/profile`,

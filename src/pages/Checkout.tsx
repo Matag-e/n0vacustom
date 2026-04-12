@@ -522,7 +522,7 @@ export default function Checkout() {
           product_id: item.product.id,
           quantity: item.quantity,
           size: item.size,
-          price: item.product.price + (item.isCustomized ? 30 : 0),
+          price: item.product.price + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0),
           customization_name: item.isCustomized ? item.customName : null,
           customization_number: item.isCustomized ? item.customNumber : null
         }));
@@ -596,13 +596,15 @@ export default function Checkout() {
               product: {
                 id: item.product.id,
                 name: item.isCustomized ? `${item.product.name} (Personalizada)` : item.product.name,
-                price: item.product.price + (item.isCustomized ? 30 : 0),
+                price: item.product.price + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0),
               },
               quantity: item.quantity,
             })),
             orderId: orderId,
             paymentMethod: formData.paymentMethod,
-            totalAmount: totalAmount
+            totalAmount: totalAmount,
+            discountAmount: discountAmount,
+            couponCode: discount?.code
           }),
         });
 
