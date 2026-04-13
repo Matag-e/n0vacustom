@@ -355,7 +355,27 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
           // Enviar email se não enviado
           if (currentOrder.email && !currentOrder.email_payment_confirmed_sent) {
-             // ... logic remains same but cleaner
+            try {
+              console.log(`[Webhook] Enviando e-mail de pagamento confirmado para: ${currentOrder.email}`);
+              const { error: emailError } = await resend.emails.send({
+                from: EMAIL_FROM,
+                to: [currentOrder.email],
+                subject: 'Pagamento Confirmado! 🔥 NovaCustom',
+                html: orderPaidTemplate({ ...currentOrder, id: String(orderId) }),
+              });
+
+              if (!emailError) {
+                await supabase
+                  .from('orders')
+                  .update({ email_payment_confirmed_sent: true })
+                  .eq('id', orderId);
+                console.log(`[Email] Confirmação de pagamento enviada com sucesso para: ${currentOrder.email}`);
+              } else {
+                console.error('[Email] Erro do Resend ao enviar confirmação:', emailError);
+              }
+            } catch (emailErr) {
+              console.error('[Email] Falha ao disparar e-mail de confirmação:', emailErr);
+            }
           }
         }
       } else if (status === 'rejected' || status === 'cancelled') {

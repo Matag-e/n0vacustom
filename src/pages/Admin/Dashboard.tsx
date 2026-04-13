@@ -135,11 +135,20 @@ export default function AdminDashboard() {
       
       if (code) {
         // Disparar e-mail de rastreio
-        fetch('/api/emails/order-shipped', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId, trackingCode: code })
-        }).catch(err => console.error('Erro ao disparar e-mail de rastreio:', err));
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.access_token) {
+            fetch('/api/emails/order-shipped', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({ orderId, trackingCode: code })
+            }).catch(err => console.error('Erro ao disparar e-mail de rastreio:', err));
+          } else {
+            console.warn('[Admin] Sessão não encontrada ao tentar disparar e-mail de rastreio');
+          }
+        });
       }
 
       toast.success('Código de rastreio atualizado');
