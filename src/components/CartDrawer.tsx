@@ -1,5 +1,6 @@
 import { X, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { getCustomizationFee } from '@/lib/customization';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
@@ -117,7 +118,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Tamanho: {item.size}</p>
                     {item.isCustomized && (
                        <p className="text-[10px] text-primary font-bold mt-0.5 uppercase">
-                         Personalizado: {item.customName} {item.customNumber && `#${item.customNumber}`}
+                         Personalizado (+ R$ {getCustomizationFee(item.customName, item.customNumber)}): {item.customName} {item.customNumber && `#${item.customNumber}`}
                        </p>
                     )}
                     {item.plusSizeFee ? (
@@ -144,7 +145,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        R$ {(( (item.product?.price || 0) + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0) ) * (item.quantity || 0)).toFixed(2).replace('.', ',')}
+                        R$ {((((item.product?.price || 0) + (item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0) + (item.plusSizeFee || 0)) * (item.quantity || 0))).toFixed(2).replace('.', ',')}
                       </span>
                       <button 
                         onClick={() => removeFromCart(item.id)}

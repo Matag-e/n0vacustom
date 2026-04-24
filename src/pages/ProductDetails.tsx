@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Product } from '@/components/ProductCard';
 import { CustomizationGallery } from '@/components/CustomizationGallery';
 import { ArrowLeft, ShoppingCart, Truck, Shield, Ruler, Sparkles, X, Heart, ChevronRight, Globe, AlertTriangle } from 'lucide-react';
+import { getCustomizationFee } from '@/lib/customization';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -28,6 +29,7 @@ export default function ProductDetails() {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const customizationFee = wantsCustomization ? getCustomizationFee(customName, customNumber) : 0;
 
   const SIZE_CHARTS = {
     torcedor: [
@@ -443,8 +445,8 @@ export default function ProductDetails() {
       return;
     }
     
-    if (wantsCustomization && (!customName || !customNumber)) {
-      toast.error('Por favor, preencha o nome e o número para personalização.');
+    if (wantsCustomization && customizationFee === 0) {
+      toast.error('Por favor, preencha ao menos o nome ou o numero para personalizacao.');
       return;
     }
 
@@ -464,7 +466,7 @@ export default function ProductDetails() {
         content_category: product.category,
         content_ids: [product.id],
         content_type: 'product',
-        value: product.price + (wantsCustomization ? 30 : 0) + plusSizeFee,
+        value: product.price + customizationFee + plusSizeFee,
         currency: 'BRL'
       });
     }
@@ -638,7 +640,7 @@ export default function ProductDetails() {
             )}
             <div className="flex items-baseline gap-4 mb-2">
               <span className="text-3xl font-medium text-gray-900">
-                R$ {(product.price + (wantsCustomization ? 30 : 0) + (getModelType() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL') ? 20 : 0)).toFixed(2).replace('.', ',')}
+                R$ {(product.price + customizationFee + (getModelType() === 'jogador' && (selectedSize === '2XG' || selectedSize === '3XL' || selectedSize === '4XL') ? 20 : 0)).toFixed(2).replace('.', ',')}
               </span>
               {(product.stock ?? 0) > 0 ? (
                 <span className="text-sm text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
@@ -764,8 +766,9 @@ export default function ProductDetails() {
               <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <div>
-                  <p className="text-sm font-bold text-gray-900">Personalização (+ R$ 30,00)</p>
+                  <p className="text-sm font-bold text-gray-900">Personalização (+ R$ 30,00 a R$ 80,00)</p>
                   <p className="text-xs text-gray-500">Adicione seu nome e número favoritos</p>
+                    <p className="text-[11px] text-gray-500 mt-1">Nome: +30 | Numero: +45 | Nome + 1 numero: +65 | Nome + 2 numeros: +80</p>
                 </div>
               </div>
               <button
@@ -815,6 +818,9 @@ export default function ProductDetails() {
                       maxLength={2}
                       className="w-full bg-white border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-300 shadow-sm transition-all"
                     />
+                  </div>
+                  <div className="rounded-xl bg-white px-4 py-3 text-sm text-gray-600 border border-gray-200">
+                    Adicional da personalizacao: <span className="font-bold text-gray-900">R$ {customizationFee.toFixed(2).replace('.', ',')}</span>
                   </div>
                 </div>
               </div>

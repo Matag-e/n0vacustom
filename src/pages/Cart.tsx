@@ -1,4 +1,5 @@
 import { useCart } from '@/context/CartContext';
+import { getCustomizationFee } from '@/lib/customization';
 import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
@@ -77,7 +78,7 @@ export default function Cart() {
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="bg-primary/10 px-2 py-0.5 rounded text-[10px] font-bold text-primary uppercase tracking-wider">
-                              Personalizado (+ R$ 30)
+                              Personalizado (+ R$ {getCustomizationFee(item.customName, item.customNumber)})
                             </span>
                           </div>
                           <span className="text-gray-900 font-bold uppercase text-xs">
@@ -117,7 +118,7 @@ export default function Cart() {
                     </div>
                     
                     <span className="text-lg font-bold text-gray-900">
-                      R$ {((item.product.price + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0)) * item.quantity).toFixed(2).replace('.', ',')}
+                      R$ {((item.product.price + (item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0) + (item.plusSizeFee || 0)) * item.quantity).toFixed(2).replace('.', ',')}
                     </span>
                   </div>
                 </div>

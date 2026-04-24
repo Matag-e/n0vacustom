@@ -6,6 +6,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn, transformImageUrl, buildSrcSet, originalImageUrl } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { maskCPF, maskPhone, maskCEP } from '@/lib/masks';
+import { getCustomizationFee } from '@/lib/customization';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
@@ -207,7 +208,7 @@ export default function Checkout() {
           const allPrices = items.flatMap(item => 
             Array(item.quantity).fill(
               (item.product.price || 0) + 
-              (item.isCustomized ? 30 : 0) + 
+              (item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0) + 
               (item.plusSizeFee || 0)
             )
           ).sort((a, b) => a - b); // Ordenar do mais barato para o mais caro
@@ -522,7 +523,7 @@ export default function Checkout() {
           product_id: item.product.id,
           quantity: item.quantity,
           size: item.size,
-          price: item.product.price + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0),
+          price: item.product.price + (item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0) + (item.plusSizeFee || 0),
           customization_name: item.isCustomized ? item.customName : null,
           customization_number: item.isCustomized ? item.customNumber : null
         }));
@@ -596,7 +597,7 @@ export default function Checkout() {
               product: {
                 id: item.product.id,
                 name: item.isCustomized ? `${item.product.name} (Personalizada)` : item.product.name,
-                price: item.product.price + (item.isCustomized ? 30 : 0) + (item.plusSizeFee || 0),
+                price: item.product.price + (item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0) + (item.plusSizeFee || 0),
               },
               quantity: item.quantity,
             })),
@@ -1047,7 +1048,7 @@ export default function Checkout() {
                       <p className="text-xs text-gray-500 mb-1">Tamanho: {item.size}</p>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">Qtd: {item.quantity}</span>
-                        <span className="text-sm font-bold text-gray-900">R$ {((item.product.price + (item.isCustomized ? 30 : 0)) * item.quantity).toFixed(2).replace('.', ',')}</span>
+                        <span className="text-sm font-bold text-gray-900">R$ {((item.product.price + (item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0) + (item.plusSizeFee || 0)) * item.quantity).toFixed(2).replace('.', ',')}</span>
                       </div>
                     </div>
                   </div>

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { Product } from '@/components/ProductCard';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
+import { getCustomizationFee } from '@/lib/customization';
 
 export interface CartItem {
   id: string; // Unique ID for cart item (combination of product id + options)
@@ -281,7 +282,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const totalPrice = items.reduce((total, item) => {
     if (!item || !item.product) return total;
     const itemBasePrice = item.product.price || 0;
-    const customizationFee = item.isCustomized ? 30 : 0;
+    const customizationFee = item.isCustomized ? getCustomizationFee(item.customName, item.customNumber) : 0;
     const plusSizeFee = item.plusSizeFee || 0;
     return total + (itemBasePrice + customizationFee + plusSizeFee) * (item.quantity || 0);
   }, 0);
