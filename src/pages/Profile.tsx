@@ -3,10 +3,24 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2, Heart } from 'lucide-react';
+import { Package, User, LogOut, ChevronRight, Clock, CheckCircle2, XCircle, ShoppingBag, CreditCard, Banknote, Trash2, Heart, Truck } from 'lucide-react';
 import { QRCodeModal } from '@/components/QRCodeModal';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
+
+interface OrderItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  price: number;
+  size: string;
+  customization_name?: string;
+  customization_number?: string;
+  product?: {
+    name: string;
+    image_url: string;
+  };
+}
 
 interface Order {
   id: string;
@@ -16,6 +30,7 @@ interface Order {
   payment_method?: string;
   tracking_code?: string;
   order_code?: string;
+  order_items?: OrderItem[];
 }
 
 import { Wishlist } from '@/components/Wishlist';
@@ -36,7 +51,16 @@ export default function Profile() {
       try {
         const { data, error } = await supabase
           .from('orders')
-          .select('*')
+          .select(`
+            *,
+            order_items (
+              *,
+              product:products (
+                name,
+                image_url
+              )
+            )
+          `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -416,6 +440,34 @@ export default function Profile() {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Order Items */}
+                    {order.order_items && order.order_items.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                        {order.order_items.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between py-2">
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">
+                                {item.product?.name || 'Produto'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Tam: {item.size} • Qtd: {item.quantity}
+                                {(item.customization_name || item.customization_number) && (
+                                  <span className="ml-2 text-primary font-medium">
+                                    • {item.customization_name && `Nome: ${item.customization_name}`}
+                                    {item.customization_name && item.customization_number && ' '}
+                                    {item.customization_number && `Número: ${item.customization_number}`}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <p className="font-bold text-gray-900 text-sm">
+                              R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

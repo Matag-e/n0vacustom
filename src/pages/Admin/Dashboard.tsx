@@ -14,9 +14,8 @@ interface OrderItem {
   quantity: number;
   price: number;
   size: string;
-  is_customized: boolean;
-  custom_name?: string;
-  custom_number?: string;
+  customization_name?: string;
+  customization_number?: string;
   product?: {
     name: string;
     image_url: string;
@@ -775,10 +774,19 @@ CEP: ${order.cep}
                     <tbody className="divide-y divide-gray-50">
                       {selectedOrder.order_items?.map((item, idx) => (
                         <tr key={idx}>
-                          <td className="px-4 py-3 font-medium">{item.product?.name || 'Produto'}</td>
+                          <td className="px-4 py-3 font-medium">
+                            {item.product?.name || 'Produto'}
+                            {(item.customization_name || item.customization_number) && (
+                              <div className="mt-1 text-xs text-gray-500">
+                                {item.customization_name && <span>Nome: {item.customization_name}</span>}
+                                {item.customization_name && item.customization_number && <span> • </span>}
+                                {item.customization_number && <span>Número: {item.customization_number}</span>}
+                              </div>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-center">{item.size || 'N/A'}</td>
                           <td className="px-4 py-3 text-center">{item.quantity || 0}</td>
-                          <td className="px-4 py-3 text-right font-bold">R$ {(item.price || 0).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-bold">R$ {(item.price || 0).toFixed(2).replace('.', ',')}</td>
                         </tr>
                       ))}
                     </tbody>
