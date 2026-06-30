@@ -519,18 +519,6 @@ CEP: ${order.cep}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {order.status === 'paid' && (
-                            <button
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setTrackingInput(order.tracking_code || '');
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded-lg transition-all"
-                            >
-                              <Truck className="w-3 h-3" />
-                              Enviar
-                            </button>
-                          )}
                           <div className="relative group/actions">
                             <select
                               value={order.status}
