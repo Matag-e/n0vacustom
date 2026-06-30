@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { ShieldAlert, Loader2, LayoutDashboard, Package, ShoppingBag, Ticket } from 'lucide-react';
+import { ShieldAlert, Loader2, LayoutDashboard, Package, ShoppingBag, Ticket, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout() {
@@ -94,6 +94,18 @@ export default function AdminLayout() {
               >
                 <Ticket className="w-3.5 h-3.5" />
                 Cupons
+              </Link>
+              <Link 
+                to="/admin/reports" 
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  location.pathname === "/admin/reports" 
+                    ? "bg-white text-black shadow-sm" 
+                    : "text-gray-500 hover:text-gray-900"
+                )}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                Relatórios
               </Link>
             </div>
           </div>

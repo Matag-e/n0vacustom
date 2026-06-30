@@ -61,8 +61,6 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingInput, setTrackingInput] = useState('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
     fetchOrders();
@@ -292,25 +290,7 @@ CEP: ${order.cep}
       `${order.first_name} ${order.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    let matchesDate = true;
-    if (startDate && endDate) {
-      const orderDate = new Date(order.created_at);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      matchesDate = orderDate >= start && orderDate <= end;
-    } else if (startDate) {
-      const orderDate = new Date(order.created_at);
-      const start = new Date(startDate);
-      matchesDate = orderDate >= start;
-    } else if (endDate) {
-      const orderDate = new Date(order.created_at);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      matchesDate = orderDate <= end;
-    }
-    
-    return matchesStatus && matchesSearch && matchesDate;
+    return matchesStatus && matchesSearch;
   });
 
   const stats = {
@@ -427,37 +407,6 @@ CEP: ${order.cep}
                 className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-black transition-all"
               />
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Período:</span>
-            </div>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none"
-            />
-            <span className="text-gray-400 text-sm">até</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none"
-            />
-            {(startDate || endDate) && (
-              <button
-                onClick={() => {
-                  setStartDate('');
-                  setEndDate('');
-                }}
-                className="text-xs font-bold text-gray-400 hover:text-black transition-colors uppercase"
-              >
-                Limpar
-              </button>
-            )}
           </div>
         </div>
 

@@ -32,6 +32,7 @@ import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminInventory from '@/pages/Admin/Inventory';
 import AdminProducts from '@/pages/Admin/Products';
 import AdminCoupons from '@/pages/Admin/Coupons';
+import AdminReports from '@/pages/Admin/Reports';
 import NotFound from '@/pages/NotFound';
 
 import { Toaster } from 'sonner';
@@ -94,6 +95,7 @@ function App() {
                       <Route path="products" element={<AdminProducts />} />
                       <Route path="inventory" element={<AdminInventory />} />
                       <Route path="coupons" element={<AdminCoupons />} />
+            <Route path="reports" element={<AdminReports />} />
                     </Route>
 
             {/* Public Routes (Main Layout) */}
