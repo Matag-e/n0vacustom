@@ -61,9 +61,31 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingInput, setTrackingInput] = useState('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
     fetchOrders();
+
+    // Inscrever-se para atualizações em tempo real
+    const channel = supabase
+      .channel('orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchOrders() {
@@ -269,7 +291,26 @@ CEP: ${order.cep}
       (order.order_code && order.order_code.toLowerCase().includes(searchTerm.toLowerCase())) ||
       `${order.first_name} ${order.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.email.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
+    
+    let matchesDate = true;
+    if (startDate && endDate) {
+      const orderDate = new Date(order.created_at);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      matchesDate = orderDate >= start && orderDate <= end;
+    } else if (startDate) {
+      const orderDate = new Date(order.created_at);
+      const start = new Date(startDate);
+      matchesDate = orderDate >= start;
+    } else if (endDate) {
+      const orderDate = new Date(order.created_at);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      matchesDate = orderDate <= end;
+    }
+    
+    return matchesStatus && matchesSearch && matchesDate;
   });
 
   const stats = {
@@ -349,41 +390,74 @@ CEP: ${order.cep}
 
       {/* Filters & Table */}
       <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 md:p-8 border-b border-gray-50 flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={cn(
-                "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0",
-                filterStatus === 'all' ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
-              )}
-            >
-              Todos
-            </button>
-            {Object.entries(STATUS_MAP).map(([status, config]) => (
+        <div className="p-6 md:p-8 border-b border-gray-50 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+            <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
               <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
+                onClick={() => setFilterStatus('all')}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0 flex items-center gap-2",
-                  filterStatus === status ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                  "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0",
+                  filterStatus === 'all' ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
                 )}
               >
-                <config.icon className="w-3 h-3" />
-                {config.label}
+                Todos
               </button>
-            ))}
+              {Object.entries(STATUS_MAP).map(([status, config]) => (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0 flex items-center gap-2",
+                    filterStatus === status ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                  )}
+                >
+                  <config.icon className="w-3 h-3" />
+                  {config.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por ID, Código ou Cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-black transition-all"
+              />
+            </div>
           </div>
 
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Período:</span>
+            </div>
             <input
-              type="text"
-              placeholder="Buscar por ID, Código ou Cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-black transition-all"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none"
             />
+            <span className="text-gray-400 text-sm">até</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none"
+            />
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="text-xs font-bold text-gray-400 hover:text-black transition-colors uppercase"
+              >
+                Limpar
+              </button>
+            )}
           </div>
         </div>
 
@@ -426,8 +500,16 @@ CEP: ${order.cep}
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-6 py-4">
                         <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id?.slice(0, 8)}</span>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {order.order_items?.length || 0} itens
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500">
+                            {order.order_items?.length || 0} itens
+                          </span>
+                          {order.order_items?.some(item => item.customization_name || item.customization_number) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-pink-50 text-pink-700 rounded-full text-[10px] font-bold uppercase">
+                              <Star className="w-3 h-3" />
+                              Personalizado
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-600">
@@ -488,6 +570,18 @@ CEP: ${order.cep}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
+                          {order.status === 'paid' && (
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setTrackingInput(order.tracking_code || '');
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded-lg transition-all"
+                            >
+                              <Truck className="w-3 h-3" />
+                              Enviar
+                            </button>
+                          )}
                           <div className="relative group/actions">
                             <select
                               value={order.status}
@@ -546,15 +640,23 @@ CEP: ${order.cep}
 
               return (
                 <div key={order.id} className="p-4 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1">
                       <span className="font-mono font-bold text-gray-900">#{order.order_code || order.id?.slice(0, 8)}</span>
-                      <div className="text-[10px] text-gray-400 uppercase font-bold mt-1">
-                        {new Date(order.created_at).toLocaleDateString()} às {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-400 uppercase font-bold">
+                          {new Date(order.created_at).toLocaleDateString()} às {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {order.order_items?.some(item => item.customization_name || item.customization_number) && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-pink-50 text-pink-700 rounded-full text-[9px] font-bold uppercase">
+                            <Star className="w-2.5 h-2.5" />
+                            Personalizado
+                          </span>
+                        )}
                       </div>
                     </div>
                     <span className={cn(
-                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter",
+                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter shrink-0",
                       STATUS_MAP[order.status]?.color || "bg-gray-100 text-gray-800"
                     )}>
                       <StatusIcon className="w-2 h-2" />
@@ -598,37 +700,51 @@ CEP: ${order.cep}
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setTrackingInput(order.tracking_code || '');
-                      }}
-                      className="flex-1 bg-gray-100 text-gray-900 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
-                    >
-                      <Eye className="w-3 h-3" />
-                      Detalhes
-                    </button>
-                    <div className="relative flex-1">
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateStatus(order.id, e.target.value)}
-                        className="w-full bg-white border border-gray-200 text-gray-700 text-[10px] font-black uppercase tracking-widest rounded-lg py-2 px-3 appearance-none outline-none"
+                  <div className="flex flex-col gap-2 pt-2">
+                    {order.status === 'paid' && (
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setTrackingInput(order.tracking_code || '');
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
                       >
-                        <option value="pending">Pendente</option>
-                        <option value="paid">Pago</option>
-                        <option value="shipped">Enviado</option>
-                        <option value="completed">Entregue</option>
-                        <option value="cancelled">Cancelado</option>
-                      </select>
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                        <Truck className="w-3 h-3" />
+                        Marcar como Enviado
+                      </button>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setTrackingInput(order.tracking_code || '');
+                        }}
+                        className="flex-1 bg-gray-100 text-gray-900 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Detalhes
+                      </button>
+                      <div className="relative flex-1">
+                        <select
+                          value={order.status}
+                          onChange={(e) => updateStatus(order.id, e.target.value)}
+                          className="w-full bg-white border border-gray-200 text-gray-700 text-[10px] font-black uppercase tracking-widest rounded-lg py-2 px-3 appearance-none outline-none"
+                        >
+                          <option value="pending">Pendente</option>
+                          <option value="paid">Pago</option>
+                          <option value="shipped">Enviado</option>
+                          <option value="completed">Entregue</option>
+                          <option value="cancelled">Cancelado</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      </div>
+                      <button
+                        onClick={() => deleteOrder(order.id)}
+                        className="p-2 text-red-400 bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => deleteOrder(order.id)}
-                      className="p-2 text-red-400 bg-red-50 rounded-lg"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
                   </div>
                 </div>
               );
@@ -774,15 +890,28 @@ CEP: ${order.cep}
                     <tbody className="divide-y divide-gray-50">
                       {selectedOrder.order_items?.map((item, idx) => (
                         <tr key={idx}>
-                          <td className="px-4 py-3 font-medium">
-                            {item.product?.name || 'Produto'}
-                            {(item.customization_name || item.customization_number) && (
-                              <div className="mt-1 text-xs text-gray-500">
-                                {item.customization_name && <span>Nome: {item.customization_name}</span>}
-                                {item.customization_name && item.customization_number && <span> • </span>}
-                                {item.customization_number && <span>Número: {item.customization_number}</span>}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              {item.product?.image_url && (
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={item.product.image_url}
+                                    alt={item.product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              <div className="font-medium">
+                                {item.product?.name || 'Produto'}
+                                {(item.customization_name || item.customization_number) && (
+                                  <div className="mt-1 text-xs text-gray-500">
+                                    {item.customization_name && <span>Nome: {item.customization_name}</span>}
+                                    {item.customization_name && item.customization_number && <span> • </span>}
+                                    {item.customization_number && <span>Número: {item.customization_number}</span>}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center">{item.size || 'N/A'}</td>
                           <td className="px-4 py-3 text-center">{item.quantity || 0}</td>
